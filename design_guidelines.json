@@ -1,0 +1,109 @@
+{
+  "theme": "light",
+  "archetype": "Archetype 1: Organic & Earthy",
+  "typography": {
+    "fonts": {
+      "heading": "Manrope",
+      "body": "IBM Plex Sans",
+      "mono": "JetBrains Mono"
+    },
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl tracking-tight font-extrabold",
+      "h2": "text-2xl sm:text-3xl tracking-tight font-bold",
+      "h3": "text-xl sm:text-2xl tracking-tight font-semibold",
+      "h4": "text-lg sm:text-xl font-semibold",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm",
+      "labels": "text-xs uppercase tracking-[0.2em] font-medium"
+    }
+  },
+  "colors": {
+    "primary": {
+      "DEFAULT": "#E06C4C",
+      "hover": "#C85A3F",
+      "light": "#FDECE8",
+      "foreground": "#FFFFFF"
+    },
+    "secondary": {
+      "DEFAULT": "#2D6A4F",
+      "hover": "#1B4332",
+      "light": "#D8F3DC",
+      "foreground": "#FFFFFF"
+    },
+    "background": {
+      "app": "#FAF9F6",
+      "card": "#FFFFFF",
+      "subtle": "#F3F2EE"
+    },
+    "text": {
+      "primary": "#1C1C1C",
+      "secondary": "#5C5C5C",
+      "muted": "#8A8A8A"
+    },
+    "border": {
+      "DEFAULT": "#E6E4DE",
+      "focus": "#E06C4C"
+    },
+    "status": {
+      "success": "#2D6A4F",
+      "warning": "#F4A261",
+      "error": "#D90429",
+      "info": "#457B9D"
+    },
+    "integrations": {
+      "swiggy": "#FC8019",
+      "zomato": "#CB202D"
+    }
+  },
+  "spacing_and_layout": {
+    "general": "Generous spacing philosophy (p-6 to p-12) for dashboard, but highly dense (p-2 to p-4) for POS order-taking screens to maximize efficiency.",
+    "border_radius": "max 8px (rounded-md) for technical precision, avoiding soft childish aesthetics.",
+    "pos_grid": "MODE B: Control Room Grid. 3-column layout (Categories 1-col, Items 2-col, Cart/KOT 1-col) spanning 100% height.",
+    "surfaces": "Grid Borders for technical dashboards. Flat backgrounds with 1px subtle borders (#E6E4DE). Avoid large drop shadows; use sharp inner contrasts."
+  },
+  "motion_and_interactions": {
+    "hover_states": "Slight lift (-translate-y-0.5) with border color darkening.",
+    "transitions": "transition-all duration-200 ease-in-out",
+    "pos_interactions": "Micro-interactions on item click (scale-95 to simulate physical tap).",
+    "sync_indicator": "Pulse animation for offline/online sync status indicator."
+  },
+  "components": {
+    "buttons": "Flat, sharp edges (rounded-md). High contrast text. Use primary color for critical actions (Pay, Send to Kitchen), subtle outlines for secondary actions.",
+    "cards": "Cardless approach preferred. Use pure HTML + Tailwind with border-collapse and subtle borders for data grids. If cards are needed, use flat white background with 1px border.",
+    "tables": "Dense, crisp lines. Hover state on rows. Use Shadcn Table.",
+    "forms": "Shadcn inputs. Solid background (white) inside gray app background. Focus ring using primary color (#E06C4C).",
+    "navigation": "Sidebar for core modules (Dashboard, POS, Kitchen, Tables, Settings). Sticky top header for contextual actions, user profile, and sync indicator."
+  },
+  "icons": {
+    "library": "lucide-react",
+    "style": "Minimal, functional, scaling with text (w-4 h-4 for body text, w-5 h-5 for headers)."
+  },
+  "images": {
+    "login_background": {
+      "url": "https://images.unsplash.com/photo-1707334724033-e997675f8c10?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA0MTJ8MHwxfHNlYXJjaHwzfHxyZXN0YXVyYW50JTIwaW50ZXJpb3IlMjBibHVyfGVufDB8fHx8MTc3ODgzNjg4N3ww&ixlib=rb-4.1.0&q=85",
+      "description": "Blurred restaurant interior with people for a warm, inviting login screen."
+    },
+    "menu_items": [
+      {
+        "url": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwxfHxkZWxpY2lvdXMlMjBidXJnZXJ8ZW58MHx8fHwxNzc4ODM2ODkyfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Classic burger for menu mockups."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwzfHxkZWxpY2lvdXMlMjBidXJnZXJ8ZW58MHx8fHwxNzc4ODM2ODkyfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Double cheeseburger for menu mockups."
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Install lucide-react, framer-motion, and recharts.",
+    "Configure Tailwind with the custom color palette, focusing on #E06C4C as the primary action color and #FAF9F6 as the app background.",
+    "Apply fonts globally in index.css: @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Manrope:wght@400;600;800&family=JetBrains+Mono:wght@400;500&display=swap');",
+    "Ensure the layout is highly dense on the POS order-taking screen. Use a 100vh layout with a strict grid (Categories | Items | KOT Cart) avoiding unnecessary scrolling.",
+    "Integrate the Swiggy (#FC8019) and Zomato (#CB202D) colors distinctly in the incoming online orders panel, avoiding full-screen brand colors, instead using colored badges, thin top borders, or subtle background tints.",
+    "Implement the 'Hybrid Offline/Online' sync indicator in the global header (e.g., a green pulsing dot for online, gray for offline, with a sync queue counter).",
+    "For the Kitchen Order Tickets (KOT) screen, use a Kanban-style board (Received, Preparing, Ready) leveraging Grid Borders for clear segregation.",
+    "Table floor plan should be a visual grid showing status colors (Free: White, Occupied: Terracotta, Reserved: Forest Green).",
+    "Avoid generic soft shadows; use sharp 1px borders and distinct typographic hierarchy.",
+    "Ensure all interactive elements have 'data-testid' attributes (e.g., data-testid='pos-add-item-btn', data-testid='checkout-btn')."
+  ]
+}
