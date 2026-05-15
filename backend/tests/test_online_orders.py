@@ -139,6 +139,22 @@ class TestOnlineOrderActions:
         target = next((o for o in listed if o["id"] == oid), None)
         assert target["status"] == "dispatched"
 
+    def test_accept_sets_accepted_at(self, auth_headers):
+        """Verify the accept endpoint stamps accepted_at on the online_orders document (SLA timer source)."""
+        sim = requests.post(f"{API}/online-orders/simulate", json={"platform": "swiggy"}, headers=auth_headers, timeout=15).json()
+        oid = sim["id"]
+        # Before accept: accepted_at should not exist (or be None)
+        assert not sim.get("accepted_at")
+        r = requests.post(f"{API}/online-orders/{oid}/accept", headers=auth_headers, timeout=15)
+        assert r.status_code == 200
+        listed = requests.get(f"{API}/online-orders", headers=auth_headers, timeout=15).json()
+        target = next((o for o in listed if o["id"] == oid), None)
+        assert target is not None, "Accepted order not found in listing"
+        assert target["status"] == "accepted"
+        assert target.get("accepted_at"), "accepted_at field not set after accept"
+        # Should be ISO string
+        assert isinstance(target["accepted_at"], str) and "T" in target["accepted_at"]
+
     def test_accept_nonexistent(self, auth_headers):
         r = requests.post(f"{API}/online-orders/non-existent-id/accept", headers=auth_headers, timeout=15)
         assert r.status_code == 404

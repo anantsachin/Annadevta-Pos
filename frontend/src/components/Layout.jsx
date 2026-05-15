@@ -1,22 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ShoppingCart, ChefHat, LayoutGrid, BookOpen, Boxes, Users, UserCog, Tag, Bike, BarChart3, LogOut, Wifi, WifiOff, CloudUpload } from "lucide-react";
+import { Bike, LayoutDashboard, ShoppingCart, ChefHat, LayoutGrid, BookOpen, Boxes, Users, UserCog, Tag, BarChart3, LogOut, Wifi, WifiOff, CloudUpload } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { offlineQueue } from "../lib/offlineQueue";
+import api from "../lib/api";
 import { toast } from "sonner";
 
 const nav = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/pos", label: "POS Terminal", icon: ShoppingCart },
-  { to: "/kitchen", label: "Kitchen (KOT)", icon: ChefHat },
-  { to: "/tables", label: "Tables", icon: LayoutGrid },
-  { to: "/online-orders", label: "Online Orders", icon: Bike },
-  { to: "/menu", label: "Menu", icon: BookOpen, roles: ["admin", "manager"] },
-  { to: "/inventory", label: "Inventory", icon: Boxes, roles: ["admin", "manager"] },
-  { to: "/customers", label: "Customers", icon: Users },
-  { to: "/discounts", label: "Discounts", icon: Tag, roles: ["admin", "manager"] },
-  { to: "/staff", label: "Staff", icon: UserCog, roles: ["admin"] },
-  { to: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"] },
+  { to: "/", label: "Online Orders", icon: Bike, hero: true, end: true, testid: "nav-online-orders" },
+  { to: "/pos", label: "POS Terminal", icon: ShoppingCart, testid: "nav-pos" },
+  { to: "/kitchen", label: "Kitchen (KOT)", icon: ChefHat, testid: "nav-kitchen" },
+  { to: "/tables", label: "Tables", icon: LayoutGrid, testid: "nav-tables" },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, testid: "nav-dashboard" },
+  { to: "/menu", label: "Menu", icon: BookOpen, roles: ["admin", "manager"], testid: "nav-menu" },
+  { to: "/inventory", label: "Inventory", icon: Boxes, roles: ["admin", "manager"], testid: "nav-inventory" },
+  { to: "/customers", label: "Customers", icon: Users, testid: "nav-customers" },
+  { to: "/discounts", label: "Discounts", icon: Tag, roles: ["admin", "manager"], testid: "nav-discounts" },
+  { to: "/staff", label: "Staff", icon: UserCog, roles: ["admin"], testid: "nav-staff" },
+  { to: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"], testid: "nav-reports" },
 ];
 
 export default function Layout() {
@@ -24,6 +25,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const [online, setOnline] = useState(navigator.onLine);
   const [queueCount, setQueueCount] = useState(offlineQueue.count());
+  const [incoming, setIncoming] = useState(0);
 
   useEffect(() => {
     const setOn = () => setOnline(true);
@@ -32,7 +34,16 @@ export default function Layout() {
     window.addEventListener("online", setOn);
     window.addEventListener("offline", setOff);
     window.addEventListener("pos-queue-changed", refreshQueue);
+    const fetchIncoming = async () => {
+      try {
+        const { data } = await api.get("/online-orders");
+        setIncoming(data.filter((o) => o.status === "incoming").length);
+      } catch {}
+    };
+    fetchIncoming();
+    const t = setInterval(fetchIncoming, 8000);
     return () => {
+      clearInterval(t);
       window.removeEventListener("online", setOn);
       window.removeEventListener("offline", setOff);
       window.removeEventListener("pos-queue-changed", refreshQueue);
@@ -53,20 +64,28 @@ export default function Layout() {
     <div className="min-h-screen flex bg-sand-app">
       <aside className="w-64 border-r border-border bg-white flex flex-col" data-testid="sidebar">
         <div className="px-6 py-5 border-b border-border">
-          <div className="font-display font-extrabold text-xl tracking-tight text-[#1C1C1C]">FORK<span className="text-terracotta">&</span>FIRE</div>
+          <div className="font-display font-extrabold text-xl tracking-tight text-[#1C1C1C]">FORK<span className="text-terracotta">&amp;</span>FIRE</div>
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mt-1">Restaurant POS</div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {nav.filter(n => !n.roles || n.roles.includes(user?.role)).map(n => (
-            <NavLink key={n.to} to={n.to} end={n.end}
-              data-testid={`nav-${n.label.toLowerCase().replace(/[^a-z]+/g, '-')}`}
+          {nav.filter((n) => !n.roles || n.roles.includes(user?.role)).map((n) => (
+            <NavLink key={n.to} to={n.to} end={n.end} data-testid={n.testid}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  isActive ? "bg-terracotta text-white" : "text-foreground hover:bg-sand-subtle"
+                `flex items-center justify-between gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? n.hero ? "bg-terracotta text-white" : "bg-foreground text-white"
+                    : n.hero ? "bg-terracotta/5 text-terracotta hover:bg-terracotta/10" : "text-foreground hover:bg-sand-subtle"
                 }`
               }>
-              <n.icon className="w-4 h-4" />
-              {n.label}
+              <span className="flex items-center gap-3">
+                <n.icon className="w-4 h-4" />
+                {n.label}
+              </span>
+              {n.hero && incoming > 0 && (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-white text-terracotta border border-terracotta/40 min-w-[20px] text-center">
+                  {incoming}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -85,7 +104,7 @@ export default function Layout() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 border-b border-border bg-white px-6 flex items-center justify-between sticky top-0 z-10">
           <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-medium">
-            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' })}
+            {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "short", year: "numeric" })}
           </div>
           <div className="flex items-center gap-4">
             {queueCount > 0 && (
@@ -97,8 +116,7 @@ export default function Layout() {
                 }}
                 data-testid="sync-now-btn"
                 className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100">
-                <CloudUpload className="w-3.5 h-3.5" />
-                {queueCount} pending
+                <CloudUpload className="w-3.5 h-3.5" /> {queueCount} pending
               </button>
             )}
             <div className="flex items-center gap-2" data-testid="sync-indicator">

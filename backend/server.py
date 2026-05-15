@@ -589,7 +589,7 @@ async def accept_online_order(oid: str, user: dict = Depends(get_current_user)):
         external_id=o["external_id"],
     )
     order = await _create_order(order_in, user["email"])
-    await db.online_orders.update_one({"id": oid}, {"$set": {"status": "accepted", "order_id": order["id"]}})
+    await db.online_orders.update_one({"id": oid}, {"$set": {"status": "accepted", "order_id": order["id"], "accepted_at": iso(now_utc())}})
     return {"ok": True, "order_id": order["id"]}
 
 @api.post("/online-orders/{oid}/reject")
