@@ -73,6 +73,12 @@ agenthub/agents/youtube/db
 *.deb
 *.dylib
 
+# MongoDB - exclude everything except the essential binary
+mongodb-portable/mongodb.zip
+mongodb-portable/mongodb-win32-x86_64-windows-8.0.4/
+!mongodb-portable/bin/
+!mongodb-portable/bin/mongod.exe
+
 # Build caches
 .cache/
 
