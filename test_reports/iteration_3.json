@@ -1,0 +1,40 @@
+{
+  "summary": "Iteration-3: full regression of pivoted Thali POS. Deleted obsolete /app/backend/tests/test_online_orders.py and wrote fresh /app/backend/tests/test_thali_pos.py — 32/32 pytest cases PASSED (auth, settings RBAC, categories, menu CRUD+toggle, templates, orders with atomic receipt_no, dashboard summary shape + top_thalis aggregation, reports sales/products/thalis, CSV+Excel export with correct content-type, and 404/405 verification for the 7 removed endpoints /online-orders /tables /inventory /customers /discounts /kot /staff/register). Frontend Playwright e2e on the public preview URL fully validated: admin login → / lands on Billing (categories | menu grid | cart), sidebar contains EXACTLY the 7 expected admin items (nav-billing, nav-orders, nav-daily-menu, nav-menu, nav-dashboard, nav-reports, nav-settings) with no Swiggy/Zomato/Kitchen/Tables/Inventory/Customers/Discounts/Staff. Clicking 'Paneer Masala' adds qty-1 line (subtotal ₹120, total ₹126 = 120+5%GST). Clicking 'Regular Thali' opens ThaliBuilder dialog with 2 groups (Sabji×2, Dal×1) — confirm button correctly disabled until required counts picked, then enabled and adds the thali line (cart now 2 lines, subtotal ₹270, with ₹5 discount → total ₹278.50 = 270+5%-5 ✓). Pay-UPI button POSTs order and triggers print popup (popup event observed); cart clears to 0 lines after success. Navigated all 6 admin routes (/orders /daily-menu /menu /dashboard /reports /settings) with no error overlays. Logout returns to /login. Cashier login (cashier@pos.com/cashier123) shows sidebar with exactly {nav-billing, nav-orders}. Direct navigation to /dashboard as cashier redirects to / as required by ProtectedRoute.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/dashboard", "issues": ["Recharts console warning: 'The width(-1) and height(-1) of chart should be greater than 0' fires 4 times on Dashboard mount. ResponsiveContainer parent collapses to 0 height — visually charts may render small or empty. Wrap each ResponsiveContainer in a fixed-height div (e.g. className='h-72') or supply aspect prop. Same finding as iteration-2 — not yet fixed."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_thali_pos.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Minor / cosmetic) Dashboard.jsx: wrap each <ResponsiveContainer> in a fixed-height div (h-64/h-72) to eliminate recharts width(-1)/height(-1) warnings and ensure charts render at intended size.",
+    "(Optional code-health) server.py is ~700 lines and growing — consider splitting into routers (auth, settings, menu, orders, dashboard, reports) once stable."
+  ],
+  "critical_code_review_comments": [
+    "server.py uses bare global `app.on_event('startup')` for seed AND .create_index — fine for now, but consider FastAPI lifespan context for cleaner shutdown semantics.",
+    "CORS configured with both allow_origins=['*'] AND allow_credentials=True — browsers will reject credentialed requests when origin is '*'. Frontend Bearer-token flow works because Bearer header is preferred over cookie, but cross-origin cookie auth will silently break. Pin allow_origins to the actual preview/production domain (or rely on allow_origin_regex with credentials).",
+    "Orders endpoint stores paid_at as ISO string and queries with $gte/$lte string comparison — works because ISO-8601 sorts lexicographically when timezone is uniform UTC; document this assumption or store as native datetime to avoid future TZ bugs.",
+    "GET /api/orders has no auth role gate (any authenticated user can list ALL orders including discounts/totals across cashiers). If cashier should only see their own orders, add a filter; if global view is intended for a small shop, this is fine.",
+    "_compute_totals uses each item's own tax_rate but ignores the configured settings.gst_rate — cart frontend passes tax_rate=5 hard-coded. If admin changes GST in Settings, NEW orders still use 5% unless frontend pulls settings.gst_rate into each line. Verify printReceipt() and Billing.jsx propagate gst_rate from /api/settings."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_thali_pos.py (created)",
+    "/app/backend/tests/test_online_orders.py (deleted — obsolete after pivot)"
+  ],
+  "success_rate": {"backend": "100% (32/32)", "frontend": "100% of requested flows verified"},
+  "test_credentials": "admin@pos.com / admin123 (admin) — verified; cashier@pos.com / cashier123 (cashier) — verified. Both seeded by server startup hook.",
+  "seed_data_creation": "No additional seed required. Default seed_defaults() creates 6 categories (Thali/Sabji/Dal/Rice/Bread/Drinks), 3 thalis (Regular ₹150, Mini ₹100, Special ₹220) with thali_groups, 5 sabji, 3 dal, 2 rice, 4 breads, 3 drinks, 1 admin user, 1 cashier user, and restaurant settings. Test created TEST_-prefixed transient items (cleaned up in same test).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend regression file is /app/backend/tests/test_thali_pos.py — run with `pytest backend/tests/test_thali_pos.py -v`. Frontend testids established: login-{email,password,submit}, sidebar, nav-{billing,orders,daily-menu,menu,dashboard,reports,settings}, logout-btn, cat-{all,<id>}, menu-search, menu-grid, menu-item-<id>, cart-items, cart-line-<key>, dec-/inc-/rm-<key>, discount-input, subtotal, cart-total, pay-{cash,upi,card}, clear-cart, thali-builder, thali-group-<catId>, thali-pick-<itemId>, thali-confirm, thali-cancel. Atomic receipt counter uses db.counters {id:'receipt'} — second order receipt_no = first+1 verified. Removed endpoints all return 404. The single carried-over design issue (Recharts 0-height on Dashboard) is documented for iteration-2 AND iteration-3 — main agent should add fixed-height wrappers in Dashboard.jsx.",
+  "rca of the issue": "N/A — no functional issues found in this iteration. Only a pre-existing cosmetic warning on Dashboard charts (Recharts ResponsiveContainer parent has no explicit height) carried over from iteration-2."
+}

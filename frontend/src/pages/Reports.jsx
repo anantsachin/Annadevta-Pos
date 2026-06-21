@@ -1,79 +1,219 @@
 import React, { useEffect, useState } from "react";
-import api from "../lib/api";
+import api, { API } from "../lib/api";
 import { Card } from "../components/ui/card";
-import { Download } from "lucide-react";
 import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Download, FileSpreadsheet, FileText, BarChart3, Sparkles, ShoppingBag } from "lucide-react";
+import { toast } from "sonner";
+
+const REPORT_TABS = [
+  { key: "sales", label: "Daily Sales", icon: ShoppingBag },
+  { key: "products", label: "Products", icon: BarChart3 },
+  { key: "thalis", label: "Thalis", icon: Sparkles },
+];
+
+const PERIODS = [
+  { key: "today", label: "Today", days: 0 },
+  { key: "week", label: "Last 7 days", days: 7 },
+  { key: "month", label: "Last 30 days", days: 30 },
+  { key: "custom", label: "Custom" },
+];
+
+const toIso = (dt, endOfDay = false) => {
+  const d = new Date(dt);
+  if (endOfDay) d.setHours(23, 59, 59, 999); else d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+};
 
 export default function Reports() {
-  const [orders, setOrders] = useState([]);
-  const refresh = () => api.get("/orders", { params: { status: "paid" } }).then(r => setOrders(r.data));
-  useEffect(() => { refresh(); }, []);
+  const [tab, setTab] = useState("sales");
+  const [periodKey, setPeriodKey] = useState("week");
+  const [customFrom, setCustomFrom] = useState(() => new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10));
+  const [customTo, setCustomTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [rows, setRows] = useState([]);
+  const [thaliPicks, setThaliPicks] = useState([]);
 
-  const total = orders.reduce((s, o) => s + (o.total || 0), 0);
+  const fromIso = periodKey === "custom" ? toIso(customFrom) : toIso(new Date(Date.now() - PERIODS.find(p => p.key === periodKey).days * 86400000));
+  const toIsoStr = periodKey === "custom" ? toIso(customTo, true) : toIso(new Date(), true);
 
-  const exportCSV = () => {
-    const rows = [["Order ID", "Date", "Type", "Items", "Subtotal", "Tax", "Discount", "Total", "Payment"]];
-    orders.forEach(o => rows.push([
-      o.id.slice(0, 8), o.paid_at || o.created_at, o.type,
-      o.items.map(i => `${i.name} x${i.qty}`).join("; "),
-      o.subtotal, o.tax, o.discount, o.total, o.payment_mode || ""
-    ]));
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `sales_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
-    URL.revokeObjectURL(url);
+  const fetch = async () => {
+    try {
+      const params = { from_date: fromIso, to_date: toIsoStr };
+      if (tab === "sales") {
+        const { data } = await api.get("/reports/sales", { params });
+        setRows(data); setThaliPicks([]);
+      } else if (tab === "products") {
+        const { data } = await api.get("/reports/products", { params });
+        setRows(data); setThaliPicks([]);
+      } else {
+        const { data } = await api.get("/reports/thalis", { params });
+        setRows(data.thalis); setThaliPicks(data.selection_picks || []);
+      }
+    } catch (e) { toast.error("Failed to load report"); }
+  };
+
+  useEffect(() => { fetch(); /* eslint-disable-next-line */ }, [tab, periodKey, customFrom, customTo]);
+
+  const download = async (fmt) => {
+    try {
+      const token = localStorage.getItem("pos_token");
+      const url = `${API}/reports/export/${tab}.${fmt}?from_date=${encodeURIComponent(fromIso)}&to_date=${encodeURIComponent(toIsoStr)}`;
+      const res = await window.fetch(url, {
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${tab}_${fromIso.slice(0, 10)}_${toIsoStr.slice(0, 10)}.${fmt}`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      toast.success(`Exported ${fmt.toUpperCase()}`);
+    } catch (e) {
+      toast.error(e.message || "Export failed");
+    }
   };
 
   return (
-    <div className="p-6 lg:p-10">
-      <div className="flex items-end justify-between mb-6">
+    <div className="p-6 lg:p-10 max-w-6xl">
+      <div className="mb-6 flex items-end justify-between flex-wrap gap-4">
         <div>
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Analytics</div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight">Sales reports</h1>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight">Reports</h1>
         </div>
-        <Button onClick={exportCSV} variant="outline" className="border-border" data-testid="export-csv"><Download className="w-4 h-4 mr-2" />Export CSV</Button>
+        <div className="flex gap-2">
+          <Button onClick={() => download("csv")} variant="outline" className="border-border" data-testid="export-csv">
+            <FileText className="w-4 h-4 mr-2" /> CSV
+          </Button>
+          <Button onClick={() => download("xlsx")} className="bg-forest hover:bg-forest-hover text-white" data-testid="export-xlsx">
+            <FileSpreadsheet className="w-4 h-4 mr-2" /> Excel
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="p-5 border-border shadow-none">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Total revenue</div>
-          <div className="font-display text-3xl font-extrabold tracking-tight mt-2">₹{total.toLocaleString('en-IN')}</div>
-        </Card>
-        <Card className="p-5 border-border shadow-none">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Total orders</div>
-          <div className="font-display text-3xl font-extrabold tracking-tight mt-2">{orders.length}</div>
-        </Card>
-        <Card className="p-5 border-border shadow-none">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Avg ticket</div>
-          <div className="font-display text-3xl font-extrabold tracking-tight mt-2">₹{orders.length ? (total / orders.length).toFixed(0) : 0}</div>
-        </Card>
+      <div className="flex flex-wrap gap-3 mb-4">
+        <div className="flex items-center gap-1 p-1 bg-white border border-border rounded-md" data-testid="report-tabs">
+          {REPORT_TABS.map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)} data-testid={`report-${t.key}`}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${
+                tab === t.key ? "bg-foreground text-white" : "text-muted-foreground hover:text-foreground"
+              }`}>
+              <t.icon className="w-3.5 h-3.5" /> {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-1 p-1 bg-white border border-border rounded-md" data-testid="period-tabs">
+          {PERIODS.map(p => (
+            <button key={p.key} onClick={() => setPeriodKey(p.key)} data-testid={`rperiod-${p.key}`}
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${
+                periodKey === p.key ? "bg-terracotta text-white" : "text-muted-foreground hover:text-foreground"
+              }`}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {periodKey === "custom" && (
+          <div className="flex gap-2 items-center">
+            <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="w-40" data-testid="custom-from" />
+            <span className="text-muted-foreground text-xs">to</span>
+            <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-40" data-testid="custom-to" />
+          </div>
+        )}
       </div>
 
       <Card className="border-border shadow-none overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-sand-subtle text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            <tr>
-              <th className="text-left px-4 py-3">ID</th>
-              <th className="text-left px-4 py-3">Date</th>
-              <th className="text-left px-4 py-3">Channel</th>
-              <th className="text-left px-4 py-3">Payment</th>
-              <th className="text-right px-4 py-3">Total</th>
-            </tr>
-          </thead>
-          <tbody data-testid="reports-table">
-            {orders.map(o => (
-              <tr key={o.id} className="border-t border-border">
-                <td className="px-4 py-3 font-mono text-xs">{o.id.slice(0, 8)}</td>
-                <td className="px-4 py-3 text-muted-foreground">{new Date(o.paid_at || o.created_at).toLocaleString('en-IN')}</td>
-                <td className="px-4 py-3 capitalize">{o.type.replace('_', ' ')}</td>
-                <td className="px-4 py-3 uppercase text-xs font-mono">{o.payment_mode || "—"}</td>
-                <td className="px-4 py-3 text-right font-mono font-semibold">₹{o.total}</td>
+        {tab === "sales" && (
+          <table className="w-full text-sm">
+            <thead className="bg-sand-subtle text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              <tr>
+                <th className="text-left px-4 py-3">Receipt #</th>
+                <th className="text-left px-4 py-3">Date</th>
+                <th className="text-left px-4 py-3">Payment</th>
+                <th className="text-right px-4 py-3">Subtotal</th>
+                <th className="text-right px-4 py-3">GST</th>
+                <th className="text-right px-4 py-3">Total</th>
               </tr>
-            ))}
-            {orders.length === 0 && <tr><td colSpan="5" className="text-center text-muted-foreground py-8">No paid orders yet.</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody data-testid="sales-table">
+              {rows.map(o => (
+                <tr key={o.id} className="border-t border-border">
+                  <td className="px-4 py-3 font-mono font-semibold">#{o.receipt_no}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(o.paid_at).toLocaleString('en-IN')}</td>
+                  <td className="px-4 py-3 uppercase text-xs font-mono">{o.payment_mode}</td>
+                  <td className="px-4 py-3 text-right font-mono">₹{o.subtotal}</td>
+                  <td className="px-4 py-3 text-right font-mono">₹{o.tax}</td>
+                  <td className="px-4 py-3 text-right font-mono font-semibold">₹{o.total}</td>
+                </tr>
+              ))}
+              {rows.length === 0 && <tr><td colSpan="6" className="text-center text-muted-foreground py-10">No sales in this period.</td></tr>}
+            </tbody>
+          </table>
+        )}
+
+        {tab === "products" && (
+          <table className="w-full text-sm">
+            <thead className="bg-sand-subtle text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              <tr>
+                <th className="text-left px-4 py-3">#</th>
+                <th className="text-left px-4 py-3">Product</th>
+                <th className="text-right px-4 py-3">Qty Sold</th>
+                <th className="text-right px-4 py-3">Revenue</th>
+              </tr>
+            </thead>
+            <tbody data-testid="products-table">
+              {rows.map((it, i) => (
+                <tr key={it.name} className="border-t border-border">
+                  <td className="px-4 py-3 font-mono text-muted-foreground">{i + 1}</td>
+                  <td className="px-4 py-3 font-medium">{it.name}</td>
+                  <td className="px-4 py-3 text-right font-mono">{it.qty}</td>
+                  <td className="px-4 py-3 text-right font-mono font-semibold">₹{it.revenue}</td>
+                </tr>
+              ))}
+              {rows.length === 0 && <tr><td colSpan="4" className="text-center text-muted-foreground py-10">No data.</td></tr>}
+            </tbody>
+          </table>
+        )}
+
+        {tab === "thalis" && (
+          <div>
+            <table className="w-full text-sm">
+              <thead className="bg-sand-subtle text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                <tr>
+                  <th className="text-left px-4 py-3">#</th>
+                  <th className="text-left px-4 py-3">Thali</th>
+                  <th className="text-right px-4 py-3">Qty Sold</th>
+                  <th className="text-right px-4 py-3">Revenue</th>
+                </tr>
+              </thead>
+              <tbody data-testid="thalis-table">
+                {rows.map((it, i) => (
+                  <tr key={it.name} className="border-t border-border">
+                    <td className="px-4 py-3 font-mono text-muted-foreground">{i + 1}</td>
+                    <td className="px-4 py-3 font-medium">{it.name}</td>
+                    <td className="px-4 py-3 text-right font-mono">{it.qty}</td>
+                    <td className="px-4 py-3 text-right font-mono font-semibold">₹{it.revenue}</td>
+                  </tr>
+                ))}
+                {rows.length === 0 && <tr><td colSpan="4" className="text-center text-muted-foreground py-10">No thalis sold.</td></tr>}
+              </tbody>
+            </table>
+            {thaliPicks.length > 0 && (
+              <div className="p-4 border-t border-border bg-sand-subtle">
+                <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-2 font-semibold">Most-picked items inside thalis</div>
+                <div className="flex flex-wrap gap-2">
+                  {thaliPicks.slice(0, 20).map((p) => (
+                    <span key={p.name} className="text-xs px-2.5 py-1 rounded-md bg-white border border-border">
+                      {p.name} <span className="font-mono text-muted-foreground">×{p.qty}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
     </div>
   );
