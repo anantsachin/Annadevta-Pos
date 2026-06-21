@@ -677,7 +677,7 @@ async def startup():
     await db.orders.create_index("receipt_no")
     await seed_defaults()
 
-    creds_dir = Path("/app/memory")
+    creds_dir = ROOT_DIR.parent / "memory"
     creds_dir.mkdir(exist_ok=True)
     (creds_dir / "test_credentials.md").write_text(
         "# Thali POS Test Credentials\n\n"
