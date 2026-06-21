@@ -6,6 +6,7 @@ import { Input } from "../components/ui/input";
 import { Printer, Eye, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { printReceipt } from "../lib/receipt";
+import ReceiptPreview from "../components/ReceiptPreview";
 
 export default function OrderHistory() {
   const [orders, setOrders] = useState([]);
@@ -98,38 +99,16 @@ export default function OrderHistory() {
 
       {view && (
         <Dialog open={true} onOpenChange={(o) => !o && setView(null)}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="font-display text-2xl">Receipt #{view.receipt_no}</DialogTitle>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto flex flex-col items-center bg-neutral-50 p-6 border border-border">
+            <DialogHeader className="w-full text-center mb-1">
+              <DialogTitle className="font-display text-lg text-neutral-700">Receipt Details</DialogTitle>
             </DialogHeader>
-            <div className="text-sm">
-              <div className="text-xs text-muted-foreground mb-3">{new Date(view.paid_at).toLocaleString('en-IN')} · {view.payment_mode.toUpperCase()}</div>
-              <div className="border-t border-b border-border py-3 space-y-2">
-                {view.items.map((it) => (
-                  <div key={`${it.menu_item_id}-${it.is_thali ? JSON.stringify(it.thali_selections || {}) : 'a'}`}>
-                    <div className="flex justify-between font-semibold">
-                      <span>{it.name} <span className="text-muted-foreground font-mono text-xs">×{it.qty}</span></span>
-                      <span className="font-mono">₹{(it.price * it.qty).toFixed(2)}</span>
-                    </div>
-                    {it.thali_selections && (
-                      <div className="text-[11px] text-muted-foreground mt-0.5">
-                        {Object.entries(it.thali_selections).map(([k, v]) => (v.length ? `${k}: ${v.join(', ')}` : null)).filter(Boolean).join(" · ")}
-                        {it.thali_extras && <span> · <i>{it.thali_extras}</i></span>}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="pt-3 space-y-1">
-                <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="font-mono">₹{view.subtotal}</span></div>
-                <div className="flex justify-between text-muted-foreground"><span>GST</span><span className="font-mono">₹{view.tax}</span></div>
-                {view.discount > 0 && <div className="flex justify-between text-muted-foreground"><span>Discount</span><span className="font-mono">- ₹{view.discount}</span></div>}
-                <div className="flex justify-between font-bold text-lg pt-2 border-t border-border mt-2"><span>Total</span><span className="font-mono text-terracotta">₹{view.total}</span></div>
-              </div>
-              <Button onClick={() => reprint(view)} className="w-full mt-4 bg-terracotta hover:bg-terracotta-hover text-white" data-testid="dialog-reprint">
-                <Printer className="w-4 h-4 mr-2" /> Reprint receipt
-              </Button>
+            <div className="flex justify-center">
+              <ReceiptPreview order={view} settings={settings} />
             </div>
+            <Button onClick={() => reprint(view)} className="w-full mt-4 bg-terracotta hover:bg-terracotta-hover text-white" data-testid="dialog-reprint">
+              <Printer className="w-4 h-4 mr-2" /> Reprint receipt
+            </Button>
           </DialogContent>
         </Dialog>
       )}

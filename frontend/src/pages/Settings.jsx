@@ -5,6 +5,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Save, Store, Receipt, Sliders, Eye } from "lucide-react";
 import { toast } from "sonner";
+import ReceiptPreview from "../components/ReceiptPreview";
 
 export default function Settings() {
   const [s, setS] = useState(null);
@@ -48,53 +49,37 @@ export default function Settings() {
 
   if (!s) return <div className="p-10 text-muted-foreground">Loading…</div>;
 
-  // Font sizing style mapping for the preview
-  const previewFontClass = 
-    s.font_size === "small" ? "text-[10px]" : 
-    s.font_size === "large" ? "text-sm" : "text-xs";
-
-  // Width container mapping for the preview
-  const previewWidthClass = (s.paper_width === 58 || String(s.paper_width) === "58") ? "w-[220px]" : "w-[290px]";
-
-  // Text alignment helper for header details
-  const headerAlignClass = s.header_alignment === "left" ? "text-left" : "text-center";
-
-  // Render receipt header preview based on selected template
-  const renderHeaderPreview = () => {
-    if (s.header_template === "compact") {
-      return (
-        <div className={headerAlignClass}>
-          <div className="font-bold text-sm tracking-wide mb-1 uppercase whitespace-pre-wrap">{s.name || "Annapurna Thali House"}</div>
-          {s.phone && <div className="text-[10px] text-[#444] mb-0.5">PH: {s.phone}</div>}
-        </div>
-      );
-    }
-    
-    if (s.header_template === "modern") {
-      return (
-        <div className={headerAlignClass}>
-          <div className="flex justify-center mb-1">
-            <span className="border border-black px-2 py-0.5 font-bold tracking-wider text-xs bg-black text-[#fdfbf7] rounded-sm">ΨΦ</span>
-          </div>
-          <div className="font-bold text-sm tracking-wide mb-1 uppercase whitespace-pre-wrap">{s.name || "Annapurna Thali House"}</div>
-          {s.address && <div className="text-[10px] text-[#444] whitespace-pre-wrap">{s.address}</div>}
-        </div>
-      );
-    }
-
-    // Classic Template (Default)
-    return (
-      <div className={headerAlignClass}>
-        <div className="font-bold text-sm tracking-wide mb-1 uppercase whitespace-pre-wrap">{s.name || "Annapurna Thali House"}</div>
-        {s.address && <div className="text-[10px] text-[#444] whitespace-pre-wrap mb-0.5">{s.address}</div>}
-        {s.phone && <div className="text-[10px] text-[#444] mb-0.5">PH: {s.phone}</div>}
-        {s.gstin && <div className="text-[10px] text-[#444]">GSTIN: {s.gstin}</div>}
-      </div>
-    );
+  // Mock order for Settings Preview
+  const mockOrder = {
+    receipt_no: 17,
+    created_at: new Date("2026-06-22T01:20:00").toISOString(),
+    cashier_name: "Owner",
+    items: [
+      {
+        menu_item_id: "mock-1",
+        name: "Regular Thali",
+        price: 150,
+        qty: 1,
+        is_thali: true,
+        thali_selections: {
+          "Sabji": ["Paneer Masala", "Mix Veg"],
+          "Dal": ["Dal Tadka"]
+        }
+      },
+      {
+        menu_item_id: "mock-2",
+        name: "Buttermilk",
+        price: 30,
+        qty: 2,
+        is_thali: false
+      }
+    ],
+    subtotal: 210,
+    tax: (210 * (s.gst_rate ?? 5.0)) / 100,
+    discount: 0,
+    total: 210 + (s.show_gst !== false ? (210 * (s.gst_rate ?? 5.0)) / 100 : 0),
+    payment_mode: "card"
   };
-
-  // Preview padded receipt number
-  const formattedReceiptNo = `${s.receipt_prefix || ""}${String(17).padStart(s.receipt_padding || 6, '0')}`;
 
   return (
     <div className="p-6 lg:p-10 max-w-6xl mx-auto">
@@ -300,95 +285,8 @@ export default function Settings() {
             <Eye className="w-4 h-4" /> Thermal Print Preview ({s.paper_width}mm)
           </div>
 
-          <div className="w-full max-w-sm flex justify-center bg-[#eae8e4] p-6 rounded-md shadow-inner border border-sand-dark/15 overflow-hidden">
-            {/* The paper roll strip container */}
-            <div className={`bg-[#fdfbf7] p-5 shadow-[0px_4px_10px_rgba(0,0,0,0.15)] border-y border-dashed border-[#e6e4de] font-mono leading-relaxed text-[#1a1a1a] transition-all duration-300 ${previewFontClass} ${previewWidthClass}`}>
-              
-              {/* Header details based on template */}
-              {renderHeaderPreview()}
-
-              <div className="my-2 border-t border-double border-black" />
-
-              {/* Metadata */}
-              <div className="space-y-0.5 text-[10px] text-[#333]">
-                <div>Receipt #: {formattedReceiptNo}</div>
-                <div>Date: 22/06/2026</div>
-                <div>Time: 01:20 AM</div>
-                <div>Cashier: Owner</div>
-              </div>
-
-              <div className="my-2 border-t border-dashed border-black" />
-              <div className="text-center font-bold tracking-widest text-[10px] mb-1">ITEMS</div>
-              <div className="my-1 border-t border-dashed border-black" />
-
-              {/* Items Block */}
-              <div className="space-y-2">
-                <div>
-                  <div className="font-bold text-left">Regular Thali</div>
-                  <div className="flex justify-between text-[11px] text-[#222]">
-                    <span>1 x Rs.150.00</span>
-                    <span className="font-bold">Rs.150.00</span>
-                  </div>
-                  {s.show_thali_selections && (
-                    <div className="text-[9px] text-[#555] pl-2 italic">
-                      + Paneer Masala, Mix Veg<br/>
-                      + Dal Tadka
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <div className="font-bold text-left">Buttermilk</div>
-                  <div className="flex justify-between text-[11px] text-[#222]">
-                    <span>2 x Rs.30.00</span>
-                    <span className="font-bold">Rs.60.00</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="my-2 border-t border-dashed border-black" />
-
-              {/* Summary Block */}
-              <div className="space-y-0.5 text-[#333]">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>Rs.210.00</span>
-                </div>
-                {s.show_gst && (
-                  <div className="flex justify-between">
-                    <span>{s.tax_label || "GST"} ({s.gst_rate}%)</span>
-                    <span>Rs.{((210 * s.gst_rate) / 100).toFixed(2)}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="my-2 border-t border-dashed border-black" />
-              
-              <div className="flex justify-between font-extrabold text-sm py-0.5">
-                <span>TOTAL</span>
-                <span>Rs.{s.show_gst ? (210 + (210 * s.gst_rate) / 100).toFixed(2) : "210.00"}</span>
-              </div>
-              
-              <div className="my-2 border-t border-dashed border-black" />
-
-              {/* Payment Details */}
-              {s.show_payment && (
-                <div className="font-bold text-[10px] uppercase">
-                  Payment Method : CARD
-                </div>
-              )}
-
-              <div className="my-2 border-t border-double border-black" />
-
-              {/* Footer */}
-              <div className="text-center font-bold uppercase text-[10px] space-y-0.5">
-                <div>{s.footer_msg || "THANK YOU"}</div>
-                <div>VISIT AGAIN</div>
-              </div>
-
-              <div className="my-2 border-t border-double border-black" />
-              <div className="text-center text-[9px] text-[#555]">22/06/2026 01:20 AM</div>
-            </div>
+          <div className="w-full max-w-sm flex justify-center bg-neutral-50 p-6 rounded-md shadow-inner border border-border overflow-hidden">
+            <ReceiptPreview order={mockOrder} settings={s} />
           </div>
         </div>
       </div>
