@@ -85,6 +85,14 @@ class RestaurantSettings(BaseModel):
     phone: str = ""
     gst_rate: float = 5.0
     footer_msg: str = "Thank you for dining with us!"
+    show_gst: bool = True
+    show_payment: bool = True
+    show_barcode: bool = True
+    show_thali_selections: bool = False
+    paper_width: str = "80mm"
+    font_size: str = "medium"
+    header_alignment: str = "center"
+    auto_print: bool = True
 
 
 class CategoryIn(BaseModel):
@@ -174,6 +182,9 @@ async def get_settings(_: dict = Depends(get_current_user)):
     if not s:
         s = {"id": "restaurant", **RestaurantSettings().model_dump()}
         await db.settings.insert_one(s.copy())
+    else:
+        # Backward-compatible upgrade: merge defaults for any newly introduced settings fields
+        s = {**RestaurantSettings().model_dump(), **s}
     return s
 
 
@@ -586,6 +597,14 @@ async def _seed_settings():
         "phone": "+91 98765 43210",
         "gst_rate": 5.0,
         "footer_msg": "Thank you! Please visit again.",
+        "show_gst": True,
+        "show_payment": True,
+        "show_barcode": True,
+        "show_thali_selections": False,
+        "paper_width": "80mm",
+        "font_size": "medium",
+        "header_alignment": "center",
+        "auto_print": True,
     })
 
 

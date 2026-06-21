@@ -70,7 +70,9 @@ export default function Billing() {
       };
       const { data } = await api.post("/orders", payload);
       toast.success(`Receipt #${data.receipt_no} · ₹${data.total} (${mode.toUpperCase()})`);
-      printReceipt({ order: data, settings });
+      if (settings?.auto_print !== false) {
+        printReceipt({ order: data, settings });
+      }
       clear();
     } catch (e) {
       toast.error(e?.response?.data?.detail || "Payment failed");
