@@ -708,6 +708,7 @@ async def seed_defaults():
     await _seed_menu(cat_lookup)
 
 
+
 app.include_router(api)
 
 app.add_middleware(
