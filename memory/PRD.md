@@ -1,59 +1,70 @@
-# Restaurant POS — Swiggy/Zomato + Full Workspace
+# Annapurna — Thali Billing Counter POS
 
-## Original Problem Statement
-> create a restaurant pos system with swiggy and zomato integration with hybrid offline online function
+## Problem Statement
+Small restaurant. Single cashier. Daily-changing Thali menu. Fast billing counter — NOT enterprise SaaS.
 
 ## Iteration History
-- **v0.1** (Feb 15, 2026): Initial full build — backend complete, all modules
-- **v0.1.1** (Feb 15): User pivot ("show only swiggy/zomato") → stripped to single page
-- **v0.2** (Feb 15): User re-expand ("add other part too but keep this as main page") + SLA timer + Print KOT
+- **v0.1 / v0.2** (Feb 2026): Initial broad-scope POS with Swiggy/Zomato + KOT + Tables + 11 modules
+- **v0.3** (Feb 2026): **Major pivot to billing-counter only.** Removed Swiggy/Zomato, KOT, Tables, Inventory, CRM, Loyalty, Coupons, Staff, SLA. Added Thali Builder + Daily Menu templates + GST receipt printing + Excel exports.
 
 ## Architecture
-- **Backend**: FastAPI + Motor (MongoDB) + bcrypt + PyJWT — single `server.py` (~820 lines, refactor candidate)
-- **Frontend**: React 19 + Tailwind + Shadcn/UI + Recharts + sonner + lucide-react
-- **Theme**: Terracotta (#E06C4C) on warm sand (#FAF9F6) — Manrope + IBM Plex Sans
-- **DB**: `restaurant_pos` Mongo · collections: users, categories, menu, tables, orders, online_orders, customers, inventory, discounts
+- **Backend**: FastAPI + Motor + bcrypt + PyJWT + openpyxl — single `server.py` (~700 lines, focused)
+- **Frontend**: React 19 + Tailwind + Shadcn/UI (Dialog, Switch, Card, Button, Input) + Recharts + sonner + lucide-react
+- **DB collections**: users, settings, categories, menu, templates, orders, counters
 
-## Routes / Modules (v0.2)
+## Routes / Modules (v0.3)
 | Route | Page | Roles |
 |---|---|---|
-| `/` (landing) | **Online Orders** (Swiggy/Zomato inbox) | all |
-| `/pos` | POS Terminal (order taking) | all |
-| `/kitchen` | KOT Board (3-lane kanban with SLA) | all |
-| `/tables` | Table floor plan | all |
-| `/dashboard` | Sales dashboard + charts | all |
-| `/menu` | Menu CRUD | admin, manager |
-| `/inventory` | Stock tracking | admin, manager |
-| `/customers` | CRM | all |
-| `/discounts` | Coupon codes | admin, manager |
-| `/staff` | User management | admin |
-| `/reports` | Sales export | admin, manager |
+| `/` (landing) | **Billing Counter** | admin, cashier |
+| `/orders` | Order History (search + reprint) | admin, cashier |
+| `/daily-menu` | Daily Menu (toggle + templates) | admin |
+| `/menu` | Menu CRUD + Thali rules | admin |
+| `/dashboard` | Revenue Dashboard (today/week/month) | admin |
+| `/reports` | Sales/Products/Thali reports (CSV + Excel) | admin |
+| `/settings` | Restaurant profile (name, GSTIN, GST%, footer) | admin |
 
-## v0.2 Features Added (Feb 15, 2026)
-- ✅ Sidebar restored with all 11 modules; Online Orders pinned with live incoming-count badge
-- ✅ **SLA timer** on accepted aggregator orders (20-min target, 15-min warn) with On track / Hurry up / SLA breached visual states + red ring on overdue cards
-- ✅ **Print KOT** one-tap button on Online Orders (accepted) and Kitchen tickets — opens 80mm-formatted ticket window and auto-prints
-- ✅ Backend `accept` endpoint now stamps `accepted_at` for SLA computation
-- ✅ Kitchen page upgraded with SLA dots, "Xm left" / "Overdue +Xm" labels, Print button per ticket
+## Core Features (v0.3)
+- ✅ JWT auth (admin + cashier only)
+- ✅ Billing counter with Categories → Items → Cart layout
+- ✅ **Thali Builder dialog** — pick N items per group from today's available menu; selections stored on the order line
+- ✅ **Daily Menu management** — per-category toggle, save current as named template, one-click activate any template
+- ✅ Menu CRUD with thali rules editor (groups: category + label + count, plus fixed inclusions text)
+- ✅ **Atomic receipt numbering** (counters collection with `$inc`)
+- ✅ Receipt printing (80mm thermal HTML, auto-print, includes restaurant header + GSTIN + footer + thali selections)
+- ✅ Order history (date filter + receipt# search + view dialog + reprint)
+- ✅ Revenue Dashboard: Today/Week/Month KPIs + 7-day trend + top items + top thalis + payment mix
+- ✅ Reports: Sales/Products/Thali tabs · period (Today/Week/Month/Custom) · **CSV + Excel export**
+- ✅ Restaurant Settings (name, address, GSTIN, phone, GST%, footer message)
+- ✅ Role-gating: cashier sees only Billing + Orders; admin sees everything
+
+## Removed in v0.3 (was in v0.1/0.2)
+- Swiggy/Zomato Online Orders + simulators
+- Kitchen KOT Board + KOT printing + SLA timer
+- Tables / floor plan / reservations
+- Inventory tracking + low-stock alerts
+- Customer CRM + loyalty points
+- Discounts/Coupons module
+- Staff management + multi-role hierarchy
+- Hybrid offline queue + sync indicator
+- Google sign-in option
 
 ## Testing
-- Iteration 1: 17/17 backend, 17/17 E2E
-- Iteration 2: 18/18 backend (incl. `test_accept_sets_accepted_at`), all frontend flows verified
+- v0.1: 17/17 backend, 17/17 E2E
+- v0.2: 18/18 backend, all flows
+- **v0.3: 32/32 backend pytest, all frontend flows verified** (new test file `/app/backend/tests/test_thali_pos.py`)
 - Credentials in `/app/memory/test_credentials.md`
 
-## Prioritized Backlog
+## Open Items
 **P0**
-- Audio chime + browser notification on new incoming orders
-- Auto-accept rule engine (by platform, time, value threshold)
+- (Cosmetic) Wrap Dashboard ResponsiveContainer parents in fixed-height containers to silence recharts warnings
 
 **P1**
-- Configurable SLA per platform (Swiggy 20m / Zomato 25m)
-- Cancel-rate & avg-prep-time analytics on dashboard
-- Toast warning when printKOT popup is blocked
+- GST rate from Settings should drive cart tax_rate instead of hardcoded 5%
+- Cashier view of /orders could filter to own orders only
 
-**P2**
-- Real Swiggy/Zomato partner webhooks (signature verification)
-- WebSocket/SSE push instead of polling (currently 6s + 8s polls overlap)
-- Split `server.py` into routers (auth/online_orders/orders/catalog/ops)
-- Wrap Dashboard recharts in fixed-height containers
-- Fix POS `<option>` content to silence dev warning
+**P2 (Nice to have)**
+- WhatsApp share receipt
+- Recipe-based stock deduction (only if inventory comes back)
+- Multi-outlet support
+- Refund/void flow
+- Audio click on tap-to-bill
