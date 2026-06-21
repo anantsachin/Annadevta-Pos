@@ -9,6 +9,8 @@ import ThaliBuilder from "../components/ThaliBuilder";
 import { useCart } from "../lib/useCart";
 import { CartLine } from "../components/CartLine";
 import { MenuTile } from "../components/MenuTile";
+import { useAuth } from "../context/AuthContext";
+import ReceiptPreview from "../components/ReceiptPreview";
 
 export default function Billing() {
   const [categories, setCategories] = useState([]);
@@ -17,7 +19,9 @@ export default function Billing() {
   const [activeCat, setActiveCat] = useState("all");
   const [search, setSearch] = useState("");
   const [thaliFor, setThaliFor] = useState(null);
+  const [activeTab, setActiveTab] = useState("cart"); // "cart" or "receipt"
 
+  const { user } = useAuth();
   const { cart, discount, setDiscount, addLine, updateQty, removeLine, clear, totals } = useCart();
 
   const refresh = useCallback(async () => {
@@ -70,7 +74,9 @@ export default function Billing() {
       };
       const { data } = await api.post("/orders", payload);
       toast.success(`Receipt #${data.receipt_no} · ₹${data.total} (${mode.toUpperCase()})`);
-      printReceipt({ order: data, settings });
+      if (settings?.auto_print !== false) {
+        printReceipt({ order: data, settings });
+      }
       clear();
     } catch (e) {
       toast.error(e?.response?.data?.detail || "Payment failed");
@@ -136,22 +142,69 @@ export default function Billing() {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" data-testid="cart-items">
-          {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center text-sm text-muted-foreground p-6">
-              <ChefHat className="w-10 h-10 mb-3 text-muted-foreground/60" />
-              Tap menu items to start a bill.
-            </div>
-          ) : cart.map((line) => (
-            <CartLine
-              key={line._key}
-              line={line}
-              onInc={() => updateQty(line._key, 1)}
-              onDec={() => updateQty(line._key, -1)}
-              onRemove={() => removeLine(line._key)}
-            />
-          ))}
+        <div className="flex border-b border-border text-xs">
+          <button
+            onClick={() => setActiveTab("cart")}
+            className={`flex-1 py-2.5 font-bold uppercase tracking-wider text-center border-b-2 transition-all ${
+              activeTab === "cart"
+                ? "border-terracotta text-terracotta bg-sand-subtle/30"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Cart List
+          </button>
+          <button
+            onClick={() => setActiveTab("receipt")}
+            className={`flex-1 py-2.5 font-bold uppercase tracking-wider text-center border-b-2 transition-all ${
+              activeTab === "receipt"
+                ? "border-terracotta text-terracotta bg-sand-subtle/30"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Receipt Preview
+          </button>
         </div>
+
+        {activeTab === "cart" ? (
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" data-testid="cart-items">
+            {cart.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center text-sm text-muted-foreground p-6">
+                <ChefHat className="w-10 h-10 mb-3 text-muted-foreground/60" />
+                Tap menu items to start a bill.
+              </div>
+            ) : cart.map((line) => (
+              <CartLine
+                key={line._key}
+                line={line}
+                onInc={() => updateQty(line._key, 1)}
+                onDec={() => updateQty(line._key, -1)}
+                onRemove={() => removeLine(line._key)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center bg-neutral-50" data-testid="receipt-preview-pane">
+            {cart.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center text-sm text-muted-foreground p-6">
+                <ChefHat className="w-10 h-10 mb-3 text-muted-foreground/60" />
+                Add items to visualize the receipt.
+              </div>
+            ) : (
+              <ReceiptPreview
+                order={{
+                  items: cart,
+                  subtotal: totals.subtotal,
+                  tax: totals.tax,
+                  discount: totals.discount,
+                  total: totals.total,
+                  cashier_name: user?.name || "Owner",
+                }}
+                settings={settings}
+                editable={false}
+              />
+            )}
+          </div>
+        )}
 
         <div className="p-4 border-t border-border bg-sand-subtle">
           <div className="flex items-center justify-between text-sm mb-1">
