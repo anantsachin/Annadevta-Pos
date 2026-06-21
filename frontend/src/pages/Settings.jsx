@@ -3,7 +3,7 @@ import api from "../lib/api";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Save, Store, Receipt, Printer, Eye, Sliders } from "lucide-react";
+import { Save, Store, Receipt, Sliders, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Settings() {
@@ -28,12 +28,15 @@ export default function Settings() {
         footer_msg: s.footer_msg || "",
         show_gst: !!s.show_gst,
         show_payment: !!s.show_payment,
-        show_barcode: !!s.show_barcode,
         show_thali_selections: !!s.show_thali_selections,
-        paper_width: s.paper_width || "80mm",
+        paper_width: Number(s.paper_width) || 80,
         font_size: s.font_size || "medium",
         header_alignment: s.header_alignment || "center",
+        header_template: s.header_template || "classic",
         auto_print: !!s.auto_print,
+        receipt_prefix: s.receipt_prefix || "",
+        receipt_padding: Number(s.receipt_padding) || 6,
+        tax_label: s.tax_label || "GST",
       };
       const { data } = await api.put("/settings", payload);
       setS(data);
@@ -51,10 +54,47 @@ export default function Settings() {
     s.font_size === "large" ? "text-sm" : "text-xs";
 
   // Width container mapping for the preview
-  const previewWidthClass = s.paper_width === "58mm" ? "w-[220px]" : "w-[290px]";
+  const previewWidthClass = (s.paper_width === 58 || String(s.paper_width) === "58") ? "w-[220px]" : "w-[290px]";
 
   // Text alignment helper for header details
   const headerAlignClass = s.header_alignment === "left" ? "text-left" : "text-center";
+
+  // Render receipt header preview based on selected template
+  const renderHeaderPreview = () => {
+    if (s.header_template === "compact") {
+      return (
+        <div className={headerAlignClass}>
+          <div className="font-bold text-sm tracking-wide mb-1 uppercase whitespace-pre-wrap">{s.name || "Annapurna Thali House"}</div>
+          {s.phone && <div className="text-[10px] text-[#444] mb-0.5">PH: {s.phone}</div>}
+        </div>
+      );
+    }
+    
+    if (s.header_template === "modern") {
+      return (
+        <div className={headerAlignClass}>
+          <div className="flex justify-center mb-1">
+            <span className="border border-black px-2 py-0.5 font-bold tracking-wider text-xs bg-black text-[#fdfbf7] rounded-sm">ΨΦ</span>
+          </div>
+          <div className="font-bold text-sm tracking-wide mb-1 uppercase whitespace-pre-wrap">{s.name || "Annapurna Thali House"}</div>
+          {s.address && <div className="text-[10px] text-[#444] whitespace-pre-wrap">{s.address}</div>}
+        </div>
+      );
+    }
+
+    // Classic Template (Default)
+    return (
+      <div className={headerAlignClass}>
+        <div className="font-bold text-sm tracking-wide mb-1 uppercase whitespace-pre-wrap">{s.name || "Annapurna Thali House"}</div>
+        {s.address && <div className="text-[10px] text-[#444] whitespace-pre-wrap mb-0.5">{s.address}</div>}
+        {s.phone && <div className="text-[10px] text-[#444] mb-0.5">PH: {s.phone}</div>}
+        {s.gstin && <div className="text-[10px] text-[#444]">GSTIN: {s.gstin}</div>}
+      </div>
+    );
+  };
+
+  // Preview padded receipt number
+  const formattedReceiptNo = `${s.receipt_prefix || ""}${String(17).padStart(s.receipt_padding || 6, '0')}`;
 
   return (
     <div className="p-6 lg:p-10 max-w-6xl mx-auto">
@@ -105,16 +145,42 @@ export default function Settings() {
             <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
               <Sliders className="w-4 h-4" /> Receipt Format Styles
             </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Header Alignment</label>
+                <select
+                  value={s.header_alignment}
+                  onChange={(e) => setS({ ...s, header_alignment: e.target.value })}
+                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracotta"
+                >
+                  <option value="center">Center Header</option>
+                  <option value="left">Left Header</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Header Template</label>
+                <select
+                  value={s.header_template}
+                  onChange={(e) => setS({ ...s, header_template: e.target.value })}
+                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracotta"
+                >
+                  <option value="classic">Classic (Name, Address, Phone, GSTIN)</option>
+                  <option value="compact">Compact (Name, Phone)</option>
+                  <option value="modern">Modern (Styled Logo, Name, Address)</option>
+                </select>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-xs uppercase tracking-wider text-muted-foreground">Paper Width</label>
                 <select
                   value={s.paper_width}
-                  onChange={(e) => setS({ ...s, paper_width: e.target.value })}
+                  onChange={(e) => setS({ ...s, paper_width: Number(e.target.value) })}
                   className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracotta"
                 >
-                  <option value="80mm">80mm (3-inch)</option>
-                  <option value="58mm">58mm (2-inch)</option>
+                  <option value="80">80mm (3-inch)</option>
+                  <option value="58">58mm (2-inch)</option>
                 </select>
               </div>
               <div>
@@ -130,20 +196,14 @@ export default function Settings() {
                 </select>
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">Header Alignment</label>
-                <select
-                  value={s.header_alignment}
-                  onChange={(e) => setS({ ...s, header_alignment: e.target.value })}
-                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracotta"
-                >
-                  <option value="center">Center</option>
-                  <option value="left">Left</option>
-                </select>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Tax Label</label>
+                <Input value={s.tax_label} onChange={(e) => setS({ ...s, tax_label: e.target.value })} className="mt-1" placeholder="GST" />
               </div>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">Default GST %</label>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Default Tax / GST %</label>
                 <Input type="number" value={s.gst_rate} onChange={(e) => setS({ ...s, gst_rate: e.target.value })} className="mt-1" data-testid="set-gst-rate" />
                 <div className="text-[10px] text-muted-foreground mt-1">Default percentage applied to menu items.</div>
               </div>
@@ -154,12 +214,31 @@ export default function Settings() {
             </div>
           </Card>
 
-          {/* Section 3: Toggles & Features */}
+          {/* Section 3: Receipt Number Format */}
+          <Card className="p-6 border-border shadow-none space-y-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
+              <Receipt className="w-4 h-4" /> Receipt Numbering
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Receipt Prefix</label>
+                <Input value={s.receipt_prefix} onChange={(e) => setS({ ...s, receipt_prefix: e.target.value })} className="mt-1 font-mono" placeholder="ANP-" />
+                <div className="text-[10px] text-muted-foreground mt-1">Example: Prefix 'ANP-' results in 'ANP-000001'.</div>
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Receipt Padding (Digits)</label>
+                <Input type="number" value={s.receipt_padding} onChange={(e) => setS({ ...s, receipt_padding: e.target.value })} className="mt-1 font-mono" placeholder="6" />
+                <div className="text-[10px] text-muted-foreground mt-1">Number of digits for numeric component.</div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Section 4: Toggles & Features */}
           <Card className="p-6 border-border shadow-none space-y-4">
             <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
               <Receipt className="w-4 h-4" /> Template Features & Rules
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label className="flex items-center gap-3 cursor-pointer select-none border border-border rounded-md p-3 hover:bg-sand-subtle transition-all">
                 <input
                   type="checkbox"
@@ -168,8 +247,8 @@ export default function Settings() {
                   className="w-4 h-4 rounded text-terracotta border-border focus:ring-terracotta"
                 />
                 <div>
-                  <div className="text-sm font-bold text-foreground">Show GST Breakdown</div>
-                  <div className="text-[10px] text-muted-foreground">Print subtotal & tax row details.</div>
+                  <div className="text-xs font-bold text-foreground">Show Tax Breakdown</div>
+                  <div className="text-[9px] text-muted-foreground">Print subtotal & tax row details.</div>
                 </div>
               </label>
 
@@ -181,21 +260,8 @@ export default function Settings() {
                   className="w-4 h-4 rounded text-terracotta border-border focus:ring-terracotta"
                 />
                 <div>
-                  <div className="text-sm font-bold text-foreground">Show Payment Method</div>
-                  <div className="text-[10px] text-muted-foreground">Display if billed via cash/upi/card.</div>
-                </div>
-              </label>
-
-              <label className="flex items-center gap-3 cursor-pointer select-none border border-border rounded-md p-3 hover:bg-sand-subtle transition-all">
-                <input
-                  type="checkbox"
-                  checked={s.show_barcode}
-                  onChange={(e) => setS({ ...s, show_barcode: e.target.checked })}
-                  className="w-4 h-4 rounded text-terracotta border-border focus:ring-terracotta"
-                />
-                <div>
-                  <div className="text-sm font-bold text-foreground">Print Barcode</div>
-                  <div className="text-[10px] text-muted-foreground">Print scan barcode at base of ticket.</div>
+                  <div className="text-xs font-bold text-foreground">Show Payment Method</div>
+                  <div className="text-[9px] text-muted-foreground">Display if billed via cash/upi/card.</div>
                 </div>
               </label>
 
@@ -207,12 +273,12 @@ export default function Settings() {
                   className="w-4 h-4 rounded text-terracotta border-border focus:ring-terracotta"
                 />
                 <div>
-                  <div className="text-sm font-bold text-foreground">Show Thali Selections</div>
-                  <div className="text-[10px] text-muted-foreground">Print detailed customization selections.</div>
+                  <div className="text-xs font-bold text-foreground">Show Thali Selections</div>
+                  <div className="text-[9px] text-muted-foreground">Print detailed thali selections.</div>
                 </div>
               </label>
 
-              <label className="flex items-center gap-3 cursor-pointer select-none border border-border rounded-md p-3 hover:bg-sand-subtle transition-all sm:col-span-2">
+              <label className="flex items-center gap-3 cursor-pointer select-none border border-border rounded-md p-3 hover:bg-sand-subtle transition-all sm:col-span-3">
                 <input
                   type="checkbox"
                   checked={s.auto_print}
@@ -231,26 +297,21 @@ export default function Settings() {
         {/* Right Side: Interactive Thermal Preview */}
         <div className="lg:col-span-5 lg:sticky lg:top-6 flex flex-col items-center">
           <div className="w-full flex items-center justify-center gap-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <Eye className="w-4 h-4" /> Thermal Print Preview ({s.paper_width})
+            <Eye className="w-4 h-4" /> Thermal Print Preview ({s.paper_width}mm)
           </div>
 
           <div className="w-full max-w-sm flex justify-center bg-[#eae8e4] p-6 rounded-md shadow-inner border border-sand-dark/15 overflow-hidden">
             {/* The paper roll strip container */}
             <div className={`bg-[#fdfbf7] p-5 shadow-[0px_4px_10px_rgba(0,0,0,0.15)] border-y border-dashed border-[#e6e4de] font-mono leading-relaxed text-[#1a1a1a] transition-all duration-300 ${previewFontClass} ${previewWidthClass}`}>
               
-              {/* Header details */}
-              <div className={headerAlignClass}>
-                <div className="font-bold text-sm tracking-wide mb-1 uppercase whitespace-pre-wrap">{s.name || "Annapurna Thali House"}</div>
-                {s.address && <div className="text-[10px] text-[#444] whitespace-pre-wrap mb-0.5">{s.address}</div>}
-                {s.phone && <div className="text-[10px] text-[#444] mb-0.5">PH: {s.phone}</div>}
-                {s.gstin && <div className="text-[10px] text-[#444]">GSTIN: {s.gstin}</div>}
-              </div>
+              {/* Header details based on template */}
+              {renderHeaderPreview()}
 
               <div className="my-2 border-t border-double border-black" />
 
               {/* Metadata */}
               <div className="space-y-0.5 text-[10px] text-[#333]">
-                <div>Receipt #: 000017</div>
+                <div>Receipt #: {formattedReceiptNo}</div>
                 <div>Date: 22/06/2026</div>
                 <div>Time: 01:20 AM</div>
                 <div>Cashier: Owner</div>
@@ -295,7 +356,7 @@ export default function Settings() {
                 </div>
                 {s.show_gst && (
                   <div className="flex justify-between">
-                    <span>GST ({s.gst_rate}%)</span>
+                    <span>{s.tax_label || "GST"} ({s.gst_rate}%)</span>
                     <span>Rs.{((210 * s.gst_rate) / 100).toFixed(2)}</span>
                   </div>
                 )}
@@ -327,22 +388,6 @@ export default function Settings() {
 
               <div className="my-2 border-t border-double border-black" />
               <div className="text-center text-[9px] text-[#555]">22/06/2026 01:20 AM</div>
-
-              {/* Barcode Option */}
-              {s.show_barcode && (
-                <div className="flex flex-col items-center mt-3 opacity-90">
-                  <svg className="w-full max-w-[150px] h-9" viewBox="0 0 100 24">
-                    {Array.from({ length: 28 }).map((_, idx) => {
-                      const width = (idx * 7) % 3 === 0 ? 3 : (idx * 5) % 2 === 0 ? 1 : 2;
-                      const space = (idx * 11) % 4 === 0 ? 2 : 1;
-                      const startX = idx * 3.2;
-                      if (startX >= 90) return null;
-                      return <rect key={idx} x={startX} y="0" width={width * 0.55} height="19" fill="currentColor" />;
-                    })}
-                    <text x="50" y="24" fontSize="4.5" textAnchor="middle" fill="currentColor" letterSpacing="1">000017</text>
-                  </svg>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -350,4 +395,5 @@ export default function Settings() {
     </div>
   );
 }
+
 

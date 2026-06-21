@@ -87,12 +87,15 @@ class RestaurantSettings(BaseModel):
     footer_msg: str = "Thank you for dining with us!"
     show_gst: bool = True
     show_payment: bool = True
-    show_barcode: bool = True
     show_thali_selections: bool = False
-    paper_width: str = "80mm"
+    paper_width: int = 80
     font_size: str = "medium"
     header_alignment: str = "center"
+    header_template: str = "classic"
     auto_print: bool = True
+    receipt_prefix: str = ""
+    receipt_padding: int = 6
+    tax_label: str = "GST"
 
 
 class CategoryIn(BaseModel):
@@ -599,12 +602,15 @@ async def _seed_settings():
         "footer_msg": "Thank you! Please visit again.",
         "show_gst": True,
         "show_payment": True,
-        "show_barcode": True,
         "show_thali_selections": False,
-        "paper_width": "80mm",
+        "paper_width": 80,
         "font_size": "medium",
         "header_alignment": "center",
+        "header_template": "classic",
         "auto_print": True,
+        "receipt_prefix": "",
+        "receipt_padding": 6,
+        "tax_label": "GST",
     })
 
 

@@ -1,22 +1,4 @@
 // Customer receipt printer (80mm / 58mm thermal compatible)
-function generateBarcodeSVG(val) {
-  const cleanVal = String(val).replace(/[^0-9A-Z\-.$/+% ]/gi, '').toUpperCase();
-  const str = String(val);
-  const seed = str.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  let lines = '';
-  let x = 10;
-  for (let i = 0; i < 45; i++) {
-    const width = ((seed + i * 7) % 3) + 1;
-    const space = ((seed + i * 13) % 3) + 1;
-    lines += `<rect x="${x}" y="0" width="${width}" height="32" fill="black" />`;
-    x += width + space;
-  }
-  return `<svg width="${x + 10}" height="46" viewBox="0 0 ${x + 10} 46" style="margin: 8px auto 0 auto; display: block; overflow: visible;">
-    ${lines}
-    <text x="${(x + 10) / 2}" y="42" text-anchor="middle" font-family="monospace" font-size="9" fill="black">${cleanVal}</text>
-  </svg>`;
-}
-
 export function printReceipt({ order, settings }) {
   if (!order) return;
   const dt = new Date(order.paid_at || order.created_at || Date.now());
@@ -32,19 +14,49 @@ export function printReceipt({ order, settings }) {
   hours = hours ? hours : 12;
   const timeStr = `${pad(hours)}:${minutes} ${ampm}`;
 
-  const receiptNoPadded = String(order.receipt_no ?? '').padStart(6, '0');
+  // Formatted receipt number based on prefix and padding settings
+  const prefix = settings?.receipt_prefix || '';
+  const paddingCount = Number(settings?.receipt_padding) || 6;
+  const receiptNoFormatted = `${prefix}${String(order.receipt_no ?? '').padStart(paddingCount, '0')}`;
+
   const gstRate = settings?.gst_rate ?? 5.0;
+  const taxLabel = settings?.tax_label || 'GST';
 
   // Format properties dynamically based on receipt settings
-  const paperWidth = settings?.paper_width === "58mm" ? "58mm" : "80mm";
-  const containerWidth = settings?.paper_width === "58mm" ? "48mm" : "72mm";
-  const containerPadding = settings?.paper_width === "58mm" ? "2mm" : "4mm";
+  const is58 = Number(settings?.paper_width) === 58;
+  const paperWidth = is58 ? "58mm" : "80mm";
+  const containerWidth = is58 ? "48mm" : "72mm";
+  const containerPadding = is58 ? "2mm" : "4mm";
 
   const fontSize = 
     settings?.font_size === "small" ? "10px" :
     settings?.font_size === "large" ? "14px" : "12px";
 
   const headerAlign = settings?.header_alignment === "left" ? "left" : "center";
+
+  // Build header HTML dynamically based on template selection
+  let headerHTML = '';
+  if (settings?.header_template === 'compact') {
+    headerHTML = `
+      <div class="header-title">${safe(settings?.name || 'Annapurna Thali House')}</div>
+      ${settings?.phone ? `<div class="header-detail">PH: ${safe(settings.phone)}</div>` : ''}
+    `;
+  } else if (settings?.header_template === 'modern') {
+    headerHTML = `
+      <div class="center" style="margin-bottom: 6px;">
+        <span style="border: 1px solid #000; padding: 2px 6px; font-weight: bold; font-size: 13px; background-color: #000; color: #fff; border-radius: 2px;">ΨΦ</span>
+      </div>
+      <div class="header-title">${safe(settings?.name || 'Annapurna Thali House')}</div>
+      ${settings?.address ? `<div class="header-detail">${safe(settings.address)}</div>` : ''}
+    `;
+  } else { // classic (default)
+    headerHTML = `
+      <div class="header-title">${safe(settings?.name || 'Annapurna Thali House')}</div>
+      ${settings?.address ? `<div class="header-detail">${safe(settings.address)}</div>` : ''}
+      ${settings?.phone ? `<div class="header-detail">PH: ${safe(settings.phone)}</div>` : ''}
+      ${settings?.gstin ? `<div class="header-detail">GSTIN: ${safe(settings.gstin)}</div>` : ''}
+    `;
+  }
 
   const lineRows = order.items.map((i) => {
     const lineTotal = (i.price * i.qty).toFixed(2);
@@ -81,7 +93,7 @@ export function printReceipt({ order, settings }) {
   }).join('');
 
   const html = `<!doctype html>
-<html><head><title>Receipt #${receiptNoPadded}</title>
+<html><head><title>Receipt #${receiptNoFormatted}</title>
 <style>
   @page {
     size: ${paperWidth} auto;
@@ -180,17 +192,14 @@ export function printReceipt({ order, settings }) {
 <body>
   <div class="receipt-container">
     <div style="text-align: ${headerAlign};">
-      <div class="header-title">${safe(settings?.name || 'Annapurna Thali House')}</div>
-      ${settings?.address ? `<div class="header-detail">${safe(settings.address)}</div>` : ''}
-      ${settings?.phone ? `<div class="header-detail">Ph: ${safe(settings.phone)}</div>` : ''}
-      ${settings?.gstin ? `<div class="header-detail">GSTIN: ${safe(settings.gstin)}</div>` : ''}
+      ${headerHTML}
     </div>
     
     <div class="separator-double"></div>
     
     <div class="meta-row">
       <span class="meta-label">Receipt #:</span>
-      <span class="meta-value">${receiptNoPadded}</span>
+      <span class="meta-value">${receiptNoFormatted}</span>
     </div>
     <div class="meta-row">
       <span class="meta-label">Date:</span>
@@ -223,7 +232,7 @@ export function printReceipt({ order, settings }) {
     
     ${settings?.show_gst !== false ? `
     <div class="summary-row">
-      <span>GST (${gstRate}%)</span>
+      <span>${safe(taxLabel)} (${gstRate}%)</span>
       <span>Rs.${Number(order.tax).toFixed(2)}</span>
     </div>` : ''}
     
@@ -254,11 +263,6 @@ export function printReceipt({ order, settings }) {
     <div class="center date-time" style="margin-top: 8px; font-size: 0.9em; color: #444;">
       ${dateStr} ${timeStr}
     </div>
-    
-    ${settings?.show_barcode !== false ? `
-      <div class="separator-dashed"></div>
-      ${generateBarcodeSVG(receiptNoPadded)}
-    ` : ''}
   </div>
   <script>
     window.onload = () => {
@@ -276,5 +280,6 @@ export function printReceipt({ order, settings }) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
   return true;
 }
+
 
 
