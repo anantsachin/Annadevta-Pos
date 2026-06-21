@@ -1,11 +1,19 @@
 # pyrefly: ignore [missing-import]
+import sys
+import os
 from dotenv import load_dotenv
 from pathlib import Path
 from contextlib import asynccontextmanager
-ROOT_DIR = Path(__file__).parent
+
+# Support running as PyInstaller bundle OR from source
+if getattr(sys, 'frozen', False):
+    # Running as backend.exe — .env is bundled next to the executable
+    ROOT_DIR = Path(sys.executable).parent
+else:
+    ROOT_DIR = Path(__file__).parent
+
 load_dotenv(ROOT_DIR / '.env')
 
-import os
 import io
 import csv
 import uuid
@@ -739,10 +747,27 @@ app.include_router(api)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        # Electron file:// renderer makes requests from null origin in some versions
+        "null",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pos")
+
+
+@app.get("/api/health")
+async def health_check():
+    """Lightweight liveness probe used by the Electron main process."""
+    return {"status": "ok", "version": "1.0.0"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")

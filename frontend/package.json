@@ -1,7 +1,11 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "annapurna-pos",
+  "version": "1.0.0",
   "private": true,
+  "description": "Annapurna Restaurant POS System — Offline Desktop App",
+  "author": "Annapurna Restaurant",
+  "main": "electron/main.js",
+  "homepage": "./",
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-accordion": "^1.2.8",
@@ -61,7 +65,64 @@
   "scripts": {
     "start": "craco start",
     "build": "craco build",
-    "test": "craco test"
+    "test": "craco test",
+    "electron:dev": "concurrently -k \"set BROWSER=none&& npm start\" \"wait-on http://localhost:3000 && set ELECTRON_DEV=true&& electron ../electron/main.js\"",
+    "electron:build": "npm run build && electron-builder --win --x64",
+    "electron:pack": "electron-builder --win --x64 --dir"
+  },
+  "build": {
+    "extends": null,
+    "appId": "com.annapurna.pos",
+    "productName": "Annapurna POS",
+    "copyright": "Copyright © 2025 Annapurna Restaurant",
+    "directories": {
+      "buildResources": "../electron",
+      "output": "../dist"
+    },
+    "files": [
+      "build/**/*",
+      { "from": "../electron", "to": "electron", "filter": ["**/*"] },
+      "node_modules/**/*",
+      "!node_modules/.cache"
+    ],
+    "extraResources": [
+      {
+        "from": "../electron/splash.html",
+        "to": "splash.html"
+      },
+      {
+        "from": "build",
+        "to": "build"
+      },
+      {
+        "from": "../backend/dist/backend.exe",
+        "to": "bin/backend.exe"
+      },
+      {
+        "from": "D:/mongodb/bin/mongod.exe",
+        "to": "bin/mongod.exe"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "../electron/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "../electron/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Annapurna POS"
+    },
+    "asar": false
   },
   "browserslist": {
     "production": [
@@ -81,6 +142,9 @@
     "@emergentbase/visual-edits": "https://assets.emergent.sh/npm/emergentbase-visual-edits-1.0.8.tgz",
     "@eslint/js": "9.23.0",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^8.2.2",
+    "electron": "^29.4.6",
+    "electron-builder": "^24.13.3",
     "eslint": "9.23.0",
     "eslint-plugin-import": "2.31.0",
     "eslint-plugin-jsx-a11y": "6.10.2",
@@ -88,7 +152,8 @@
     "eslint-plugin-react-hooks": "5.2.0",
     "globals": "15.15.0",
     "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "wait-on": "^7.2.0"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
