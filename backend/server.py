@@ -1,5 +1,7 @@
+# pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
 from pathlib import Path
+from contextlib import asynccontextmanager
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -136,8 +138,33 @@ class OrderIn(BaseModel):
     notes: str = ""
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await db.users.create_index("email", unique=True)
+    await db.menu.create_index("id", unique=True)
+    await db.categories.create_index("id", unique=True)
+    await db.orders.create_index("id", unique=True)
+    await db.orders.create_index("receipt_no")
+    await seed_defaults()
+
+    creds_dir = Path("/app/memory")
+    try:
+        creds_dir.mkdir(exist_ok=True)
+    except OSError:
+        creds_dir = Path(__file__).parent.parent / "memory"
+        creds_dir.mkdir(exist_ok=True)
+    (creds_dir / "test_credentials.md").write_text(
+        "# Thali POS Test Credentials\n\n"
+        f"- Owner (admin): {os.environ.get('ADMIN_EMAIL', 'admin@pos.com')} / {os.environ.get('ADMIN_PASSWORD', 'admin123')}\n"
+        "- Cashier: cashier@pos.com / cashier123\n\n"
+        "Auth endpoints: POST /api/auth/login, GET /api/auth/me, POST /api/auth/logout\n"
+    )
+    yield
+    client.close()
+
+
 # ------- App -------
-app = FastAPI(title="Thali POS")
+app = FastAPI(title="Thali POS", lifespan=lifespan)
 api = APIRouter(prefix="/api")
 
 
@@ -296,6 +323,14 @@ async def create_order(body: OrderIn, user: dict = Depends(get_current_user)):
     items = [i.model_dump() for i in body.items]
     if not items:
         raise HTTPException(400, "Cart is empty")
+    
+    # Apply configured GST rate from settings to items that use the default 5%
+    s = await db.settings.find_one({"id": "restaurant"})
+    gst_rate = s.get("gst_rate", 5.0) if s else 5.0
+    for item in items:
+        if item.get("tax_rate") is None or item.get("tax_rate") == 5.0:
+            item["tax_rate"] = gst_rate
+
     totals = _compute_totals(items, body.discount)
     rn = await _next_receipt_number()
     ts = iso(now_utc())
@@ -324,9 +359,14 @@ async def list_orders(
     to_date: Optional[str] = None,
     q: Optional[str] = None,
     limit: int = 500,
-    _: dict = Depends(get_current_user),
+    user: dict = Depends(get_current_user),
 ):
     query = {}
+    if user.get("role") == "cashier":
+        query["cashier_email"] = user.get("email")
+    # Note: paid_at is stored as a uniform ISO-8601 UTC string (from iso(now_utc()))
+    # which allows correct lexicographical sorting and range comparison ($gte/$lte)
+    # in MongoDB without needing native datetime conversions.
     if from_date or to_date:
         rng = {}
         if from_date: rng["$gte"] = from_date
@@ -668,40 +708,15 @@ async def seed_defaults():
     await _seed_menu(cat_lookup)
 
 
-@app.on_event("startup")
-async def startup():
-    await db.users.create_index("email", unique=True)
-    await db.menu.create_index("id", unique=True)
-    await db.categories.create_index("id", unique=True)
-    await db.orders.create_index("id", unique=True)
-    await db.orders.create_index("receipt_no")
-    await seed_defaults()
-
-    creds_dir = Path("/app/memory")
-    creds_dir.mkdir(exist_ok=True)
-    (creds_dir / "test_credentials.md").write_text(
-        "# Thali POS Test Credentials\n\n"
-        f"- Owner (admin): {os.environ.get('ADMIN_EMAIL', 'admin@pos.com')} / {os.environ.get('ADMIN_PASSWORD', 'admin123')}\n"
-        "- Cashier: cashier@pos.com / cashier123\n\n"
-        "Auth endpoints: POST /api/auth/login, GET /api/auth/me, POST /api/auth/logout\n"
-    )
-
-
 app.include_router(api)
 
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
-    allow_origin_regex=".*",
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pos")
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    client.close()
