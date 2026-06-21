@@ -554,8 +554,7 @@ async def root():
 
 
 # ------- Seed -------
-async def seed_defaults():
-    # Users
+async def _seed_users():
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@pos.com").lower()
     admin_pw = os.environ.get("ADMIN_PASSWORD", "admin123")
     existing = await db.users.find_one({"email": admin_email})
@@ -575,84 +574,98 @@ async def seed_defaults():
             "created_at": iso(now_utc()),
         })
 
-    # Settings
-    if not await db.settings.find_one({"id": "restaurant"}):
-        await db.settings.insert_one({
-            "id": "restaurant",
-            "name": "Annapurna Thali House",
-            "address": "12, MG Road, Bengaluru 560001",
-            "gstin": "29ABCDE1234F1Z5",
-            "phone": "+91 98765 43210",
-            "gst_rate": 5.0,
-            "footer_msg": "Thank you! Please visit again.",
-        })
 
-    # Categories
+async def _seed_settings():
+    if await db.settings.find_one({"id": "restaurant"}):
+        return
+    await db.settings.insert_one({
+        "id": "restaurant",
+        "name": "Annapurna Thali House",
+        "address": "12, MG Road, Bengaluru 560001",
+        "gstin": "29ABCDE1234F1Z5",
+        "phone": "+91 98765 43210",
+        "gst_rate": 5.0,
+        "footer_msg": "Thank you! Please visit again.",
+    })
+
+
+async def _seed_categories() -> dict:
     if await db.categories.count_documents({}) == 0:
-        cats = [
+        for c in [
             {"name": "Thali", "sort_order": 1},
             {"name": "Sabji", "sort_order": 2},
             {"name": "Dal", "sort_order": 3},
             {"name": "Rice", "sort_order": 4},
             {"name": "Bread", "sort_order": 5},
             {"name": "Drinks", "sort_order": 6},
-        ]
-        for c in cats:
+        ]:
             await db.categories.insert_one({"id": new_id(), **c})
+    rows = await db.categories.find({}, {"_id": 0}).to_list(20)
+    return {c["name"]: c["id"] for c in rows}
 
-    cat_lookup = {c["name"]: c["id"] for c in await db.categories.find({}, {"_id": 0}).to_list(20)}
 
-    # Menu
-    if await db.menu.count_documents({}) == 0:
-        # Thalis
-        thalis = [
-            {
-                "name": "Regular Thali", "price": 150,
-                "is_thali": True,
-                "thali_groups": [
-                    {"category_id": cat_lookup.get("Sabji"), "label": "Sabji", "count": 2},
-                    {"category_id": cat_lookup.get("Dal"), "label": "Dal", "count": 1},
-                ],
-                "thali_extras": "Roti (4), Rice, Salad, Papad, Buttermilk",
-            },
-            {
-                "name": "Mini Thali", "price": 100,
-                "is_thali": True,
-                "thali_groups": [
-                    {"category_id": cat_lookup.get("Sabji"), "label": "Sabji", "count": 1},
-                    {"category_id": cat_lookup.get("Dal"), "label": "Dal", "count": 1},
-                ],
-                "thali_extras": "Roti (2), Rice, Salad",
-            },
-            {
-                "name": "Special Thali", "price": 220,
-                "is_thali": True,
-                "thali_groups": [
-                    {"category_id": cat_lookup.get("Sabji"), "label": "Sabji", "count": 2},
-                    {"category_id": cat_lookup.get("Dal"), "label": "Dal", "count": 1},
-                    {"category_id": cat_lookup.get("Rice"), "label": "Rice", "count": 1},
-                ],
-                "thali_extras": "Roti (4), Sweet, Salad, Papad, Pickle, Buttermilk",
-            },
-        ]
-        for t in thalis:
-            await db.menu.insert_one({"id": new_id(), "category_id": cat_lookup["Thali"], "available": True, **t})
+def _thali_seed_rows(cat_lookup: dict) -> list:
+    return [
+        {
+            "name": "Regular Thali", "price": 150,
+            "thali_groups": [
+                {"category_id": cat_lookup.get("Sabji"), "label": "Sabji", "count": 2},
+                {"category_id": cat_lookup.get("Dal"), "label": "Dal", "count": 1},
+            ],
+            "thali_extras": "Roti (4), Rice, Salad, Papad, Buttermilk",
+        },
+        {
+            "name": "Mini Thali", "price": 100,
+            "thali_groups": [
+                {"category_id": cat_lookup.get("Sabji"), "label": "Sabji", "count": 1},
+                {"category_id": cat_lookup.get("Dal"), "label": "Dal", "count": 1},
+            ],
+            "thali_extras": "Roti (2), Rice, Salad",
+        },
+        {
+            "name": "Special Thali", "price": 220,
+            "thali_groups": [
+                {"category_id": cat_lookup.get("Sabji"), "label": "Sabji", "count": 2},
+                {"category_id": cat_lookup.get("Dal"), "label": "Dal", "count": 1},
+                {"category_id": cat_lookup.get("Rice"), "label": "Rice", "count": 1},
+            ],
+            "thali_extras": "Roti (4), Sweet, Salad, Papad, Pickle, Buttermilk",
+        },
+    ]
 
-        # Sabji
-        for n, p in [("Paneer Masala", 120), ("Mix Veg", 90), ("Bhindi Fry", 100), ("Aloo Matar", 90), ("Chana Masala", 95)]:
-            await db.menu.insert_one({"id": new_id(), "name": n, "category_id": cat_lookup["Sabji"], "price": p, "available": True, "is_thali": False, "thali_groups": [], "thali_extras": ""})
-        # Dal
-        for n, p in [("Dal Tadka", 80), ("Dal Fry", 80), ("Dal Makhani", 110)]:
-            await db.menu.insert_one({"id": new_id(), "name": n, "category_id": cat_lookup["Dal"], "price": p, "available": True, "is_thali": False, "thali_groups": [], "thali_extras": ""})
-        # Rice
-        for n, p in [("Jeera Rice", 90), ("Steamed Rice", 60)]:
-            await db.menu.insert_one({"id": new_id(), "name": n, "category_id": cat_lookup["Rice"], "price": p, "available": True, "is_thali": False, "thali_groups": [], "thali_extras": ""})
-        # Bread
-        for n, p in [("Roti", 15), ("Butter Roti", 20), ("Butter Naan", 50), ("Garlic Naan", 60)]:
-            await db.menu.insert_one({"id": new_id(), "name": n, "category_id": cat_lookup["Bread"], "price": p, "available": True, "is_thali": False, "thali_groups": [], "thali_extras": ""})
-        # Drinks
-        for n, p in [("Buttermilk", 30), ("Masala Chai", 25), ("Fresh Lime", 40)]:
-            await db.menu.insert_one({"id": new_id(), "name": n, "category_id": cat_lookup["Drinks"], "price": p, "available": True, "is_thali": False, "thali_groups": [], "thali_extras": ""})
+
+def _alacarte_seed_rows() -> dict:
+    return {
+        "Sabji": [("Paneer Masala", 120), ("Mix Veg", 90), ("Bhindi Fry", 100), ("Aloo Matar", 90), ("Chana Masala", 95)],
+        "Dal": [("Dal Tadka", 80), ("Dal Fry", 80), ("Dal Makhani", 110)],
+        "Rice": [("Jeera Rice", 90), ("Steamed Rice", 60)],
+        "Bread": [("Roti", 15), ("Butter Roti", 20), ("Butter Naan", 50), ("Garlic Naan", 60)],
+        "Drinks": [("Buttermilk", 30), ("Masala Chai", 25), ("Fresh Lime", 40)],
+    }
+
+
+async def _seed_menu(cat_lookup: dict):
+    if await db.menu.count_documents({}) > 0:
+        return
+    for t in _thali_seed_rows(cat_lookup):
+        await db.menu.insert_one({
+            "id": new_id(), "category_id": cat_lookup["Thali"], "available": True,
+            "is_thali": True, **t,
+        })
+    for cat_name, rows in _alacarte_seed_rows().items():
+        for n, p in rows:
+            await db.menu.insert_one({
+                "id": new_id(), "name": n, "category_id": cat_lookup[cat_name],
+                "price": p, "available": True, "is_thali": False,
+                "thali_groups": [], "thali_extras": "",
+            })
+
+
+async def seed_defaults():
+    await _seed_users()
+    await _seed_settings()
+    cat_lookup = await _seed_categories()
+    await _seed_menu(cat_lookup)
 
 
 @app.on_event("startup")

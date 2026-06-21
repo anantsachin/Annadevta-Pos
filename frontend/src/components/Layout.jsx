@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Receipt, CalendarDays, BookOpen, ListOrdered, LayoutDashboard, FileBarChart, Settings as SettingsIcon, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
-const nav = [
+const NAV_ITEMS = [
   { to: "/", label: "Billing", icon: Receipt, hero: true, end: true, testid: "nav-billing" },
   { to: "/orders", label: "Orders", icon: ListOrdered, testid: "nav-orders" },
   { to: "/daily-menu", label: "Daily Menu", icon: CalendarDays, roles: ["admin"], testid: "nav-daily-menu" },
@@ -13,10 +13,23 @@ const nav = [
   { to: "/settings", label: "Settings", icon: SettingsIcon, roles: ["admin"], testid: "nav-settings" },
 ];
 
+function navClasses({ isActive, hero }) {
+  const base = "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-150";
+  if (isActive && hero) return `${base} bg-terracotta text-white shadow-sm`;
+  if (isActive) return `${base} bg-foreground text-white`;
+  if (hero) return `${base} bg-terracotta/5 text-terracotta hover:bg-terracotta/10`;
+  return `${base} text-foreground hover:bg-sand-subtle`;
+}
+
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const handleLogout = async () => { await logout(); navigate("/login"); };
+
+  const visibleNav = useMemo(
+    () => NAV_ITEMS.filter((n) => !n.roles || n.roles.includes(user?.role)),
+    [user?.role]
+  );
 
   return (
     <div className="min-h-screen flex bg-sand-app">
@@ -26,15 +39,9 @@ export default function Layout() {
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mt-0.5">Thali billing counter</div>
         </div>
         <nav className="flex-1 px-2 py-3 space-y-0.5">
-          {nav.filter((n) => !n.roles || n.roles.includes(user?.role)).map((n) => (
+          {visibleNav.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end} data-testid={n.testid}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-150 ${
-                  isActive
-                    ? n.hero ? "bg-terracotta text-white shadow-sm" : "bg-foreground text-white"
-                    : n.hero ? "bg-terracotta/5 text-terracotta hover:bg-terracotta/10" : "text-foreground hover:bg-sand-subtle"
-                }`
-              }>
+              className={({ isActive }) => navClasses({ isActive, hero: n.hero })}>
               <n.icon className="w-4 h-4" />
               {n.label}
             </NavLink>

@@ -29,9 +29,9 @@ export default function Dashboard() {
   const [period, setPeriod] = useState("today");
 
   useEffect(() => {
-    const fetch = () => api.get("/dashboard/summary").then(r => setData(r.data));
-    fetch();
-    const t = setInterval(fetch, 20000);
+    const fetchSummary = () => api.get("/dashboard/summary").then((r) => setData(r.data));
+    fetchSummary();
+    const t = setInterval(fetchSummary, 20000);
     return () => clearInterval(t);
   }, []);
 

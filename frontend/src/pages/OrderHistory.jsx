@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import api from "../lib/api";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -18,19 +18,23 @@ export default function OrderHistory() {
   const [q, setQ] = useState("");
   const [view, setView] = useState(null);
 
-  const fetch = async () => {
+  const fetchOrders = useCallback(async () => {
     const params = {};
     if (from) params.from_date = `${from}T00:00:00+00:00`;
     if (to) params.to_date = `${to}T23:59:59+00:00`;
     if (q) params.q = q;
-    const [{ data }, s] = await Promise.all([
-      api.get("/orders", { params }),
-      api.get("/settings"),
-    ]);
-    setOrders(data); setSettings(s.data);
-  };
+    try {
+      const [{ data }, s] = await Promise.all([
+        api.get("/orders", { params }),
+        api.get("/settings"),
+      ]);
+      setOrders(data); setSettings(s.data);
+    } catch (err) {
+      console.error("Failed to load orders", err);
+    }
+  }, [from, to, q]);
 
-  useEffect(() => { fetch(); /* eslint-disable-next-line */ }, [from, to]);
+  useEffect(() => { fetchOrders(); }, [from, to, fetchOrders]);
 
   const reprint = (o) => printReceipt({ order: o, settings });
 
@@ -55,7 +59,7 @@ export default function OrderHistory() {
             <label className="text-xs uppercase tracking-wider text-muted-foreground">Search (receipt #)</label>
             <div className="flex gap-2">
               <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. 42" data-testid="filter-q" />
-              <Button onClick={fetch} variant="outline" className="border-border" data-testid="filter-go"><Search className="w-4 h-4" /></Button>
+              <Button onClick={fetchOrders} variant="outline" className="border-border" data-testid="filter-go"><Search className="w-4 h-4" /></Button>
             </div>
           </div>
         </div>
@@ -101,15 +105,15 @@ export default function OrderHistory() {
             <div className="text-sm">
               <div className="text-xs text-muted-foreground mb-3">{new Date(view.paid_at).toLocaleString('en-IN')} · {view.payment_mode.toUpperCase()}</div>
               <div className="border-t border-b border-border py-3 space-y-2">
-                {view.items.map((it, i) => (
-                  <div key={i}>
+                {view.items.map((it) => (
+                  <div key={`${it.menu_item_id}-${it.is_thali ? JSON.stringify(it.thali_selections || {}) : 'a'}`}>
                     <div className="flex justify-between font-semibold">
                       <span>{it.name} <span className="text-muted-foreground font-mono text-xs">×{it.qty}</span></span>
                       <span className="font-mono">₹{(it.price * it.qty).toFixed(2)}</span>
                     </div>
                     {it.thali_selections && (
                       <div className="text-[11px] text-muted-foreground mt-0.5">
-                        {Object.entries(it.thali_selections).map(([k, v]) => v.length ? `${k}: ${v.join(', ')}` : null).filter(Boolean).join(" · ")}
+                        {Object.entries(it.thali_selections).map(([k, v]) => (v.length ? `${k}: ${v.join(', ')}` : null)).filter(Boolean).join(" · ")}
                         {it.thali_extras && <span> · <i>{it.thali_extras}</i></span>}
                       </div>
                     )}

@@ -75,7 +75,7 @@ export default function DailyMenu() {
             <CalendarDays className="w-7 h-7 text-terracotta" /> Daily Menu
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Toggle what's available today. <span className="text-foreground font-semibold">{activeCount}</span> items live on the counter.
+            Toggle what&apos;s available today. <span className="text-foreground font-semibold">{activeCount}</span> items live on the counter.
           </p>
         </div>
       </div>

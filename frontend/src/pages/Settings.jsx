@@ -10,7 +10,11 @@ export default function Settings() {
   const [s, setS] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { api.get("/settings").then(r => setS(r.data)); }, []);
+  useEffect(() => {
+    let mounted = true;
+    api.get("/settings").then((r) => { if (mounted) setS(r.data); });
+    return () => { mounted = false; };
+  }, []);
 
   const save = async () => {
     setBusy(true);

@@ -35,7 +35,12 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    try { await api.post("/auth/logout"); } catch {}
+    try {
+      await api.post("/auth/logout");
+    } catch (err) {
+      // Logout is best-effort: clear local state even if API call fails (e.g. offline).
+      console.warn("logout request failed", err);
+    }
     localStorage.removeItem("pos_token");
     setUser(false);
   };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import api, { API } from "../lib/api";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -36,7 +36,7 @@ export default function Reports() {
   const fromIso = periodKey === "custom" ? toIso(customFrom) : toIso(new Date(Date.now() - PERIODS.find(p => p.key === periodKey).days * 86400000));
   const toIsoStr = periodKey === "custom" ? toIso(customTo, true) : toIso(new Date(), true);
 
-  const fetch = async () => {
+  const fetch = useCallback(async () => {
     try {
       const params = { from_date: fromIso, to_date: toIsoStr };
       if (tab === "sales") {
@@ -49,10 +49,13 @@ export default function Reports() {
         const { data } = await api.get("/reports/thalis", { params });
         setRows(data.thalis); setThaliPicks(data.selection_picks || []);
       }
-    } catch (e) { toast.error("Failed to load report"); }
-  };
+    } catch (e) {
+      console.error("Report load failed", e);
+      toast.error("Failed to load report");
+    }
+  }, [tab, fromIso, toIsoStr]);
 
-  useEffect(() => { fetch(); /* eslint-disable-next-line */ }, [tab, periodKey, customFrom, customTo]);
+  useEffect(() => { fetch(); }, [fetch]);
 
   const download = async (fmt) => {
     try {

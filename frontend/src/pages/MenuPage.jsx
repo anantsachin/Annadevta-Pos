@@ -39,7 +39,13 @@ export default function MenuPage() {
     });
   };
 
-  const startEdit = (item) => setEditing({ ...item, thali_groups: item.thali_groups || [] });
+  const startEdit = (item) => {
+    const groups = (item.thali_groups || []).map((g, i) => ({
+      ...g,
+      _key: g._key || `${g.category_id || 'k'}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+    }));
+    setEditing({ ...item, thali_groups: groups });
+  };
 
   const save = async () => {
     if (!editing.name || !editing.category_id) return toast.error("Name and category required");
@@ -181,13 +187,19 @@ export default function MenuPage() {
                   <div className="flex items-center justify-between">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Thali rules</div>
                     <Button size="sm" variant="outline" className="border-border h-7 text-xs"
-                      onClick={() => setEditing({ ...editing, thali_groups: [...(editing.thali_groups || []), { category_id: "", label: "", count: 1 }] })}
+                      onClick={() => setEditing({
+                        ...editing,
+                        thali_groups: [
+                          ...(editing.thali_groups || []),
+                          { category_id: "", label: "", count: 1, _key: `new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` },
+                        ],
+                      })}
                       data-testid="add-thali-group">
                       <Plus className="w-3 h-3 mr-1" /> Add rule
                     </Button>
                   </div>
                   {(editing.thali_groups || []).map((g, idx) => (
-                    <div key={idx} className="grid grid-cols-12 gap-2 items-center" data-testid={`thali-group-row-${idx}`}>
+                    <div key={g._key || idx} className="grid grid-cols-12 gap-2 items-center" data-testid={`thali-group-row-${idx}`}>
                       <select value={g.category_id} onChange={(e) => {
                         const cat = categories.find(c => c.id === e.target.value);
                         const next = [...editing.thali_groups];

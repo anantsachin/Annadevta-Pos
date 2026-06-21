@@ -66,7 +66,11 @@ export function printReceipt({ order, settings }) {
 </body></html>`;
   const w = window.open('', '_blank', 'width=420,height=720');
   if (!w) return false;
-  w.document.write(html);
-  w.document.close();
+  // Render via Blob URL instead of document.write (CSP/XSS-safer).
+  // All dynamic interpolations are passed through safe() above.
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  w.location.href = url;
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
   return true;
 }

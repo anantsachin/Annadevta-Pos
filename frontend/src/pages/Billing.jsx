@@ -1,11 +1,14 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Plus, Minus, Trash2, Search, Banknote, CreditCard, Smartphone, Printer, Sparkles, ChefHat } from "lucide-react";
+import { Search, Banknote, CreditCard, Smartphone, Printer, ChefHat } from "lucide-react";
 import { toast } from "sonner";
 import { printReceipt } from "../lib/receipt";
 import ThaliBuilder from "../components/ThaliBuilder";
+import { useCart } from "../lib/useCart";
+import { CartLine } from "../components/CartLine";
+import { MenuTile } from "../components/MenuTile";
 
 export default function Billing() {
   const [categories, setCategories] = useState([]);
@@ -13,11 +16,11 @@ export default function Billing() {
   const [settings, setSettings] = useState(null);
   const [activeCat, setActiveCat] = useState("all");
   const [search, setSearch] = useState("");
-  const [cart, setCart] = useState([]);
-  const [discount, setDiscount] = useState(0);
   const [thaliFor, setThaliFor] = useState(null);
 
-  const refresh = async () => {
+  const { cart, discount, setDiscount, addLine, updateQty, removeLine, clear, totals } = useCart();
+
+  const refresh = useCallback(async () => {
     const [c, m, s] = await Promise.all([
       api.get("/categories"),
       api.get("/menu"),
@@ -26,76 +29,53 @@ export default function Billing() {
     setCategories(c.data);
     setMenu(m.data);
     setSettings(s.data);
-  };
+  }, []);
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh(); }, [refresh]);
 
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return menu.filter((m) =>
       (activeCat === "all" || m.category_id === activeCat) &&
-      (!search || m.name.toLowerCase().includes(search.toLowerCase())) &&
+      (!q || m.name.toLowerCase().includes(q)) &&
       m.available
     );
   }, [menu, activeCat, search]);
 
-  const handleItemClick = (item) => {
+  const handleItemClick = useCallback((item) => {
     if (item.is_thali) {
       setThaliFor(item);
-    } else {
-      addToCart({
-        menu_item_id: item.id,
-        name: item.name,
-        price: item.price,
-        qty: 1,
-        tax_rate: 5.0,
-        is_thali: false,
-      });
+      return;
     }
-  };
-
-  const addToCart = (line) => {
-    setCart((c) => {
-      // group same non-thali items
-      if (!line.is_thali) {
-        const idx = c.findIndex((x) => x.menu_item_id === line.menu_item_id && !x.is_thali);
-        if (idx >= 0) {
-          const next = [...c];
-          next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
-          return next;
-        }
-      }
-      // thalis are always added as separate lines (different selections possible)
-      return [...c, { ...line, _key: Math.random().toString(36).slice(2) }];
+    addLine({
+      menu_item_id: item.id,
+      name: item.name,
+      price: item.price,
+      qty: 1,
+      tax_rate: settings?.gst_rate ?? 5.0,
+      is_thali: false,
     });
-  };
+  }, [addLine, settings]);
 
-  const updateQty = (key, delta) => {
-    setCart((c) => c.map((x) => x._key === key ? { ...x, qty: Math.max(1, x.qty + delta) } : x));
-  };
-
-  const removeLine = (key) => setCart((c) => c.filter((x) => x._key !== key));
-  const clearCart = () => { setCart([]); setDiscount(0); };
-
-  const subtotal = cart.reduce((s, x) => s + x.price * x.qty, 0);
-  const tax = cart.reduce((s, x) => s + x.price * x.qty * (x.tax_rate / 100), 0);
-  const total = Math.max(0, subtotal + tax - (Number(discount) || 0));
-
-  const checkout = async (mode) => {
-    if (!cart.length) return toast.error("Cart is empty");
+  const checkout = useCallback(async (mode) => {
+    if (!cart.length) {
+      toast.error("Cart is empty");
+      return;
+    }
     try {
       const payload = {
         items: cart.map(({ _key, ...rest }) => rest),
-        discount: Number(discount) || 0,
+        discount: totals.discount,
         payment_mode: mode,
       };
       const { data } = await api.post("/orders", payload);
       toast.success(`Receipt #${data.receipt_no} · ₹${data.total} (${mode.toUpperCase()})`);
       printReceipt({ order: data, settings });
-      clearCart();
+      clear();
     } catch (e) {
       toast.error(e?.response?.data?.detail || "Payment failed");
     }
-  };
+  }, [cart, totals.discount, settings, clear]);
 
   return (
     <div className="h-screen grid grid-cols-12 gap-0 overflow-hidden">
@@ -133,26 +113,12 @@ export default function Billing() {
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" data-testid="menu-grid">
-          {filtered.length === 0 && (
+          {filtered.length === 0 ? (
             <div className="col-span-full text-center py-16 text-muted-foreground border border-dashed border-border rounded-md bg-white/60">
               No items match. Activate items in <b>Daily Menu</b>.
             </div>
-          )}
-          {filtered.map((item) => (
-            <button key={item.id} onClick={() => handleItemClick(item)}
-              data-testid={`menu-item-${item.id}`}
-              className={`tap-scale group text-left bg-white border rounded-md p-3 hover:-translate-y-0.5 transition-all ${
-                item.is_thali ? "border-terracotta/40 hover:border-terracotta ring-1 ring-terracotta/10" : "border-border hover:border-terracotta"
-              }`}>
-              <div className="flex items-start justify-between min-h-[18px]">
-                {item.is_thali && (
-                  <span className="text-[9px] uppercase tracking-[0.2em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">Thali</span>
-                )}
-                {item.is_thali && <Sparkles className="w-3.5 h-3.5 text-terracotta" />}
-              </div>
-              <div className="mt-2 text-sm font-semibold text-foreground leading-tight">{item.name}</div>
-              <div className="mt-2 font-mono text-base font-bold text-terracotta">₹{item.price}</div>
-            </button>
+          ) : filtered.map((item) => (
+            <MenuTile key={item.id} item={item} onClick={() => handleItemClick(item)} />
           ))}
         </div>
       </div>
@@ -165,7 +131,7 @@ export default function Billing() {
             <div className="font-display text-lg font-bold">{cart.length} {cart.length === 1 ? "line" : "lines"}</div>
           </div>
           {cart.length > 0 && (
-            <button onClick={clearCart} data-testid="clear-cart"
+            <button onClick={clear} data-testid="clear-cart"
               className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
           )}
         </div>
@@ -176,41 +142,25 @@ export default function Billing() {
               <ChefHat className="w-10 h-10 mb-3 text-muted-foreground/60" />
               Tap menu items to start a bill.
             </div>
-          ) : cart.map((it) => (
-            <div key={it._key} className="border-b border-border pb-3" data-testid={`cart-line-${it._key}`}>
-              <div className="flex items-start gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    {it.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">Thali</span>}
-                    <span className="text-sm font-semibold truncate">{it.name}</span>
-                  </div>
-                  {it.is_thali && it.thali_selections && (
-                    <div className="text-[11px] text-muted-foreground mt-1 leading-snug">
-                      {Object.entries(it.thali_selections).map(([k, v]) => v.length ? `${k}: ${v.join(', ')}` : null).filter(Boolean).join(' · ')}
-                      {it.thali_extras && <span> · <i>{it.thali_extras}</i></span>}
-                    </div>
-                  )}
-                  <div className="text-xs text-muted-foreground font-mono mt-1">₹{it.price} × {it.qty} = ₹{(it.price * it.qty).toFixed(2)}</div>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={() => updateQty(it._key, -1)} data-testid={`dec-${it._key}`} className="w-7 h-7 border border-border rounded-md flex items-center justify-center hover:bg-sand-subtle"><Minus className="w-3 h-3" /></button>
-                  <span className="w-6 text-center text-sm font-mono">{it.qty}</span>
-                  <button onClick={() => updateQty(it._key, 1)} data-testid={`inc-${it._key}`} className="w-7 h-7 border border-border rounded-md flex items-center justify-center hover:bg-sand-subtle"><Plus className="w-3 h-3" /></button>
-                  <button onClick={() => removeLine(it._key)} data-testid={`rm-${it._key}`} className="w-7 h-7 text-destructive hover:bg-destructive/10 rounded-md flex items-center justify-center"><Trash2 className="w-3 h-3" /></button>
-                </div>
-              </div>
-            </div>
+          ) : cart.map((line) => (
+            <CartLine
+              key={line._key}
+              line={line}
+              onInc={() => updateQty(line._key, 1)}
+              onDec={() => updateQty(line._key, -1)}
+              onRemove={() => removeLine(line._key)}
+            />
           ))}
         </div>
 
         <div className="p-4 border-t border-border bg-sand-subtle">
           <div className="flex items-center justify-between text-sm mb-1">
             <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-mono" data-testid="subtotal">₹{subtotal.toFixed(2)}</span>
+            <span className="font-mono" data-testid="subtotal">₹{totals.subtotal.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between text-sm mb-1">
             <span className="text-muted-foreground">GST</span>
-            <span className="font-mono">₹{tax.toFixed(2)}</span>
+            <span className="font-mono">₹{totals.tax.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="text-muted-foreground">Discount (₹)</span>
@@ -220,7 +170,9 @@ export default function Billing() {
           </div>
           <div className="flex items-center justify-between border-t border-border pt-2 mb-3">
             <span className="font-display font-bold">Total</span>
-            <span className="font-mono text-2xl font-extrabold text-terracotta" data-testid="cart-total">₹{total.toFixed(2)}</span>
+            <span className="font-mono text-2xl font-extrabold text-terracotta" data-testid="cart-total">
+              ₹{totals.total.toFixed(2)}
+            </span>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <Button onClick={() => checkout("cash")} disabled={!cart.length} data-testid="pay-cash"
@@ -247,7 +199,7 @@ export default function Billing() {
         onClose={() => setThaliFor(null)}
         thali={thaliFor}
         menu={menu}
-        onAdd={addToCart}
+        onAdd={addLine}
       />
     </div>
   );
