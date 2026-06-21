@@ -52,6 +52,7 @@ export default function DailyMenu() {
   };
 
   const activate = async (t) => {
+    if (!window.confirm(`Are you sure?\n\nActivate "${t.name}"?\n\nCurrent active menu will be replaced.`)) return;
     await api.post(`/templates/${t.id}/activate`);
     toast.success(`Activated "${t.name}" — ${t.item_ids.length} items live`);
     refresh();

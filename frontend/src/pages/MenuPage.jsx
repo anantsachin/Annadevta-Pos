@@ -69,7 +69,11 @@ export default function MenuPage() {
     }
   };
 
-  const remove = async (m) => { await api.delete(`/menu/${m.id}`); refresh(); };
+  const remove = async (m) => {
+    if (!window.confirm(`Are you sure?\n\nDelete "${m.name}"?\n\nThis action cannot be undone.`)) return;
+    await api.delete(`/menu/${m.id}`);
+    refresh();
+  };
   const toggle = async (m) => { await api.patch(`/menu/${m.id}/toggle`); refresh(); };
 
   const removeCat = async (c) => {
@@ -168,7 +172,15 @@ export default function MenuPage() {
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-wider text-muted-foreground">Price (₹)</label>
-                  <Input type="number" value={editing.price} onChange={(e) => setEditing({ ...editing, price: e.target.value })} data-testid="edit-price" />
+                  <Input type="number" value={editing.price} onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (val < 0) {
+                      toast.error("Price cannot be negative");
+                      setEditing({ ...editing, price: 0 });
+                    } else {
+                      setEditing({ ...editing, price: e.target.value });
+                    }
+                  }} data-testid="edit-price" />
                 </div>
               </div>
               <div className="flex items-center justify-between border-t border-border pt-3">

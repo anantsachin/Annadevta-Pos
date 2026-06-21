@@ -137,7 +137,11 @@ export default function Billing() {
             <div className="font-display text-lg font-bold">{cart.length} {cart.length === 1 ? "line" : "lines"}</div>
           </div>
           {cart.length > 0 && (
-            <button onClick={clear} data-testid="clear-cart"
+            <button onClick={() => {
+              if (window.confirm("Are you sure?\n\nAll items in the current bill will be removed.")) {
+                clear();
+              }
+            }} data-testid="clear-cart"
               className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
           )}
         </div>
@@ -218,7 +222,19 @@ export default function Billing() {
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="text-muted-foreground">Discount (₹)</span>
             <input data-testid="discount-input" type="number" value={discount}
-              onChange={(e) => setDiscount(e.target.value)}
+              onChange={(e) => {
+                const val = Number(e.target.value) || 0;
+                const maxDiscount = totals.subtotal + totals.tax;
+                if (val < 0) {
+                  toast.error("Discount cannot be negative");
+                  setDiscount(0);
+                } else if (val > maxDiscount) {
+                  toast.error(`Discount cannot exceed ₹${maxDiscount.toFixed(2)}`);
+                  setDiscount(maxDiscount);
+                } else {
+                  setDiscount(e.target.value);
+                }
+              }}
               className="w-24 text-right bg-white border border-border rounded-md px-2 py-1 text-sm font-mono" />
           </div>
           <div className="flex items-center justify-between border-t border-border pt-2 mb-3">

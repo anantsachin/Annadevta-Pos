@@ -208,6 +208,37 @@ async def logout(response: Response):
     return {"ok": True}
 
 
+class PasswordChangeIn(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@api.post("/auth/change-password")
+async def change_password(body: PasswordChangeIn, user=Depends(get_current_user)):
+    """Change user password. Requires current password for verification."""
+    # Verify current password
+    db_user = await db.users.find_one({"id": user["id"]})
+    if not db_user or not verify_password(body.current_password, db_user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    
+    # Validate new password
+    if len(body.new_password) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
+    
+    # Don't allow reusing default password
+    if body.new_password == "admin123":
+        raise HTTPException(status_code=400, detail="Cannot use default password")
+    
+    # Update password
+    new_hash = hash_password(body.new_password)
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"password_hash": new_hash}}
+    )
+    
+    return {"ok": True, "message": "Password changed successfully"}
+
+
 @api.get("/auth/me")
 async def me(user: dict = Depends(get_current_user)):
     return user
@@ -759,6 +790,64 @@ app.add_middleware(
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pos")
+
+
+@api.post("/backup/create")
+async def create_backup(_user=Depends(require_roles("admin"))):
+    """Create a complete backup of all collections."""
+    import json
+    from datetime import datetime
+    
+    backup_data = {
+        "timestamp": iso(now_utc()),
+        "version": "1.0.0",
+        "collections": {}
+    }
+    
+    # Backup all collections
+    collections = ["users", "settings", "categories", "menu", "templates", "orders", "counters"]
+    for coll_name in collections:
+        docs = await db[coll_name].find().to_list(None)
+        # Convert ObjectId and datetime to strings for JSON serialization
+        for doc in docs:
+            if "_id" in doc:
+                doc["_id"] = str(doc["_id"])
+        backup_data["collections"][coll_name] = docs
+    
+    # Return as JSON string
+    json_str = json.dumps(backup_data, indent=2, default=str)
+    return Response(content=json_str, media_type="application/json")
+
+
+@api.post("/backup/restore")
+async def restore_backup(request: Request, _user=Depends(require_roles("admin"))):
+    """Restore database from backup file."""
+    import json
+    
+    body = await request.body()
+    backup_data = json.loads(body.decode("utf-8"))
+    
+    # Validate backup structure
+    if "collections" not in backup_data or "timestamp" not in backup_data:
+        raise HTTPException(status_code=400, detail="Invalid backup file format")
+    
+    # Restore each collection
+    for coll_name, docs in backup_data["collections"].items():
+        if coll_name in ["users", "settings", "categories", "menu", "templates", "orders", "counters"]:
+            # Clear existing data
+            await db[coll_name].delete_many({})
+            # Insert backup data
+            if docs:
+                await db[coll_name].insert_many(docs)
+    
+    return {"status": "success", "restored_at": iso(now_utc()), "backup_timestamp": backup_data["timestamp"]}
+
+
+@api.get("/backup/last")
+async def get_last_backup(_user=Depends(require_roles("admin"))):
+    """Get last backup timestamp from settings or local storage."""
+    # For now, return null - frontend will track this in localStorage
+    return {"last_backup": None}
 
 
 @app.get("/api/health")

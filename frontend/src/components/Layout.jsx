@@ -1,7 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Receipt, CalendarDays, BookOpen, ListOrdered, LayoutDashboard, FileBarChart, Settings as SettingsIcon, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import PasswordChangeDialog from "./PasswordChangeDialog";
 
 const NAV_ITEMS = [
   { to: "/", label: "Billing", icon: Receipt, hero: true, end: true, testid: "nav-billing" },
@@ -24,12 +25,31 @@ function navClasses({ isActive, hero }) {
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  
   const handleLogout = async () => { await logout(); navigate("/login"); };
 
   const visibleNav = useMemo(
     () => NAV_ITEMS.filter((n) => !n.roles || n.roles.includes(user?.role)),
     [user?.role]
   );
+
+  // Check if this is first login (password hasn't been changed from default)
+  useEffect(() => {
+    if (user && user.email === "admin@pos.com") {
+      const passwordChanged = localStorage.getItem("passwordChanged");
+      if (!passwordChanged) {
+        setShowPasswordChange(true);
+      }
+    }
+  }, [user]);
+
+  const handlePasswordChangeClose = (success) => {
+    if (success) {
+      setShowPasswordChange(false);
+    }
+    // If not success and it's first login, keep dialog open
+  };
 
   return (
     <div className="min-h-screen flex bg-sand-app">
@@ -62,6 +82,12 @@ export default function Layout() {
       <main className="flex-1 overflow-auto min-w-0">
         <Outlet />
       </main>
+
+      <PasswordChangeDialog
+        open={showPasswordChange}
+        onClose={handlePasswordChangeClose}
+        isFirstLogin={true}
+      />
     </div>
   );
 }

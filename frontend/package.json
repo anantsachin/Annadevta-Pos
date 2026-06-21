@@ -82,8 +82,9 @@
     "files": [
       "build/**/*",
       { "from": "../electron", "to": "electron", "filter": ["**/*"] },
-      "node_modules/**/*",
-      "!node_modules/.cache"
+      "!node_modules",
+      "!src",
+      "!public"
     ],
     "extraResources": [
       {
@@ -99,12 +100,18 @@
         "to": "bin/backend.exe"
       },
       {
-        "from": "D:/mongodb/bin/mongod.exe",
+        "from": "../mongodb-portable/mongodb-win32-x86_64-windows-8.0.4/bin/mongod.exe",
         "to": "bin/mongod.exe"
       }
     ],
     "win": {
       "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
         {
           "target": "nsis",
           "arch": [
@@ -120,9 +127,10 @@
       "installerIcon": "../electron/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Annapurna POS"
+      "shortcutName": "Annapurna POS",
+      "warningsAsErrors": false
     },
-    "asar": false
+    "asar": true
   },
   "browserslist": {
     "production": [

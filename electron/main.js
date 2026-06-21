@@ -26,7 +26,8 @@ const IS_PACKAGED = app.isPackaged;
 
 function getResourcePath(...segments) {
   if (IS_PACKAGED) {
-    // Packaged: binaries and React build are in process.resourcesPath
+    // Packaged: binaries and React build are in process.resourcesPath (extraResources)
+    // electron/ files are inside app.asar, but bin/ and build/ are in extraResources
     return path.join(process.resourcesPath, ...segments);
   }
   // Dev: __dirname = D:\GIT\POS-system\electron\

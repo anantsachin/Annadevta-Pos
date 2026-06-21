@@ -3,17 +3,25 @@ import api from "../lib/api";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Save, Store, Receipt, Sliders, Eye } from "lucide-react";
+import { Save, Store, Receipt, Sliders, Eye, Database, Download, Upload, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import ReceiptPreview from "../components/ReceiptPreview";
 
 export default function Settings() {
   const [s, setS] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [lastBackup, setLastBackup] = useState(null);
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [restoreBusy, setRestoreBusy] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     api.get("/settings").then((r) => { if (mounted) setS(r.data); });
+    // Load last backup timestamp from localStorage
+    const lastBackupTime = localStorage.getItem("lastBackupTime");
+    if (lastBackupTime && mounted) {
+      setLastBackup(new Date(lastBackupTime));
+    }
     return () => { mounted = false; };
   }, []);
 
@@ -45,6 +53,96 @@ export default function Settings() {
     } catch (e) {
       toast.error(e?.response?.data?.detail || "Save failed");
     } finally { setBusy(false); }
+  };
+
+  const createBackup = async () => {
+    setBackupBusy(true);
+    try {
+      const { data } = await api.post("/backup/create");
+      
+      // Create timestamped filename
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/:/g, '-').split('.')[0];
+      const filename = `AnnapurnaPOS_Backup_${timestamp}.json`;
+      
+      // Create download link
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      // Save backup timestamp
+      localStorage.setItem("lastBackupTime", now.toISOString());
+      setLastBackup(now);
+      
+      toast.success(`Backup created: ${filename}`);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Backup failed");
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const restoreBackup = async () => {
+    // Create file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      // Confirm before restore
+      if (!window.confirm("⚠️ Restoring this backup will overwrite all current data.\n\nThis action cannot be undone.\n\nContinue?")) {
+        return;
+      }
+      
+      setRestoreBusy(true);
+      try {
+        const text = await file.text();
+        const backupData = JSON.parse(text);
+        
+        // Validate backup structure
+        if (!backupData.collections || !backupData.timestamp) {
+          throw new Error("Invalid backup file format");
+        }
+        
+        await api.post("/backup/restore", backupData);
+        
+        toast.success("Backup restored successfully! Reloading...");
+        
+        // Reload page after 2 seconds
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+        
+      } catch (e) {
+        toast.error(e?.response?.data?.detail || e.message || "Restore failed");
+        setRestoreBusy(false);
+      }
+    };
+    
+    input.click();
+  };
+
+  const getBackupStatus = () => {
+    if (!lastBackup) return { text: "No Backup Found", color: "text-destructive", showWarning: true };
+    
+    const daysSince = Math.floor((Date.now() - lastBackup.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysSince >= 30) {
+      return { text: "Backup Overdue", color: "text-destructive", showWarning: true };
+    } else if (daysSince >= 7) {
+      return { text: "Backup Recommended", color: "text-amber-600", showWarning: true };
+    } else {
+      return { text: lastBackup.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }), color: "text-forest", showWarning: false };
+    }
   };
 
   if (!s) return <div className="p-10 text-muted-foreground">Loading…</div>;
@@ -189,7 +287,18 @@ export default function Settings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs uppercase tracking-wider text-muted-foreground">Default Tax / GST %</label>
-                <Input type="number" value={s.gst_rate} onChange={(e) => setS({ ...s, gst_rate: e.target.value })} className="mt-1" data-testid="set-gst-rate" />
+                <Input type="number" value={s.gst_rate} onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val < 0) {
+                    toast.error("GST rate cannot be negative");
+                    setS({ ...s, gst_rate: 0 });
+                  } else if (val > 100) {
+                    toast.error("GST rate cannot exceed 100%");
+                    setS({ ...s, gst_rate: 100 });
+                  } else {
+                    setS({ ...s, gst_rate: e.target.value });
+                  }
+                }} className="mt-1" data-testid="set-gst-rate" />
                 <div className="text-[10px] text-muted-foreground mt-1">Default percentage applied to menu items.</div>
               </div>
               <div>
@@ -275,6 +384,59 @@ export default function Settings() {
                   <div className="text-[10px] text-muted-foreground">Trigger browser print dialog automatically after checkouts.</div>
                 </div>
               </label>
+            </div>
+          </Card>
+
+          {/* Section 5: Data Management */}
+          <Card className="p-6 border-border shadow-none space-y-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
+              <Database className="w-4 h-4" /> Data Management
+            </h2>
+            
+            <div className="bg-sand-subtle/40 border border-border rounded-md p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${getBackupStatus().showWarning ? 'text-amber-600' : 'text-muted-foreground'}`} />
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-foreground">Last Backup</div>
+                  <div className={`text-sm font-mono ${getBackupStatus().color} mt-1`}>
+                    {getBackupStatus().text}
+                  </div>
+                  {getBackupStatus().showWarning && (
+                    <div className="text-xs text-muted-foreground mt-2">
+                      Regular backups protect your business data. Create a backup now.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Button
+                onClick={createBackup}
+                disabled={backupBusy}
+                className="bg-forest hover:bg-forest/90 text-white"
+                data-testid="backup-now-btn"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {backupBusy ? "Creating Backup..." : "Backup Now"}
+              </Button>
+
+              <Button
+                onClick={restoreBackup}
+                disabled={restoreBusy}
+                variant="outline"
+                className="border-border hover:bg-sand-subtle"
+                data-testid="restore-backup-btn"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {restoreBusy ? "Restoring..." : "Restore Backup"}
+              </Button>
+            </div>
+
+            <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-border">
+              <p><strong>Backup includes:</strong> All orders, revenue, menu items, daily menu templates, Thali configurations, users, and settings.</p>
+              <p><strong>File format:</strong> JSON file with timestamp (e.g., AnnapurnaPOS_Backup_2026-06-22.json)</p>
+              <p><strong>Restore:</strong> Select a backup file to restore all data. Current data will be overwritten.</p>
             </div>
           </Card>
         </div>

@@ -1,0 +1,155 @@
+================================================================================
+                    ANNAPURNA POS - INSTALLATION GUIDE
+                              Version 1.0.0
+================================================================================
+
+SYSTEM REQUIREMENTS
+-------------------
+- Windows 10 or Windows 11 (64-bit)
+- 500 MB free disk space
+- 4 GB RAM (minimum)
+- Internet connection (for initial download only)
+
+INSTALLATION STEPS
+------------------
+1. Extract the ZIP file to a folder of your choice
+   Example: C:\Program Files\Annapurna POS\
+
+2. Double-click "Annapurna POS.exe" to launch the application
+
+3. Wait for the application to start (first launch may take 30-60 seconds)
+   - MongoDB database will start automatically
+   - Backend server will start automatically
+   - Login screen will appear
+
+FIRST LOGIN
+-----------
+Default Credentials:
+  Email: admin@pos.com
+  Password: admin123
+
+IMPORTANT: You MUST change the default password on first login!
+
+After logging in, you will be prompted to:
+  - Enter current password: admin123
+  - Enter new password: (minimum 8 characters)
+  - Confirm new password
+
+Your new password cannot be "admin123" for security reasons.
+
+DAILY USAGE
+-----------
+1. Launch "Annapurna POS.exe"
+2. Login with your credentials
+3. Start billing from the main screen
+
+DATA LOCATION
+-------------
+All your data is stored in:
+  %APPDATA%\Annapurna POS\data\
+
+This includes:
+  - Orders
+  - Menu items
+  - Daily menu templates
+  - Settings
+  - User accounts
+
+BACKUP & RESTORE
+----------------
+IMPORTANT: Regular backups protect your business data!
+
+To Create Backup:
+  1. Go to Settings → Data Management
+  2. Click "Backup Now"
+  3. Choose where to save the backup file
+  4. File will be named: AnnapurnaPOS_Backup_YYYY-MM-DD.json
+
+To Restore Backup:
+  1. Go to Settings → Data Management
+  2. Click "Restore Backup"
+  3. Select your backup file
+  4. Confirm the restore operation
+  5. Application will reload automatically
+
+Backup Reminders:
+  - Green: Backup within 7 days (good)
+  - Amber: 7-30 days (backup recommended)
+  - Red: 30+ days or no backup (backup overdue!)
+
+FEATURES
+--------
+✓ Fast Billing Counter
+✓ Interactive Thali Builder
+✓ Daily Menu Management
+✓ Order History
+✓ Sales Reports (CSV & Excel export)
+✓ Admin Dashboard
+✓ Receipt Printing (58mm & 80mm thermal printers)
+✓ GST Tax Calculation
+✓ Discount Management
+✓ Role-Based Access (Admin/Cashier)
+✓ Data Backup & Restore
+
+TROUBLESHOOTING
+---------------
+Problem: Application doesn't start
+Solution: 
+  - Check if port 27017 is available (MongoDB port)
+  - Check if port 8000 is available (Backend port)
+  - Check logs in: %APPDATA%\Annapurna POS\logs\
+
+Problem: "Cannot connect to database"
+Solution:
+  - Restart the application
+  - Check if mongod.exe is running in Task Manager
+  - Check MongoDB logs in: %APPDATA%\Annapurna POS\logs\mongod.log
+
+Problem: Data lost after Windows update
+Solution:
+  - Data is stored in AppData and should survive updates
+  - If data is lost, restore from your latest backup
+  - Always keep regular backups!
+
+Problem: Receipt not printing
+Solution:
+  - Check if printer is connected and turned on
+  - Verify printer is set as default in Windows
+  - Go to Settings → Receipt Format to configure paper size
+  - Enable "Auto Print Receipt" in Settings
+
+UNINSTALLATION
+--------------
+To remove Annapurna POS:
+  1. Delete the application folder
+  2. (Optional) Delete data folder: %APPDATA%\Annapurna POS\
+     WARNING: This will delete all your orders and settings!
+     Make sure you have a backup first!
+
+SUPPORT
+-------
+For technical support or questions:
+  - Check the user manual (if provided)
+  - Contact your system administrator
+  - Keep your backup files safe
+
+SECURITY NOTES
+--------------
+✓ Change default password immediately
+✓ Use strong passwords (8+ characters, mixed case)
+✓ Keep regular backups
+✓ Don't share admin credentials with cashiers
+✓ Create separate cashier accounts if needed
+
+VERSION INFORMATION
+-------------------
+Application: Annapurna POS
+Version: 1.0.0
+Build Date: June 22, 2026
+Platform: Windows x64
+Electron: 29.4.6
+MongoDB: 8.0.4
+
+================================================================================
+                         Thank you for using Annapurna POS!
+================================================================================
