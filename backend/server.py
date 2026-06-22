@@ -106,6 +106,7 @@ class RestaurantSettings(BaseModel):
     receipt_prefix: str = ""
     receipt_padding: int = 6
     tax_label: str = "GST"
+    language: str = "en"
 
 
 class CategoryIn(BaseModel):
@@ -690,6 +691,7 @@ async def _seed_settings():
         "receipt_prefix": "",
         "receipt_padding": 6,
         "tax_label": "GST",
+        "language": "en",
     })
 
 

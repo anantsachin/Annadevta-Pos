@@ -94,3 +94,22 @@ credentials.json
 *.key
 .credentials
 frontend/node_modules/.cache/default-development/5.pack
+
+# Electron experimental (not ready for production)
+electron/printer.js
+
+# Build and packaging scripts (local only)
+CREATE_PORTABLE.bat
+PREPARE_CLIENT_DELIVERY.bat
+TEST_DEVELOPMENT.bat
+TEST_PORTABLE_BUILD.bat
+FIX_LOGIN_ERROR.bat
+DIAGNOSE_ISSUE.bat
+
+# Temporary documentation (build-related)
+COMPLETE_WORKFLOW.md
+FINAL_BUILD_GUIDE.md
+DIRECT_PRINTING_IMPLEMENTATION.md
+PROJECT_STRUCTURE.md
+TESTING_CHECKLIST.md
+TROUBLESHOOTING.md

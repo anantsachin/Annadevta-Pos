@@ -25,8 +25,14 @@ function CartLineComponent({ line, onInc, onDec, onRemove }) {
               {line.thali_extras && <span> · <i>{line.thali_extras}</i></span>}
             </div>
           )}
+          {line.extra_bread > 0 && (
+            <div className="text-[11px] text-amber-700 mt-1 font-medium">
+              🍞 Extra Roti ({line.extra_bread}) · ₹{line.extra_bread_charge.toFixed(2)}
+            </div>
+          )}
           <div className="text-xs text-muted-foreground font-mono mt-1">
             ₹{line.price} × {line.qty} = ₹{(line.price * line.qty).toFixed(2)}
+            {line.extra_bread_charge > 0 && <span className="text-amber-700"> + ₹{line.extra_bread_charge.toFixed(2)}</span>}
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">

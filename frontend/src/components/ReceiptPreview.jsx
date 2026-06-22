@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { Plus, Minus, Trash2 } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 function formatThaliSelections(selections) {
   if (!selections) return [];
@@ -17,6 +18,7 @@ export default function ReceiptPreview({
   onDec = null,
   onRemove = null,
 }) {
+  const { t } = useLanguage();
   if (!order) return null;
 
   const dt = new Date(order.paid_at || order.created_at || Date.now());
@@ -96,14 +98,21 @@ export default function ReceiptPreview({
 
       {/* Metadata */}
       <div className="space-y-0.5 text-[10px] text-[#333]">
-        <div>Receipt #: {receiptNoFormatted}</div>
-        <div>Date: {dateStr}</div>
-        <div>Time: {timeStr}</div>
-        {order.cashier_name && <div>Cashier: {order.cashier_name}</div>}
+        <div>{t("bill_no")}: {receiptNoFormatted}</div>
+        <div>{t("date")}: {dateStr}</div>
+        <div>{t("time")}: {timeStr}</div>
+        {order.cashier_name && (
+          <div>
+            {t("cashier")}: {
+              order.cashier_name === "Owner" ? t("owner") :
+              order.cashier_name === "Cashier" ? t("cashier") : order.cashier_name
+            }
+          </div>
+        )}
       </div>
 
-      <div className="my-2 border-t border-dashed border-black" />
-      <div className="text-center font-bold tracking-widest text-[10px] mb-1">ITEMS</div>
+      <div className="my-2 border-t border-double border-black" />
+      <div className="text-center font-bold tracking-widest text-[10px] mb-1">{t("items_header")}</div>
       <div className="my-1 border-t border-dashed border-black" />
 
       {/* Items List */}
@@ -125,7 +134,7 @@ export default function ReceiptPreview({
                   {selectionsList.map((sel, sIdx) => (
                     <div key={sIdx}>• {sel}</div>
                   ))}
-                  {line.thali_extras && <div>• incl. {line.thali_extras}</div>}
+                  {line.thali_extras && <div>• {t("includes")} {line.thali_extras}</div>}
                 </div>
               )}
 
@@ -145,7 +154,7 @@ export default function ReceiptPreview({
           );
         })}
         {order.items.length === 0 && (
-          <div className="text-center text-xs text-muted-foreground py-4">No items added yet.</div>
+          <div className="text-center text-xs text-muted-foreground py-4">{t("no_items_in_cart")}</div>
         )}
       </div>
 
@@ -154,7 +163,7 @@ export default function ReceiptPreview({
       {/* Summary */}
       <div className="space-y-0.5 text-[#333]">
         <div className="flex justify-between">
-          <span>Subtotal</span>
+          <span>{t("subtotal")}</span>
           <span>Rs.{Number(order.subtotal || 0).toFixed(2)}</span>
         </div>
         {settings?.show_gst !== false && (
@@ -165,7 +174,7 @@ export default function ReceiptPreview({
         )}
         {order.discount > 0 && (
           <div className="flex justify-between text-[#d32f2f]">
-            <span>Discount</span>
+            <span>{t("discount")}</span>
             <span>-Rs.{Number(order.discount).toFixed(2)}</span>
           </div>
         )}
@@ -174,7 +183,7 @@ export default function ReceiptPreview({
       <div className="my-2 border-t border-dashed border-black" />
       
       <div className="flex justify-between font-extrabold text-sm py-0.5">
-        <span>TOTAL</span>
+        <span>{t("total_uppercase")}</span>
         <span>Rs.{Number(order.total || 0).toFixed(2)}</span>
       </div>
       
@@ -183,7 +192,11 @@ export default function ReceiptPreview({
       {/* Payment details */}
       {settings?.show_payment !== false && order.payment_mode && (
         <div className="font-bold text-[10px] uppercase">
-          Payment : {order.payment_mode}
+          {t("payment")} : {
+            order.payment_mode === "cash" ? t("cash") :
+            order.payment_mode === "upi" ? t("upi") :
+            order.payment_mode === "card" ? t("card") : order.payment_mode
+          }
         </div>
       )}
 
@@ -191,8 +204,15 @@ export default function ReceiptPreview({
 
       {/* Footer message */}
       <div className="text-center font-bold uppercase text-[10px] space-y-0.5">
-        <div>{settings?.footer_msg || "THANK YOU"}</div>
-        <div>VISIT AGAIN</div>
+        <div>
+          {
+            (!settings?.footer_msg || 
+             settings.footer_msg === "Thank you! Please visit again." || 
+             settings.footer_msg === "Thank you for dining with us!")
+              ? `${t("thank_you")}! ${t("visit_again")}`
+              : settings.footer_msg
+          }
+        </div>
       </div>
 
       <div className="my-2 border-t border-double border-black" />

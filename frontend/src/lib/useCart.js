@@ -33,8 +33,16 @@ export function useCart() {
   }, []);
 
   const totals = useMemo(() => {
-    const subtotal = cart.reduce((s, x) => s + x.price * x.qty, 0);
-    const tax = cart.reduce((s, x) => s + x.price * x.qty * (x.tax_rate / 100), 0);
+    const subtotal = cart.reduce((s, x) => {
+      const itemTotal = x.price * x.qty;
+      const extraBreadTotal = (x.extra_bread_charge || 0) * x.qty;
+      return s + itemTotal + extraBreadTotal;
+    }, 0);
+    const tax = cart.reduce((s, x) => {
+      const itemTotal = x.price * x.qty;
+      const extraBreadTotal = (x.extra_bread_charge || 0) * x.qty;
+      return s + (itemTotal + extraBreadTotal) * (x.tax_rate / 100);
+    }, 0);
     const d = Number(discount) || 0;
     const total = Math.max(0, subtotal + tax - d);
     return { subtotal, tax, total, discount: d };

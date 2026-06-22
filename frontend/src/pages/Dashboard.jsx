@@ -1,14 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import api from "../lib/api";
 import { Card } from "../components/ui/card";
 import { TrendingUp, ShoppingBag, IndianRupee, Banknote, Smartphone, CreditCard, Sparkles } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, Cell } from "recharts";
-
-const PERIODS = [
-  { key: "today", label: "Today" },
-  { key: "week", label: "This week" },
-  { key: "month", label: "This month" },
-];
+import { useLanguage } from "../context/LanguageContext";
 
 const PAY_COLORS = { cash: "#2D6A4F", upi: "#E06C4C", card: "#457B9D" };
 const PAY_ICONS = { cash: Banknote, upi: Smartphone, card: CreditCard };
@@ -27,6 +22,13 @@ const Stat = ({ label, value, sub, accent }) => (
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [period, setPeriod] = useState("today");
+  const { t } = useLanguage();
+
+  const periods = useMemo(() => [
+    { key: "today", label: t("today") },
+    { key: "week", label: t("this_week") },
+    { key: "month", label: t("this_month") },
+  ], [t]);
 
   useEffect(() => {
     const fetchSummary = () => api.get("/dashboard/summary").then((r) => setData(r.data));
@@ -43,15 +45,17 @@ export default function Dashboard() {
   const pay = data[`payment_${period}`] || { cash: 0, upi: 0, card: 0 };
   const payTotal = pay.cash + pay.upi + pay.card;
 
+  const activePeriodLabel = periods.find(p => p.key === period)?.label || "";
+
   return (
     <div className="p-6 lg:p-10 max-w-7xl">
       <div className="mb-6 flex items-end justify-between flex-wrap gap-4">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Business pulse</div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight">Dashboard</h1>
+          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("business_pulse")}</div>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("nav_dashboard")}</h1>
         </div>
         <div className="flex items-center gap-1 p-1 bg-white border border-border rounded-md" data-testid="period-tabs">
-          {PERIODS.map(p => (
+          {periods.map(p => (
             <button key={p.key} onClick={() => setPeriod(p.key)} data-testid={`period-${p.key}`}
               className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${
                 period === p.key ? "bg-foreground text-white" : "text-muted-foreground hover:text-foreground"
@@ -63,15 +67,15 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" data-testid="kpi-cards">
-        <Stat label="Revenue" value={k.revenue.toLocaleString('en-IN')} accent="text-terracotta" />
-        <Stat label="Orders" value={k.orders} sub={k.orders > 0 ? `${k.orders} bills` : "No bills yet"} />
-        <Stat label="Avg Bill Value" value={k.avg.toLocaleString('en-IN')} sub="Per receipt" />
+        <Stat label={t("revenue_card")} value={k.revenue.toLocaleString('en-IN')} accent="text-terracotta" />
+        <Stat label={t("orders_card")} value={k.orders} sub={k.orders > 0 ? `${k.orders} ${t("bills")}` : t("no_bills_yet")} />
+        <Stat label={t("avg_bill_card")} value={k.avg.toLocaleString('en-IN')} sub={t("per_receipt")} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <Card className="p-6 border-border shadow-none lg:col-span-2">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">Last 7 days</div>
-          <h3 className="font-display text-lg font-semibold mb-4">Revenue trend</h3>
+          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">{t("last_7_days")}</div>
+          <h3 className="font-display text-lg font-semibold mb-4">{t("sales_trend")}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.series}>
@@ -86,18 +90,18 @@ export default function Dashboard() {
         </Card>
 
         <Card className="p-6 border-border shadow-none">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">{PERIODS.find(p => p.key === period).label}</div>
-          <h3 className="font-display text-lg font-semibold mb-4">Payment mix</h3>
+          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">{activePeriodLabel}</div>
+          <h3 className="font-display text-lg font-semibold mb-4">{t("payment_mix")}</h3>
           {payTotal === 0 ? (
-            <div className="text-sm text-muted-foreground py-6 text-center">No payments yet.</div>
+            <div className="text-sm text-muted-foreground py-6 text-center">{t("no_payments_yet")}</div>
           ) : (
             <>
               <div className="h-44">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={[
-                    { mode: "Cash", amount: pay.cash },
-                    { mode: "UPI", amount: pay.upi },
-                    { mode: "Card", amount: pay.card },
+                    { mode: t("cash"), amount: pay.cash },
+                    { mode: t("upi"), amount: pay.upi },
+                    { mode: t("card"), amount: pay.card },
                   ]} layout="vertical" margin={{ left: 8 }}>
                     <XAxis type="number" hide />
                     <YAxis type="category" dataKey="mode" tick={{ fontSize: 12 }} width={50} />
@@ -117,7 +121,7 @@ export default function Dashboard() {
                   return (
                     <div key={mode} className="flex items-center justify-between">
                       <span className="flex items-center gap-1.5 capitalize text-muted-foreground">
-                        <Icon className="w-3.5 h-3.5" style={{ color: PAY_COLORS[mode] }} /> {mode}
+                        <Icon className="w-3.5 h-3.5" style={{ color: PAY_COLORS[mode] }} /> {t(mode)}
                       </span>
                       <span className="font-mono">₹{amt.toLocaleString('en-IN')} <span className="text-muted-foreground">({pct}%)</span></span>
                     </div>
@@ -133,11 +137,11 @@ export default function Dashboard() {
         <Card className="p-6 border-border shadow-none">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-4 h-4 text-terracotta" />
-            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Top thalis · {PERIODS.find(p => p.key === period).label.toLowerCase()}</div>
+            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("top_thalis")} · {activePeriodLabel.toLowerCase()}</div>
           </div>
-          <h3 className="font-display text-lg font-semibold mb-4">Best-selling thali</h3>
+          <h3 className="font-display text-lg font-semibold mb-4">{t("top_thalis")}</h3>
           <ul className="space-y-2" data-testid="top-thalis">
-            {topThalis.length === 0 ? <li className="text-sm text-muted-foreground">No thalis sold yet.</li> : topThalis.map((it, i) => (
+            {topThalis.length === 0 ? <li className="text-sm text-muted-foreground">{t("no_thalis_sold")}</li> : topThalis.map((it, i) => (
               <li key={it.name} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
                 <div className="flex items-center gap-3">
                   <span className="w-6 h-6 rounded-md bg-terracotta-light text-terracotta flex items-center justify-center text-xs font-bold font-mono">{i + 1}</span>
@@ -155,11 +159,11 @@ export default function Dashboard() {
         <Card className="p-6 border-border shadow-none">
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp className="w-4 h-4 text-secondary" />
-            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Top items · {PERIODS.find(p => p.key === period).label.toLowerCase()}</div>
+            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("top_products")} · {activePeriodLabel.toLowerCase()}</div>
           </div>
-          <h3 className="font-display text-lg font-semibold mb-4">Most ordered (non-thali)</h3>
+          <h3 className="font-display text-lg font-semibold mb-4">{t("top_products")}</h3>
           <ul className="space-y-2" data-testid="top-items">
-            {topItems.length === 0 ? <li className="text-sm text-muted-foreground">No items sold yet.</li> : topItems.map((it, i) => (
+            {topItems.length === 0 ? <li className="text-sm text-muted-foreground">{t("no_items_sold")}</li> : topItems.map((it, i) => (
               <li key={it.name} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
                 <div className="flex items-center gap-3">
                   <span className="w-6 h-6 rounded-md bg-forest-light text-forest flex items-center justify-center text-xs font-bold font-mono">{i + 1}</span>

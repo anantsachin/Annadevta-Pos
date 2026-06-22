@@ -67,8 +67,8 @@
     "build": "craco build",
     "test": "craco test",
     "electron:dev": "concurrently -k \"set BROWSER=none&& npm start\" \"wait-on http://localhost:3000 && set ELECTRON_DEV=true&& electron ../electron/main.js\"",
-    "electron:build": "npm run build && electron-builder --win --x64",
-    "electron:pack": "electron-builder --win --x64 --dir"
+    "electron:build": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& npm run build && electron-builder --win --x64",
+    "electron:pack": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --win --x64 --dir"
   },
   "build": {
     "extends": null,
@@ -81,7 +81,13 @@
     },
     "files": [
       "build/**/*",
-      { "from": "../electron", "to": "electron", "filter": ["**/*"] },
+      {
+        "from": "../electron",
+        "to": "electron",
+        "filter": [
+          "**/*"
+        ]
+      },
       "!node_modules",
       "!src",
       "!public"
@@ -107,19 +113,14 @@
     "win": {
       "target": [
         {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
           "target": "nsis",
           "arch": [
             "x64"
           ]
         }
       ],
-      "icon": "../electron/icon.ico"
+      "icon": "../electron/icon.ico",
+      "verifyUpdateCodeSignature": false
     },
     "nsis": {
       "oneClick": false,
@@ -153,6 +154,7 @@
     "concurrently": "^8.2.2",
     "electron": "^29.4.6",
     "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2",
     "eslint": "9.23.0",
     "eslint-plugin-import": "2.31.0",
     "eslint-plugin-jsx-a11y": "6.10.2",

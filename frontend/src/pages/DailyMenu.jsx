@@ -6,12 +6,14 @@ import { Input } from "../components/ui/input";
 import { Switch } from "../components/ui/switch";
 import { Save, Trash2, Play, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function DailyMenu() {
   const [menu, setMenu] = useState([]);
   const [categories, setCategories] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [templateName, setTemplateName] = useState("");
+  const { t } = useLanguage();
 
   const refresh = async () => {
     const [m, c, t] = await Promise.all([
@@ -43,24 +45,24 @@ export default function DailyMenu() {
   };
 
   const saveTemplate = async () => {
-    if (!templateName.trim()) return toast.error("Name required");
+    if (!templateName.trim()) return toast.error(t("save_template_error"));
     const active = menu.filter(m => m.available).map(m => m.id);
     await api.post("/templates", { name: templateName, item_ids: active });
-    toast.success(`Saved template "${templateName}"`);
+    toast.success(`${t("template_saved")}: "${templateName}"`);
     setTemplateName("");
     refresh();
   };
 
-  const activate = async (t) => {
-    if (!window.confirm(`Are you sure?\n\nActivate "${t.name}"?\n\nCurrent active menu will be replaced.`)) return;
-    await api.post(`/templates/${t.id}/activate`);
-    toast.success(`Activated "${t.name}" — ${t.item_ids.length} items live`);
+  const activate = async (tpl) => {
+    if (!window.confirm(t("confirm_activate_template").replace("{name}", tpl.name))) return;
+    await api.post(`/templates/${tpl.id}/activate`);
+    toast.success(`${t("template_activated")}: "${tpl.name}" — ${tpl.item_ids.length} ${t("items")} ${t("active")}`);
     refresh();
   };
 
-  const removeTemplate = async (t) => {
-    if (!window.confirm(`Delete template "${t.name}"?`)) return;
-    await api.delete(`/templates/${t.id}`);
+  const removeTemplate = async (tpl) => {
+    if (!window.confirm(t("confirm_delete_template").replace("{name}", tpl.name))) return;
+    await api.delete(`/templates/${tpl.id}`);
     refresh();
   };
 
@@ -73,10 +75,10 @@ export default function DailyMenu() {
         <div>
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{today}</div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight flex items-center gap-2">
-            <CalendarDays className="w-7 h-7 text-terracotta" /> Daily Menu
+            <CalendarDays className="w-7 h-7 text-terracotta" /> {t("nav_daily_menu")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Toggle what&apos;s available today. <span className="text-foreground font-semibold">{activeCount}</span> items live on the counter.
+            {t("daily_menu_subtext")} <span className="text-foreground font-semibold">{activeCount}</span> {t("active_items")}.
           </p>
         </div>
       </div>
@@ -84,28 +86,28 @@ export default function DailyMenu() {
       <Card className="p-4 border-border shadow-none mb-6 bg-terracotta/5 border-terracotta/30">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <div className="text-sm font-semibold">Save current selection as a template</div>
-            <div className="text-xs text-muted-foreground mt-1">e.g. <i>Monday menu</i>, <i>Tuesday menu</i>, <i>Festival special</i></div>
+            <div className="text-sm font-semibold">{t("save_as_template_title")}</div>
+            <div className="text-xs text-muted-foreground mt-1">{t("save_as_template_sub")}</div>
           </div>
           <div className="flex gap-2">
             <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)}
-              placeholder="Template name" className="w-56 bg-white" data-testid="template-name" />
+              placeholder={t("template_name_placeholder")} className="w-56 bg-white" data-testid="template-name" />
             <Button onClick={saveTemplate} className="bg-terracotta hover:bg-terracotta-hover text-white" data-testid="save-template-btn">
-              <Save className="w-4 h-4 mr-2" /> Save template
+              <Save className="w-4 h-4 mr-2" /> {t("save_template_btn")}
             </Button>
           </div>
         </div>
 
         {templates.length > 0 && (
           <div className="mt-4 pt-4 border-t border-terracotta/20">
-            <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-2">Saved templates</div>
+            <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-2">{t("templates")}</div>
             <div className="flex flex-wrap gap-2" data-testid="templates-list">
-              {templates.map((t) => (
-                <div key={t.id} className="flex items-center gap-1 bg-white border border-border rounded-md pl-3 pr-1 py-1" data-testid={`template-${t.id}`}>
-                  <span className="text-sm font-medium">{t.name}</span>
-                  <span className="text-xs text-muted-foreground font-mono">({t.item_ids.length})</span>
-                  <button onClick={() => activate(t)} className="p-1 ml-1 text-forest hover:bg-forest/10 rounded-md" title="Activate" data-testid={`activate-${t.id}`}><Play className="w-3.5 h-3.5" /></button>
-                  <button onClick={() => removeTemplate(t)} className="p-1 text-muted-foreground hover:text-destructive rounded-md" title="Delete" data-testid={`del-template-${t.id}`}><Trash2 className="w-3.5 h-3.5" /></button>
+              {templates.map((tpl) => (
+                <div key={tpl.id} className="flex items-center gap-1 bg-white border border-border rounded-md pl-3 pr-1 py-1" data-testid={`template-${tpl.id}`}>
+                  <span className="text-sm font-medium">{tpl.name}</span>
+                  <span className="text-xs text-muted-foreground font-mono">({tpl.item_ids.length})</span>
+                  <button onClick={() => activate(tpl)} className="p-1 ml-1 text-forest hover:bg-forest/10 rounded-md" title="Activate" data-testid={`activate-${tpl.id}`}><Play className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => removeTemplate(tpl)} className="p-1 text-muted-foreground hover:text-destructive rounded-md" title="Delete" data-testid={`del-template-${tpl.id}`}><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
               ))}
             </div>
@@ -119,13 +121,13 @@ export default function DailyMenu() {
             <div className="px-5 py-3 border-b border-border flex items-center justify-between">
               <div className="font-display font-bold text-lg">{cat.name}</div>
               <div className="flex items-center gap-3 text-xs">
-                <span className="text-muted-foreground font-mono">{cat.items.filter(i => i.available).length}/{cat.items.length} active</span>
-                <button onClick={() => setAllInCategory(cat.items, true)} className="text-terracotta hover:underline" data-testid={`all-on-${cat.id}`}>All on</button>
-                <button onClick={() => setAllInCategory(cat.items, false)} className="text-muted-foreground hover:underline" data-testid={`all-off-${cat.id}`}>All off</button>
+                <span className="text-muted-foreground font-mono">{cat.items.filter(i => i.available).length}/{cat.items.length} {t("active")}</span>
+                <button onClick={() => setAllInCategory(cat.items, true)} className="text-terracotta hover:underline" data-testid={`all-on-${cat.id}`}>{t("all_on")}</button>
+                <button onClick={() => setAllInCategory(cat.items, false)} className="text-muted-foreground hover:underline" data-testid={`all-off-${cat.id}`}>{t("all_off")}</button>
               </div>
             </div>
             <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {cat.items.length === 0 && <div className="text-xs text-muted-foreground col-span-full p-4 text-center">No items in this category.</div>}
+              {cat.items.length === 0 && <div className="text-xs text-muted-foreground col-span-full p-4 text-center">{t("no_items_in_category")}</div>}
               {cat.items.map(m => (
                 <label key={m.id}
                   className={`flex items-center justify-between gap-3 p-3 rounded-md border transition-all cursor-pointer ${
@@ -134,7 +136,7 @@ export default function DailyMenu() {
                   data-testid={`daily-item-${m.id}`}>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold flex items-center gap-1.5 truncate">
-                      {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">Thali</span>}
+                      {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">{t("thali")}</span>}
                       {m.name}
                     </div>
                     <div className="text-xs text-muted-foreground font-mono">₹{m.price}</div>

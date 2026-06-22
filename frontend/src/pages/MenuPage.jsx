@@ -7,12 +7,16 @@ import { Switch } from "../components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "../components/ui/dialog";
 import { Plus, Trash2, Sparkles, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "../context/LanguageContext";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 export default function MenuPage() {
   const [categories, setCategories] = useState([]);
   const [menu, setMenu] = useState([]);
   const [editing, setEditing] = useState(null); // editing item or null
   const [catName, setCatName] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, action: null, title: "", message: "" });
+  const { t } = useLanguage();
 
   const refresh = async () => {
     const [c, m] = await Promise.all([api.get("/categories"), api.get("/menu")]);
@@ -48,7 +52,7 @@ export default function MenuPage() {
   };
 
   const save = async () => {
-    if (!editing.name || !editing.category_id) return toast.error("Name and category required");
+    if (!editing.name || !editing.category_id) return toast.error(t("save_item_error"));
     const payload = {
       name: editing.name,
       category_id: editing.category_id,
@@ -61,51 +65,112 @@ export default function MenuPage() {
     try {
       if (editing.id) await api.put(`/menu/${editing.id}`, payload);
       else await api.post("/menu", payload);
-      toast.success("Saved");
+      toast.success(t("settings_saved_success"));
       setEditing(null);
       refresh();
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "Failed");
+      toast.error(e?.response?.data?.detail || t("checkout_failed"));
     }
   };
 
   const remove = async (m) => {
-    if (!window.confirm(`Are you sure?\n\nDelete "${m.name}"?\n\nThis action cannot be undone.`)) return;
-    await api.delete(`/menu/${m.id}`);
-    refresh();
+    setConfirmDialog({
+      open: true,
+      title: "Delete Menu Item",
+      message: `Are you sure you want to delete "${m.name}"? This action cannot be undone.`,
+      action: async () => {
+        await api.delete(`/menu/${m.id}`);
+        refresh();
+        toast.success("Menu item deleted successfully");
+      }
+    });
   };
   const toggle = async (m) => { await api.patch(`/menu/${m.id}/toggle`); refresh(); };
 
   const removeCat = async (c) => {
-    if (!window.confirm(`Delete category "${c.name}"?`)) return;
-    await api.delete(`/categories/${c.id}`); refresh();
+    setConfirmDialog({
+      open: true,
+      title: "Delete Category",
+      message: `Are you sure you want to delete "${c.name}"? This action cannot be undone.`,
+      action: async () => {
+        await api.delete(`/categories/${c.id}`);
+        refresh();
+        toast.success("Category deleted successfully");
+      }
+    });
   };
 
   return (
     <div className="p-6 lg:p-10 max-w-6xl">
       <div className="mb-6 flex items-end justify-between flex-wrap gap-4">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Catalog</div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight">Menu</h1>
+          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("menu_database")}</div>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("nav_menu")}</h1>
         </div>
         <Button onClick={startNew} className="bg-terracotta hover:bg-terracotta-hover text-white" data-testid="add-item-btn">
-          <Plus className="w-4 h-4 mr-2" /> Add item
+          <Plus className="w-4 h-4 mr-2" /> {t("add_item")}
         </Button>
       </div>
 
-      <Card className="p-4 border-border shadow-none mb-6">
-        <div className="text-sm font-semibold mb-3">Categories</div>
-        <div className="flex flex-wrap gap-2 mb-3">
-          {categories.map(c => (
-            <span key={c.id} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-sand-subtle border border-border">
-              {c.name}
-              <button onClick={() => removeCat(c)} data-testid={`del-cat-${c.id}`} className="text-muted-foreground hover:text-destructive ml-1"><Trash2 className="w-3 h-3" /></button>
-            </span>
-          ))}
+      {/* Professional Categories Section */}
+      <Card className="p-6 border-border shadow-sm mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta">{t("categories")}</h2>
+            <p className="text-xs text-muted-foreground mt-1">Organize your menu items into categories</p>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {categories.length} {categories.length === 1 ? 'category' : 'categories'}
+          </div>
         </div>
-        <div className="flex gap-2 max-w-md">
-          <Input value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="New category (e.g. Sweets)" data-testid="cat-name" />
-          <Button onClick={addCategory} variant="outline" className="border-border" data-testid="add-cat-btn"><Plus className="w-4 h-4" /></Button>
+
+        {/* Categories Grid */}
+        {categories.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+            {categories.map(c => (
+              <div 
+                key={c.id} 
+                className="group relative flex items-center justify-between px-4 py-3 rounded-lg bg-gradient-to-br from-sand-subtle to-white border border-border hover:border-terracotta/50 hover:shadow-sm transition-all"
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="w-2 h-2 rounded-full bg-terracotta flex-shrink-0"></div>
+                  <span className="text-sm font-semibold text-foreground truncate">{c.name}</span>
+                </div>
+                <button 
+                  onClick={() => removeCat(c)} 
+                  data-testid={`del-cat-${c.id}`} 
+                  className="opacity-0 group-hover:opacity-100 ml-2 p-1.5 rounded-md text-muted-foreground hover:text-white hover:bg-destructive transition-all flex-shrink-0"
+                  title="Delete category"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 mb-4 border-2 border-dashed border-border rounded-lg">
+            <div className="text-muted-foreground text-sm">No categories yet. Add your first category below.</div>
+          </div>
+        )}
+
+        {/* Add Category Input */}
+        <div className="flex gap-2 pt-4 border-t border-border">
+          <Input 
+            value={catName} 
+            onChange={(e) => setCatName(e.target.value)} 
+            onKeyPress={(e) => e.key === 'Enter' && addCategory()}
+            placeholder={t("category_name_placeholder") || "e.g., Sabji, Dal, Rice"} 
+            className="flex-1"
+            data-testid="cat-name" 
+          />
+          <Button 
+            onClick={addCategory} 
+            disabled={!catName.trim()}
+            className="bg-terracotta hover:bg-terracotta-hover text-white px-6" 
+            data-testid="add-cat-btn"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Add
+          </Button>
         </div>
       </Card>
 
@@ -113,10 +178,10 @@ export default function MenuPage() {
         <table className="w-full text-sm">
           <thead className="bg-sand-subtle text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
             <tr>
-              <th className="text-left px-4 py-3">Item</th>
-              <th className="text-left px-4 py-3">Category</th>
-              <th className="text-right px-4 py-3">Price</th>
-              <th className="text-center px-4 py-3">Available</th>
+              <th className="text-left px-4 py-3">{t("item")}</th>
+              <th className="text-left px-4 py-3">{t("category_name")}</th>
+              <th className="text-right px-4 py-3">{t("price")}</th>
+              <th className="text-center px-4 py-3">{t("available")}</th>
               <th className="text-right px-4 py-3"></th>
             </tr>
           </thead>
@@ -125,7 +190,7 @@ export default function MenuPage() {
               <tr key={m.id} className="border-t border-border hover:bg-sand-subtle/40">
                 <td className="px-4 py-3 font-medium">
                   <div className="flex items-center gap-2">
-                    {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">Thali</span>}
+                    {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">{t("thali")}</span>}
                     {m.name}
                   </div>
                   {m.is_thali && m.thali_groups?.length > 0 && (
@@ -146,7 +211,7 @@ export default function MenuPage() {
                 </td>
               </tr>
             ))}
-            {menu.length === 0 && <tr><td colSpan="5" className="text-center text-muted-foreground py-8">No items yet.</td></tr>}
+            {menu.length === 0 && <tr><td colSpan="5" className="text-center text-muted-foreground py-8">{t("no_items_yet")}</td></tr>}
           </tbody>
         </table>
       </Card>
@@ -155,27 +220,27 @@ export default function MenuPage() {
         <Dialog open={true} onOpenChange={(o) => !o && setEditing(null)}>
           <DialogContent className="max-w-xl">
             <DialogHeader>
-              <DialogTitle className="font-display text-2xl">{editing.id ? "Edit item" : "New item"}</DialogTitle>
+              <DialogTitle className="font-display text-2xl">{editing.id ? t("edit_item") : t("new_item")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto py-2">
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">Name</label>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("name")}</label>
                 <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} data-testid="edit-name" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs uppercase tracking-wider text-muted-foreground">Category</label>
+                  <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("category_name")}</label>
                   <select value={editing.category_id} onChange={(e) => setEditing({ ...editing, category_id: e.target.value })}
                     className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1" data-testid="edit-cat">
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-wider text-muted-foreground">Price (₹)</label>
+                  <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("price")} (₹)</label>
                   <Input type="number" value={editing.price} onChange={(e) => {
                     const val = Number(e.target.value);
                     if (val < 0) {
-                      toast.error("Price cannot be negative");
+                      toast.error(t("discount_cannot_be_negative")); // reuse negative alert or custom
                       setEditing({ ...editing, price: 0 });
                     } else {
                       setEditing({ ...editing, price: e.target.value });
@@ -186,18 +251,18 @@ export default function MenuPage() {
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <label className="flex items-center gap-2 text-sm">
                   <Switch checked={editing.is_thali} onCheckedChange={(v) => setEditing({ ...editing, is_thali: v })} data-testid="edit-thali" />
-                  <Sparkles className="w-4 h-4 text-terracotta" /> This is a Thali
+                  <Sparkles className="w-4 h-4 text-terracotta" /> {t("this_is_thali")}
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <Switch checked={editing.available} onCheckedChange={(v) => setEditing({ ...editing, available: v })} data-testid="edit-avail" />
-                  Available
+                  {t("available")}
                 </label>
               </div>
 
               {editing.is_thali && (
                 <div className="bg-sand-subtle border border-border rounded-md p-3 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Thali rules</div>
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{t("thali_rules")}</div>
                     <Button size="sm" variant="outline" className="border-border h-7 text-xs"
                       onClick={() => setEditing({
                         ...editing,
@@ -207,7 +272,7 @@ export default function MenuPage() {
                         ],
                       })}
                       data-testid="add-thali-group">
-                      <Plus className="w-3 h-3 mr-1" /> Add rule
+                      <Plus className="w-3 h-3 mr-1" /> {t("add_rule")}
                     </Button>
                   </div>
                   {(editing.thali_groups || []).map((g, idx) => (
@@ -218,10 +283,10 @@ export default function MenuPage() {
                         next[idx] = { ...next[idx], category_id: e.target.value, label: g.label || (cat?.name || "") };
                         setEditing({ ...editing, thali_groups: next });
                       }} className="col-span-5 bg-white border border-border rounded-md px-2 py-1.5 text-sm">
-                        <option value="">Pick category…</option>
+                        <option value="">{t("pick_category_placeholder")}</option>
                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
-                      <Input className="col-span-4 h-8" placeholder="Label (e.g. Sabji)" value={g.label}
+                      <Input className="col-span-4 h-8" placeholder={t("rule_label_placeholder")} value={g.label}
                         onChange={(e) => {
                           const next = [...editing.thali_groups];
                           next[idx] = { ...next[idx], label: e.target.value };
@@ -243,20 +308,32 @@ export default function MenuPage() {
                     <div className="text-xs text-muted-foreground">No rules yet. E.g. <i>Pick 2 from Sabji, 1 from Dal</i>.</div>
                   )}
                   <div>
-                    <label className="text-xs uppercase tracking-wider text-muted-foreground">Fixed inclusions (text)</label>
+                    <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("fixed_inclusions_label")}</label>
                     <Input value={editing.thali_extras} onChange={(e) => setEditing({ ...editing, thali_extras: e.target.value })}
-                      placeholder="e.g. Roti (4), Rice, Salad, Papad, Buttermilk" data-testid="thali-extras" />
+                      placeholder={t("fixed_inclusions_placeholder")} data-testid="thali-extras" />
                   </div>
                 </div>
               )}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditing(null)} className="border-border">Cancel</Button>
-              <Button onClick={save} className="bg-terracotta hover:bg-terracotta-hover text-white" data-testid="save-item-btn">Save</Button>
+              <Button variant="outline" onClick={() => setEditing(null)} className="border-border">{t("cancel")}</Button>
+              <Button onClick={save} className="bg-terracotta hover:bg-terracotta-hover text-white" data-testid="save-item-btn">{t("save")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Custom Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onClose={() => setConfirmDialog({ ...confirmDialog, open: false })}
+        onConfirm={confirmDialog.action}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   );
 }
