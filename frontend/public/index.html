@@ -22,7 +22,33 @@
         Learn how to configure a non-root public URL by running `npm run build`.
         -->
         <title>Annapurna POS | Billing Counter</title>
-        <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
+        <script>
+          window.onerror = function(message, source, lineno, colno, error) {
+            var div = document.createElement('div');
+            div.className = 'crash-reporter';
+            div.style.position = 'fixed';
+            div.style.top = '0';
+            div.style.left = '0';
+            div.style.width = '100%';
+            div.style.height = '100%';
+            div.style.backgroundColor = '#ffffff';
+            div.style.color = '#ef4444';
+            div.style.padding = '24px';
+            div.style.zIndex = '999999';
+            div.style.overflow = 'auto';
+            div.style.fontFamily = 'monospace';
+            div.style.fontSize = '14px';
+            div.innerHTML = '<h2 style="font-size: 20px; font-weight: bold; margin-bottom: 12px;">🚨 Javascript Crash Detected</h2>' +
+                            '<p style="margin-bottom: 8px;"><strong>Message:</strong> ' + message + '</p>' +
+                            '<p style="margin-bottom: 8px;"><strong>Source:</strong> ' + source + '</p>' +
+                            '<p style="margin-bottom: 8px;"><strong>Line:</strong> ' + lineno + ' <strong>Col:</strong> ' + colno + '</p>' +
+                            '<p style="margin-top: 16px;"><strong>Stack Trace:</strong></p>' +
+                            '<pre style="background-color: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; overflow-x: auto; color: #334155; font-size: 12px;">' + (error && error.stack ? error.stack : 'N/A') + '</pre>';
+            document.body.appendChild(div);
+            return false;
+          };
+          window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);
+        </script>
     </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>

@@ -1,15 +1,19 @@
 import axios from "axios";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-export const API = `${BACKEND_URL}/api`;
+// Helper to retrieve the current backend URL
+export const getBackendUrl = () => {
+  const customUrl = localStorage.getItem("pos_backend_url");
+  if (customUrl) return customUrl;
+  return process.env.REACT_APP_BACKEND_URL || "";
+};
 
 const api = axios.create({
-  baseURL: API,
   withCredentials: true,
 });
 
-// Attach token if present
+// Interceptor to dynamically set baseURL and attach authentication token
 api.interceptors.request.use((cfg) => {
+  cfg.baseURL = `${getBackendUrl()}/api`;
   const t = localStorage.getItem("pos_token");
   if (t) cfg.headers.Authorization = `Bearer ${t}`;
   return cfg;
