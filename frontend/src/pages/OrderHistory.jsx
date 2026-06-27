@@ -81,16 +81,17 @@ export default function OrderHistory() {
             </tr>
           </thead>
           <tbody data-testid="orders-table">
-            {orders.map(o => {
+            {Array.isArray(orders) && orders.map(o => {
               let pm = o.payment_mode;
               if (o.payment_mode === "cash") pm = t("cash");
               if (o.payment_mode === "upi") pm = t("upi");
               if (o.payment_mode === "card") pm = t("card");
+              const orderItems = Array.isArray(o.items) ? o.items : [];
               return (
                 <tr key={o.id} className="border-t border-border hover:bg-sand-subtle/40" data-testid={`order-row-${o.id}`}>
                   <td className="px-4 py-3 font-mono font-semibold">#{o.receipt_no}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(o.paid_at).toLocaleString('en-IN')}</td>
-                  <td className="px-4 py-3 text-xs">{o.items.map(i => `${i.name} ×${i.qty}`).join(", ")}</td>
+                  <td className="px-4 py-3 text-xs">{orderItems.map(i => `${i.name} ×${i.qty}`).join(", ")}</td>
                   <td className="px-4 py-3"><span className="text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded-md bg-sand-subtle border border-border">{pm}</span></td>
                   <td className="px-4 py-3 text-right font-mono font-bold">₹{o.total}</td>
                   <td className="px-4 py-3 text-right">

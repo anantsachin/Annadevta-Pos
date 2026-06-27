@@ -180,7 +180,7 @@ export default function Billing() {
               }`}>
               {t("all_items")}
             </button>
-            {categories.map((c) => (
+            {Array.isArray(categories) && categories.map((c) => (
               <button key={c.id} onClick={() => setActiveCat(c.id)} data-testid={`cat-${c.id}`}
                 className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all border ${
                   activeCat === c.id 
@@ -197,7 +197,7 @@ export default function Billing() {
             <div className="col-span-full text-center py-16 text-muted-foreground border border-dashed border-border rounded-md bg-white/60">
               {t("no_items_match")}
             </div>
-          ) : filtered.map((item) => (
+          ) : Array.isArray(filtered) && filtered.map((item) => (
             <MenuTile key={item.id} item={item} onClick={() => handleItemClick(item)} />
           ))}
         </div>
@@ -268,7 +268,7 @@ export default function Billing() {
                 <ChefHat className="w-10 h-10 mb-3 text-muted-foreground/60" />
                 {t("thali_builder_start_bill")}
               </div>
-            ) : cart.map((line) => (
+            ) : Array.isArray(cart) && cart.map((line) => (
               <CartLine
                 key={line._key}
                 line={line}

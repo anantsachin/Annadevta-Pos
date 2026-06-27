@@ -161,7 +161,7 @@ export default function Layout() {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {visibleNav.map((n) => (
+          {Array.isArray(visibleNav) && visibleNav.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end} data-testid={n.testid}
               className={({ isActive }) => 
                 `flex items-center justify-between px-4 py-3.5 rounded-lg text-[15px] font-medium transition-all ${
