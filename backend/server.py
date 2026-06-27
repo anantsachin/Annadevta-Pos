@@ -73,15 +73,19 @@ async def get_current_user(request: Request) -> dict:
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
     if not token:
+        print("Auth failed: No token provided in cookies or header")
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:
+        print("Auth failed: Token expired")
         raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
+        print(f"Auth failed: Invalid token - {e}")
         raise HTTPException(status_code=401, detail="Invalid token")
     user = await master_db.users.find_one({"id": payload["sub"]}, {"_id": 0, "password_hash": 0})
     if not user:
+        print(f"Auth failed: User not found in DB for sub {payload.get('sub')}")
         raise HTTPException(status_code=401, detail="User not found")
     return user
 
@@ -1693,12 +1697,7 @@ async def export_inventory_report(
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        # Electron file:// renderer makes requests from null origin in some versions
-        "null",
-    ],
+    allow_origin_regex=".*",
     allow_methods=["*"],
     allow_headers=["*"],
 )
