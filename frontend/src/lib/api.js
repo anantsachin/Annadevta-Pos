@@ -7,6 +7,11 @@ export const getBackendUrl = () => {
   return process.env.REACT_APP_BACKEND_URL || "";
 };
 
+// Object that converts to the dynamic API string when used in template strings
+export const API = {
+  toString: () => `${getBackendUrl()}/api`
+};
+
 const api = axios.create({
   withCredentials: true,
 });
