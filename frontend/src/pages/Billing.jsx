@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Search, Banknote, CreditCard, Smartphone, Printer, ChefHat, ShoppingCart, X } from "lucide-react";
+import { Search, Banknote, CreditCard, Smartphone, Printer, ChefHat, ShoppingCart, X, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { printReceipt } from "../lib/receipt";
 import ThaliBuilder from "../components/ThaliBuilder";
@@ -12,6 +12,9 @@ import { MenuTile } from "../components/MenuTile";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import ReceiptPreview from "../components/ReceiptPreview";
+import { offlineStorage } from "../lib/offlineStorage";
+import { syncQueue } from "../lib/syncQueue";
+import { useOnlineStatus } from "../lib/offlineManager";
 
 export default function Billing() {
   const [categories, setCategories] = useState([]);
@@ -26,6 +29,7 @@ export default function Billing() {
   const { user } = useAuth();
   const { language, changeLanguage, t } = useLanguage();
   const { cart, discount, setDiscount, addLine, updateQty, removeLine, clear, totals } = useCart();
+  const isOnline = useOnlineStatus();
 
   const refresh = useCallback(async () => {
     try {
@@ -37,11 +41,29 @@ export default function Billing() {
       setCategories(c.data);
       setMenu(m.data);
       setSettings(s.data);
+      // Cache data for offline use
+      offlineStorage.saveCategories(c.data);
+      offlineStorage.saveMenu(m.data);
+      offlineStorage.saveSettings(s.data);
       if (s.data && s.data.language && !localStorage.getItem("pos_language")) {
         changeLanguage(s.data.language);
       }
     } catch (e) {
-      console.error("Failed to refresh billing data:", e);
+      // Network error — load from cache
+      if (!e.response) {
+        const cachedCats = offlineStorage.loadCategories();
+        const cachedMenu = offlineStorage.loadMenu();
+        const cachedSettings = offlineStorage.loadSettings();
+        if (cachedMenu.length) {
+          setCategories(cachedCats);
+          setMenu(cachedMenu);
+          setSettings(cachedSettings);
+        } else {
+          console.error("No cached data and server unreachable");
+        }
+      } else {
+        console.error("Failed to refresh billing data:", e);
+      }
     }
   }, [changeLanguage]);
 
@@ -77,12 +99,36 @@ export default function Billing() {
       toast.error(t("no_items_in_cart"));
       return;
     }
-    try {
-      const payload = {
-        items: cart.map(({ _key, ...rest }) => rest),
+    const payload = {
+      items: cart.map(({ _key, ...rest }) => rest),
+      discount: totals.discount,
+      payment_mode: mode,
+    };
+
+    if (!isOnline) {
+      // Offline: save to sync queue and show local receipt
+      const queued = syncQueue.enqueue(payload);
+      const offlineOrder = {
+        receipt_no: queued.id,
+        items: payload.items,
+        subtotal: totals.subtotal,
+        tax: totals.tax,
         discount: totals.discount,
+        total: totals.total,
         payment_mode: mode,
+        created_at: new Date().toISOString(),
+        _offline: true,
       };
+      toast.warning(`📵 Offline — order saved locally. Will sync when online.`);
+      if (settings?.auto_print !== false) {
+        printReceipt({ order: offlineOrder, settings });
+      }
+      clear();
+      setShowCartMobile(false);
+      return;
+    }
+
+    try {
       const { data } = await api.post("/orders", payload);
       toast.success(`${t("checkout_success")} · #${data.receipt_no} · ₹${data.total} (${mode.toUpperCase()})`);
       if (settings?.auto_print !== false) {
@@ -92,9 +138,17 @@ export default function Billing() {
       setShowCartMobile(false);
       refresh(); // Reload menu with updated stock
     } catch (e) {
-      toast.error(e?.response?.data?.detail || t("checkout_failed"));
+      // Network error mid-checkout — queue the order
+      if (!e.response) {
+        const queued = syncQueue.enqueue(payload);
+        toast.warning(`📵 Server unreachable — order queued for sync.`);
+        clear();
+        setShowCartMobile(false);
+      } else {
+        toast.error(e?.response?.data?.detail || t("checkout_failed"));
+      }
     }
-  }, [cart, totals.discount, settings, clear, refresh, t]);
+  }, [cart, totals, isOnline, settings, clear, refresh, t]);
 
   return (
     <div className="h-[calc(100vh-3.5rem)] lg:h-screen grid grid-cols-12 gap-0 overflow-hidden relative">

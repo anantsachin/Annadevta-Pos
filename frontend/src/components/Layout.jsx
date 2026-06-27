@@ -1,10 +1,11 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Receipt, CalendarDays, BookOpen, ListOrdered, LayoutDashboard, FileBarChart, Settings as SettingsIcon, LogOut, Package, Briefcase, Users, Menu, X } from "lucide-react";
+import { Receipt, CalendarDays, BookOpen, ListOrdered, LayoutDashboard, FileBarChart, Settings as SettingsIcon, LogOut, Package, Briefcase, Users, Menu, X, WifiOff, RefreshCw, CheckCircle2, CloudOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import PasswordChangeDialog from "./PasswordChangeDialog";
 import api from "../lib/api";
+import { useSyncManager } from "../lib/offlineManager";
 
 const NAV_ITEMS = [
   { to: "/", key: "nav_billing", label: "Billing", icon: Receipt, hero: true, end: true, testid: "nav-billing" },
@@ -28,7 +29,7 @@ function navClasses({ isActive, hero }) {
 }
 
 export default function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, isOffline } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,6 +37,7 @@ export default function Layout() {
   const [settings, setSettings] = useState(null);
   const [alertCount, setAlertCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isOnline, syncStatus, pendingCount, triggerSync } = useSyncManager();
   
   const handleLogout = async () => { await logout(); navigate("/login"); };
 
@@ -56,6 +58,8 @@ export default function Layout() {
         const { data } = await api.get("/settings");
         console.log("Settings loaded:", data);
         setSettings(data);
+        // Also cache settings for offline use
+        try { const { offlineStorage } = await import("../lib/offlineStorage"); offlineStorage.saveSettings(data); } catch (_) {}
       } catch (e) {
         console.error("Failed to load settings:", e);
       }
@@ -221,7 +225,40 @@ export default function Layout() {
       </aside>
 
       {/* Main Content - Offset by sidebar width on desktop */}
-      <main className="flex-1 lg:ml-[280px] overflow-auto min-w-0">
+      <main className="flex-1 lg:ml-[280px] overflow-auto min-w-0 flex flex-col">
+        {/* Sync / Offline Status Bar */}
+        {(!isOnline || pendingCount > 0 || syncStatus === "syncing" || syncStatus === "synced" || syncStatus === "error") && (
+          <div className={`w-full px-4 py-2 flex items-center justify-between text-xs font-semibold z-20 ${
+            !isOnline
+              ? "bg-red-500 text-white"
+              : syncStatus === "syncing"
+              ? "bg-amber-400 text-amber-900"
+              : syncStatus === "synced"
+              ? "bg-green-500 text-white"
+              : syncStatus === "error"
+              ? "bg-red-500 text-white"
+              : "bg-amber-100 text-amber-800"
+          }`}>
+            <div className="flex items-center gap-2">
+              {!isOnline ? (
+                <><WifiOff className="w-3.5 h-3.5" /> OFFLINE MODE{pendingCount > 0 ? ` · ${pendingCount} order${pendingCount > 1 ? "s" : ""} queued` : ""}</>
+              ) : syncStatus === "syncing" ? (
+                <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Syncing {pendingCount} order{pendingCount > 1 ? "s" : ""}…</>
+              ) : syncStatus === "synced" ? (
+                <><CheckCircle2 className="w-3.5 h-3.5" /> All orders synced!</>
+              ) : syncStatus === "error" ? (
+                <><CloudOff className="w-3.5 h-3.5" /> Sync failed — will retry</>
+              ) : (
+                <><CloudOff className="w-3.5 h-3.5" /> {pendingCount} order{pendingCount > 1 ? "s" : ""} pending sync</>
+              )}
+            </div>
+            {isOnline && pendingCount > 0 && syncStatus === "idle" && (
+              <button onClick={triggerSync} className="underline underline-offset-2 hover:no-underline">
+                Sync now
+              </button>
+            )}
+          </div>
+        )}
         <Outlet />
       </main>
 
