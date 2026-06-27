@@ -20,7 +20,25 @@ function MenuTileComponent({ item, onClick }) {
         {item.is_thali && <Sparkles className="w-3.5 h-3.5 text-terracotta" />}
       </div>
       <div className="mt-2 text-sm font-semibold text-foreground leading-tight">{item.name}</div>
-      <div className="mt-2 font-mono text-base font-bold text-terracotta">₹{item.price}</div>
+      <div className="mt-2 flex items-center justify-between">
+        <div className="font-mono text-base font-bold text-terracotta">₹{item.price}</div>
+      </div>
+      {item.current_stock !== null && item.current_stock !== undefined && (
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-[10px] text-muted-foreground font-medium">Available Stock:</span>
+          {item.current_stock <= 0 ? (
+            <span className="text-[10px] font-mono font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded">Out of Stock</span>
+          ) : (
+            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+              item.current_stock <= (item.reorder_level || 10) ? "bg-red-100 text-red-600" :
+              item.current_stock <= (item.reorder_level || 10) * 1.5 ? "bg-orange-100 text-orange-600" :
+              "bg-green-100 text-green-700"
+            }`}>
+              {Number(item.current_stock).toFixed(3)} kg
+            </span>
+          )}
+        </div>
+      )}
     </button>
   );
 }

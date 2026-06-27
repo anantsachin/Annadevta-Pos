@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { Button } from "../components/ui/button";
@@ -46,22 +46,22 @@ export default function Login() {
             <Receipt className="w-5 h-5" />
             <span className="font-display font-extrabold tracking-tight text-lg">ANNAPURNA</span>
           </div>
-          <div className="absolute bottom-12 left-12 flex items-center gap-3 opacity-90">
-            <img src="/tranferentlogo.png" alt="Career Craftly" className="h-8" />
-            <div className="text-xs">
-              <div className="font-semibold">Powered by Career Craftly</div>
-              <div className="opacity-75">Crafting Digital Success, Intelligently</div>
-            </div>
-          </div>
           <div>
             <div className="text-[10px] uppercase tracking-[0.3em] mb-3 opacity-80">A billing counter for thali kitchens</div>
             <h1 className="font-display text-4xl lg:text-5xl font-extrabold leading-tight max-w-md">
               Punch the bill.<br />
               <span className="text-terracotta-light">Feed the next guest.</span>
             </h1>
-            <p className="mt-4 text-sm opacity-80 max-w-sm">
+            <p className="mt-4 text-sm opacity-80 max-w-sm mb-12">
               Tap, total, print. Built for the speed of a real thali counter.
             </p>
+            <div className="flex items-center gap-3 opacity-90">
+              <img src="/tranferentlogo.png" alt="Career Craftly" className="h-8" />
+              <div className="text-xs">
+                <div className="font-semibold">Powered by Career Craftly</div>
+                <div className="opacity-75">Crafting Digital Success, Intelligently</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -88,8 +88,11 @@ export default function Login() {
               {t("sign_in")}
             </Button>
           </form>
-          <div className="mt-6 text-xs text-muted-foreground">
+          <div className="mt-6 text-xs text-muted-foreground border-b border-border pb-4">
             Demo: <code className="font-mono">admin@pos.com / admin123</code> &nbsp;·&nbsp; <code className="font-mono">cashier@pos.com / cashier123</code>
+          </div>
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            Don't have an account? <Link to="/signup" className="text-terracotta hover:underline font-medium">Sign up</Link>
           </div>
         </Card>
       </div>

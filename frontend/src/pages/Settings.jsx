@@ -27,7 +27,7 @@ export default function Settings() {
           changeLanguage(r.data.language);
         }
       }
-    });
+    }).catch(console.error);
     // Load last backup timestamp from localStorage
     const lastBackupTime = localStorage.getItem("lastBackupTime");
     if (lastBackupTime && mounted) {

@@ -45,8 +45,14 @@ export function AuthProvider({ children }) {
     setUser(false);
   };
 
+  const signup = async (email, password, restaurant_name) => {
+    const { data } = await api.post("/auth/signup", { email, password, restaurant_name });
+    // After signup, we log them in automatically
+    return await login(email, password);
+  };
+
   return (
-    <AuthCtx.Provider value={{ user, ready, login, googleSession, logout, setUser }}>
+    <AuthCtx.Provider value={{ user, ready, login, signup, googleSession, logout, setUser }}>
       {children}
     </AuthCtx.Provider>
   );

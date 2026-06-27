@@ -247,6 +247,14 @@ export default function MenuPage() {
                     }
                   }} data-testid="edit-price" />
                 </div>
+                <div className="col-span-2">
+                  <label className="text-xs uppercase tracking-wider text-muted-foreground">Inventory Deduction / Portion Weight (kg)</label>
+                  <Input type="number" step="0.001" placeholder="0.250" value={editing.portion_weight_kg || ""} onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setEditing({ ...editing, portion_weight_kg: val < 0 ? 0 : val });
+                  }} />
+                  <p className="text-[10px] text-muted-foreground mt-1">If set to 0, selling this item won't automatically deduct bulk inventory stock.</p>
+                </div>
               </div>
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <label className="flex items-center gap-2 text-sm">

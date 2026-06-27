@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Search, Banknote, CreditCard, Smartphone, Printer, ChefHat } from "lucide-react";
+import { Search, Banknote, CreditCard, Smartphone, Printer, ChefHat, ShoppingCart, X } from "lucide-react";
 import { toast } from "sonner";
 import { printReceipt } from "../lib/receipt";
 import ThaliBuilder from "../components/ThaliBuilder";
@@ -21,22 +21,27 @@ export default function Billing() {
   const [search, setSearch] = useState("");
   const [thaliFor, setThaliFor] = useState(null);
   const [activeTab, setActiveTab] = useState("cart"); // "cart" or "receipt"
+  const [showCartMobile, setShowCartMobile] = useState(false);
 
   const { user } = useAuth();
   const { language, changeLanguage, t } = useLanguage();
   const { cart, discount, setDiscount, addLine, updateQty, removeLine, clear, totals } = useCart();
 
   const refresh = useCallback(async () => {
-    const [c, m, s] = await Promise.all([
-      api.get("/categories"),
-      api.get("/menu"),
-      api.get("/settings"),
-    ]);
-    setCategories(c.data);
-    setMenu(m.data);
-    setSettings(s.data);
-    if (s.data && s.data.language && !localStorage.getItem("pos_language")) {
-      changeLanguage(s.data.language);
+    try {
+      const [c, m, s] = await Promise.all([
+        api.get("/categories"),
+        api.get("/menu"),
+        api.get("/settings"),
+      ]);
+      setCategories(c.data);
+      setMenu(m.data);
+      setSettings(s.data);
+      if (s.data && s.data.language && !localStorage.getItem("pos_language")) {
+        changeLanguage(s.data.language);
+      }
+    } catch (e) {
+      console.error("Failed to refresh billing data:", e);
     }
   }, [changeLanguage]);
 
@@ -63,6 +68,7 @@ export default function Billing() {
       qty: 1,
       tax_rate: settings?.gst_rate ?? 5.0,
       is_thali: false,
+      current_stock: item.current_stock,
     });
   }, [addLine, settings]);
 
@@ -83,47 +89,54 @@ export default function Billing() {
         printReceipt({ order: data, settings });
       }
       clear();
+      setShowCartMobile(false);
+      refresh(); // Reload menu with updated stock
     } catch (e) {
       toast.error(e?.response?.data?.detail || t("checkout_failed"));
     }
-  }, [cart, totals.discount, settings, clear, t]);
+  }, [cart, totals.discount, settings, clear, refresh, t]);
 
   return (
-    <div className="h-screen grid grid-cols-12 gap-0 overflow-hidden">
-      {/* Categories */}
-      <div className="col-span-2 border-r border-border bg-white p-3 overflow-y-auto">
-        <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground px-2 mb-2 mt-1">{t("categories")}</div>
-        <button onClick={() => setActiveCat("all")} data-testid="cat-all"
-          className={`w-full text-left px-3 py-2.5 rounded-md text-sm font-medium mb-1 transition-all ${
-            activeCat === "all" ? "bg-terracotta text-white" : "hover:bg-sand-subtle"
-          }`}>
-          {t("all_items")}
-        </button>
-        {categories.map((c) => (
-          <button key={c.id} onClick={() => setActiveCat(c.id)} data-testid={`cat-${c.id}`}
-            className={`w-full text-left px-3 py-2.5 rounded-md text-sm font-medium mb-1 transition-all ${
-              activeCat === c.id ? "bg-terracotta text-white" : "hover:bg-sand-subtle"
-            }`}>
-            {c.name}
-          </button>
-        ))}
-      </div>
-
+    <div className="h-[calc(100vh-3.5rem)] lg:h-screen grid grid-cols-12 gap-0 overflow-hidden relative">
       {/* Items grid */}
-      <div className="col-span-6 p-4 overflow-y-auto bg-sand-app">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("thali_billing_counter")}</div>
-            <h1 className="font-display text-2xl font-extrabold tracking-tight">{t("tap_to_bill")}</h1>
+      <div className="col-span-12 lg:col-span-8 p-4 overflow-y-auto bg-sand-app h-full">
+        <div className="flex flex-col gap-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("thali_billing_counter")}</div>
+              <h1 className="font-display text-2xl font-extrabold tracking-tight">{t("tap_to_bill")}</h1>
+            </div>
+            <div className="relative w-full max-w-sm">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input data-testid="menu-search" placeholder={t("search_menu")}
+                value={search} onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 bg-white" />
+            </div>
           </div>
-          <div className="relative w-full max-w-sm">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input data-testid="menu-search" placeholder={t("search_menu")}
-              value={search} onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-white" />
+
+          {/* Horizontal Categories Bar */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
+            <button onClick={() => setActiveCat("all")} data-testid="cat-all"
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all border ${
+                activeCat === "all" 
+                  ? "bg-terracotta text-white border-terracotta shadow-sm" 
+                  : "bg-white hover:bg-sand-subtle border-border text-muted-foreground hover:text-foreground"
+              }`}>
+              {t("all_items")}
+            </button>
+            {categories.map((c) => (
+              <button key={c.id} onClick={() => setActiveCat(c.id)} data-testid={`cat-${c.id}`}
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all border ${
+                  activeCat === c.id 
+                    ? "bg-terracotta text-white border-terracotta shadow-sm" 
+                    : "bg-white hover:bg-sand-subtle border-border text-muted-foreground hover:text-foreground"
+                }`}>
+                {c.name}
+              </button>
+            ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" data-testid="menu-grid">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-20 lg:pb-0" data-testid="menu-grid">
           {filtered.length === 0 ? (
             <div className="col-span-full text-center py-16 text-muted-foreground border border-dashed border-border rounded-md bg-white/60">
               {t("no_items_match")}
@@ -134,21 +147,39 @@ export default function Billing() {
         </div>
       </div>
 
-      {/* Cart */}
-      <div className="col-span-4 border-l border-border bg-white flex flex-col">
+      {/* Mobile Cart Backdrop */}
+      {showCartMobile && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/40 z-30 backdrop-blur-sm transition-opacity duration-300"
+          onClick={() => setShowCartMobile(false)}
+        />
+      )}
+
+      {/* Cart Panel - Slide-in on mobile, Sidebar column on desktop */}
+      <div className={`fixed inset-y-0 right-0 z-40 w-full sm:w-[420px] border-l border-border bg-white flex flex-col transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-auto lg:col-span-4 ${
+        showCartMobile ? "translate-x-0" : "translate-x-full"
+      }`}>
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div>
             <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("current_bill")}</div>
             <div className="font-display text-lg font-bold">{cart.length} {cart.length === 1 ? t("line") : t("lines")}</div>
           </div>
-          {cart.length > 0 && (
-            <button onClick={() => {
-              if (window.confirm(t("confirm_clear_cart"))) {
-                clear();
-              }
-            }} data-testid="clear-cart"
-              className="text-xs text-muted-foreground hover:text-destructive">{t("clear")}</button>
-          )}
+          <div className="flex items-center gap-4">
+            {cart.length > 0 && (
+              <button onClick={() => {
+                if (window.confirm(t("confirm_clear_cart"))) {
+                  clear();
+                }
+              }} data-testid="clear-cart"
+                className="text-xs text-muted-foreground hover:text-destructive">{t("clear")}</button>
+            )}
+            <button 
+              onClick={() => setShowCartMobile(false)}
+              className="lg:hidden p-1.5 rounded-md hover:bg-sand-subtle text-foreground transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="flex border-b border-border text-xs">
@@ -267,6 +298,19 @@ export default function Billing() {
           </div>
         </div>
       </div>
+
+      {/* Floating Cart Button for Mobile */}
+      <button
+        onClick={() => setShowCartMobile(true)}
+        className="lg:hidden fixed bottom-6 right-6 bg-terracotta text-white p-4 rounded-full shadow-lg z-30 flex items-center gap-2 hover:bg-terracotta/90 transition-all active:scale-95 duration-150"
+      >
+        <ShoppingCart className="w-6 h-6" />
+        {cart.length > 0 && (
+          <span className="bg-white text-terracotta text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
+            {cart.length}
+          </span>
+        )}
+      </button>
 
       <ThaliBuilder
         open={!!thaliFor}

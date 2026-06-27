@@ -31,7 +31,7 @@ export default function Dashboard() {
   ], [t]);
 
   useEffect(() => {
-    const fetchSummary = () => api.get("/dashboard/summary").then((r) => setData(r.data));
+    const fetchSummary = () => api.get("/dashboard/summary").then((r) => setData(r.data)).catch(console.error);
     fetchSummary();
     const t = setInterval(fetchSummary, 20000);
     return () => clearInterval(t);

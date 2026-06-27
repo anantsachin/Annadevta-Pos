@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Receipt, CalendarDays, BookOpen, ListOrdered, LayoutDashboard, FileBarChart, Settings as SettingsIcon, LogOut } from "lucide-react";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Receipt, CalendarDays, BookOpen, ListOrdered, LayoutDashboard, FileBarChart, Settings as SettingsIcon, LogOut, Package, Briefcase, Users, Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import PasswordChangeDialog from "./PasswordChangeDialog";
@@ -13,7 +13,10 @@ const NAV_ITEMS = [
   { to: "/menu", key: "nav_menu", label: "Menu", icon: BookOpen, roles: ["admin"], testid: "nav-menu" },
   { to: "/dashboard", key: "nav_dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin"], testid: "nav-dashboard" },
   { to: "/reports", key: "nav_reports", label: "Reports", icon: FileBarChart, roles: ["admin"], testid: "nav-reports" },
+  { to: "/staff", key: "nav_staff", label: "System Users", icon: Users, roles: ["admin"], testid: "nav-staff" },
   { to: "/settings", key: "nav_settings", label: "Settings", icon: SettingsIcon, roles: ["admin"], testid: "nav-settings" },
+  { to: "/inventory", key: "nav_inventory", label: "Inventory", icon: Package, roles: ["admin"], testid: "nav-inventory" },
+  { to: "/payroll", key: "nav_payroll", label: "Payroll & HR", icon: Briefcase, roles: ["admin"], testid: "nav-payroll" },
 ];
 
 function navClasses({ isActive, hero }) {
@@ -28,10 +31,18 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [settings, setSettings] = useState(null);
+  const [alertCount, setAlertCount] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const handleLogout = async () => { await logout(); navigate("/login"); };
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const visibleNav = useMemo(
     () => NAV_ITEMS.filter((n) => !n.roles || n.roles.includes(user?.role)),
@@ -49,8 +60,18 @@ export default function Layout() {
         console.error("Failed to load settings:", e);
       }
     };
+
+    const fetchAlerts = async () => {
+      if (user?.role === "admin") {
+        try {
+          const { data } = await api.get("/inventory/alerts/count");
+          setAlertCount(data.count);
+        } catch (e) { console.error("Failed to fetch alerts:", e); }
+      }
+    };
     
     fetchSettings();
+    fetchAlerts();
     
     // Listen for settings updates
     const handleSettingsUpdate = () => {
@@ -63,6 +84,7 @@ export default function Layout() {
     return () => {
       window.removeEventListener('settingsUpdated', handleSettingsUpdate);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check if this is first login (password hasn't been changed from default)
@@ -83,17 +105,54 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen flex bg-sand-app">
-      {/* Fixed Professional Sidebar */}
-      <aside className="w-[280px] h-screen fixed left-0 top-0 bg-white border-r border-border flex flex-col shadow-sm" data-testid="sidebar">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-sand-app">
+      {/* Mobile Top Header */}
+      <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-border sticky top-0 z-30 shadow-sm h-14">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="p-1.5 rounded-md hover:bg-sand-subtle text-foreground transition-all"
+            aria-label="Open menu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <div className="font-display font-extrabold text-xl tracking-tight">
+            {(settings?.app_name !== undefined && settings?.app_name !== null) ? settings.app_name : "Annapurna"}
+          </div>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-terracotta to-amber-600 flex items-center justify-center text-white font-bold text-sm shadow">
+          {user?.name?.charAt(0).toUpperCase()}
+        </div>
+      </header>
+
+      {/* Mobile Menu Drawer Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-sm transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Fixed/Drawer on mobile, Standard on desktop */}
+      <aside className={`w-[280px] h-screen fixed left-0 top-0 bg-white border-r border-border flex flex-col shadow-sm transition-transform duration-300 z-50 lg:translate-x-0 ${
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+      }`} data-testid="sidebar">
         {/* Header with Customizable Branding */}
-        <div className="px-6 py-6 border-b border-border">
-          <div className="font-display font-extrabold text-2xl tracking-tight">
-            {(settings?.app_name !== undefined && settings?.app_name !== null) ? settings.app_name : "Annapurna"}<span className="text-terracotta">.</span>
+        <div className="px-6 py-5 border-b border-border flex items-center justify-between">
+          <div>
+            <div className="font-display font-extrabold text-2xl tracking-tight">
+              {(settings?.app_name !== undefined && settings?.app_name !== null) ? settings.app_name : "Annapurna"}<span className="text-terracotta">.</span>
+            </div>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mt-1">
+              {(settings?.app_tagline !== undefined && settings?.app_tagline !== null) ? settings.app_tagline : t("thali_billing_counter")}
+            </div>
           </div>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mt-1">
-            {(settings?.app_tagline !== undefined && settings?.app_tagline !== null) ? settings.app_tagline : t("thali_billing_counter")}
-          </div>
+          <button 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="lg:hidden p-1.5 rounded-md hover:bg-sand-subtle text-foreground transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Navigation */}
@@ -101,7 +160,7 @@ export default function Layout() {
           {visibleNav.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end} data-testid={n.testid}
               className={({ isActive }) => 
-                `flex items-center gap-3 px-4 py-3.5 rounded-lg text-[15px] font-medium transition-all ${
+                `flex items-center justify-between px-4 py-3.5 rounded-lg text-[15px] font-medium transition-all ${
                   isActive && n.hero
                     ? 'bg-terracotta text-white shadow-sm' 
                     : isActive
@@ -111,8 +170,15 @@ export default function Layout() {
                     : 'text-foreground hover:bg-sand-subtle'
                 }`
               }>
-              <n.icon className="w-5 h-5 flex-shrink-0" />
-              <span>{t(n.key)}</span>
+              <div className="flex items-center gap-3">
+                <n.icon className="w-5 h-5 flex-shrink-0" />
+                <span>{t(n.key)}</span>
+              </div>
+              {n.key === "nav_inventory" && alertCount > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {alertCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -154,8 +220,8 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Main Content - Offset by sidebar width */}
-      <main className="flex-1 ml-[280px] overflow-auto min-w-0">
+      {/* Main Content - Offset by sidebar width on desktop */}
+      <main className="flex-1 lg:ml-[280px] overflow-auto min-w-0">
         <Outlet />
       </main>
 

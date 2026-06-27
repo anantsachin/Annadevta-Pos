@@ -59,6 +59,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
       bread_consumed: breadConsumed,
       extra_bread: extraBread,
       extra_bread_charge: extraBreadCharge,
+      current_stock: thali.current_stock,
     });
     onClose();
   };

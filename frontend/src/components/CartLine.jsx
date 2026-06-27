@@ -34,6 +34,11 @@ function CartLineComponent({ line, onInc, onDec, onRemove }) {
             ₹{line.price} × {line.qty} = ₹{(line.price * line.qty).toFixed(2)}
             {line.extra_bread_charge > 0 && <span className="text-amber-700"> + ₹{line.extra_bread_charge.toFixed(2)}</span>}
           </div>
+          {line.current_stock !== undefined && line.current_stock !== null && (
+            <div className="text-[11px] text-forest font-medium mt-1">
+              Available Stock: {line.current_stock % 1 !== 0 ? line.current_stock.toFixed(3) + ' kg' : line.current_stock}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <button onClick={onDec} data-testid={`dec-${line._key}`}
