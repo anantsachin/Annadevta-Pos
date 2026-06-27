@@ -38,6 +38,11 @@ export default function Billing() {
         api.get("/menu"),
         api.get("/settings"),
       ]);
+      
+      if (!Array.isArray(c.data) || !Array.isArray(m.data)) {
+        throw new Error("Invalid format received from server (expected arrays)");
+      }
+
       setCategories(c.data);
       setMenu(m.data);
       setSettings(s.data);
@@ -49,20 +54,16 @@ export default function Billing() {
         changeLanguage(s.data.language);
       }
     } catch (e) {
-      // Network error — load from cache
-      if (!e.response) {
-        const cachedCats = offlineStorage.loadCategories();
-        const cachedMenu = offlineStorage.loadMenu();
-        const cachedSettings = offlineStorage.loadSettings();
-        if (cachedMenu.length) {
-          setCategories(cachedCats);
-          setMenu(cachedMenu);
-          setSettings(cachedSettings);
-        } else {
-          console.error("No cached data and server unreachable");
-        }
+      // Network error or format error — load from cache
+      const cachedCats = offlineStorage.loadCategories();
+      const cachedMenu = offlineStorage.loadMenu();
+      const cachedSettings = offlineStorage.loadSettings();
+      if (cachedMenu && cachedMenu.length) {
+        setCategories(cachedCats);
+        setMenu(cachedMenu);
+        setSettings(cachedSettings);
       } else {
-        console.error("Failed to refresh billing data:", e);
+        console.error("No cached data and server unreachable:", e);
       }
     }
   }, [changeLanguage]);
@@ -71,7 +72,8 @@ export default function Billing() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return menu.filter((m) =>
+    const menuList = Array.isArray(menu) ? menu : [];
+    return menuList.filter((m) =>
       (activeCat === "all" || m.category_id === activeCat) &&
       (!q || m.name.toLowerCase().includes(q)) &&
       m.available

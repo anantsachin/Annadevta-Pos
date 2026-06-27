@@ -29,10 +29,16 @@ function load(key) {
 
 export const offlineStorage = {
   saveMenu: (data) => save(KEYS.MENU, data),
-  loadMenu: () => load(KEYS.MENU) || [],
+  loadMenu: () => {
+    const val = load(KEYS.MENU);
+    return Array.isArray(val) ? val : [];
+  },
 
   saveCategories: (data) => save(KEYS.CATEGORIES, data),
-  loadCategories: () => load(KEYS.CATEGORIES) || [],
+  loadCategories: () => {
+    const val = load(KEYS.CATEGORIES);
+    return Array.isArray(val) ? val : [];
+  },
 
   saveSettings: (data) => save(KEYS.SETTINGS, data),
   loadSettings: () => load(KEYS.SETTINGS) || null,
