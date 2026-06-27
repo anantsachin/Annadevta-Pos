@@ -6,6 +6,7 @@ import { Input } from "../components/ui/input";
 import { Download, FileSpreadsheet, FileText, BarChart3, Sparkles, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "../context/LanguageContext";
+import { safeArray } from "../lib/safeArray";
 
 const REPORT_TABS = [
   { key: "sales", label: "Daily Sales", icon: ShoppingBag },
@@ -43,19 +44,20 @@ export default function Reports() {
       const params = { from_date: fromIso, to_date: toIsoStr };
       if (tab === "sales") {
         const { data } = await api.get("/reports/sales", { params });
-        setRows(data); setThaliPicks([]);
+        setRows(safeArray(data)); setThaliPicks([]);
       } else if (tab === "products") {
         const { data } = await api.get("/reports/products", { params });
-        setRows(data); setThaliPicks([]);
+        setRows(safeArray(data)); setThaliPicks([]);
       } else {
         const { data } = await api.get("/reports/thalis", { params });
-        setRows(data.thalis); setThaliPicks(data.selection_picks || []);
+        setRows(safeArray(data?.thalis)); setThaliPicks(safeArray(data?.selection_picks));
       }
     } catch (e) {
       console.error("Report load failed", e);
-      toast.error(t("report_load_failed"));
+      setRows([]);
+      setThaliPicks([]);
     }
-  }, [tab, fromIso, toIsoStr, t]);
+  }, [tab, fromIso, toIsoStr]);
 
   useEffect(() => { fetch(); }, [fetch]);
 

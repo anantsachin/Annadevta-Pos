@@ -9,6 +9,7 @@ import { Plus, Trash2, Sparkles, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "../context/LanguageContext";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { safeArray } from "../lib/safeArray";
 
 export default function MenuPage() {
   const [categories, setCategories] = useState([]);
@@ -19,8 +20,13 @@ export default function MenuPage() {
   const { t } = useLanguage();
 
   const refresh = async () => {
-    const [c, m] = await Promise.all([api.get("/categories"), api.get("/menu")]);
-    setCategories(c.data); setMenu(m.data);
+    try {
+      const [c, m] = await Promise.all([api.get("/categories"), api.get("/menu")]);
+      setCategories(safeArray(c.data));
+      setMenu(safeArray(m.data));
+    } catch (e) {
+      console.error("MenuPage load failed:", e);
+    }
   };
   useEffect(() => { refresh(); }, []);
 
@@ -127,7 +133,7 @@ export default function MenuPage() {
         {/* Categories Grid */}
         {categories.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
-            {categories.map(c => (
+            {safeArray(categories).map(c => (
               <div 
                 key={c.id} 
                 className="group relative flex items-center justify-between px-4 py-3 rounded-lg bg-gradient-to-br from-sand-subtle to-white border border-border hover:border-terracotta/50 hover:shadow-sm transition-all"
@@ -186,7 +192,7 @@ export default function MenuPage() {
             </tr>
           </thead>
           <tbody data-testid="menu-table">
-            {menu.map(m => (
+            {safeArray(menu).map(m => (
               <tr key={m.id} className="border-t border-border hover:bg-sand-subtle/40">
                 <td className="px-4 py-3 font-medium">
                   <div className="flex items-center gap-2">
@@ -232,7 +238,7 @@ export default function MenuPage() {
                   <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("category_name")}</label>
                   <select value={editing.category_id} onChange={(e) => setEditing({ ...editing, category_id: e.target.value })}
                     className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1" data-testid="edit-cat">
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {safeArray(categories).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 <div>
@@ -292,7 +298,7 @@ export default function MenuPage() {
                         setEditing({ ...editing, thali_groups: next });
                       }} className="col-span-5 bg-white border border-border rounded-md px-2 py-1.5 text-sm">
                         <option value="">{t("pick_category_placeholder")}</option>
-                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        {safeArray(categories).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
                       <Input className="col-span-4 h-8" placeholder={t("rule_label_placeholder")} value={g.label}
                         onChange={(e) => {

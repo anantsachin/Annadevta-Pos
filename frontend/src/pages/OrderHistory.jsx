@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/
 import { printReceipt } from "../lib/receipt";
 import ReceiptPreview from "../components/ReceiptPreview";
 import { useLanguage } from "../context/LanguageContext";
+import { safeArray } from "../lib/safeArray";
 
 export default function OrderHistory() {
   const { t } = useLanguage();
@@ -31,9 +32,10 @@ export default function OrderHistory() {
         api.get("/orders", { params }),
         api.get("/settings"),
       ]);
-      setOrders(data); setSettings(s.data);
+      setOrders(safeArray(data)); setSettings(s.data);
     } catch (err) {
       console.error("Failed to load orders", err);
+      setOrders([]);
     }
   }, [from, to, q]);
 
