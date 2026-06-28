@@ -91,15 +91,7 @@ export default function Layout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Check if this is first login (password hasn't been changed from default)
-  useEffect(() => {
-    if (user && user.email === "admin@pos.com") {
-      const passwordChanged = localStorage.getItem("passwordChanged");
-      if (!passwordChanged) {
-        setShowPasswordChange(true);
-      }
-    }
-  }, [user]);
+
 
   const handlePasswordChangeClose = (success) => {
     if (success) {
