@@ -329,12 +329,32 @@ export function printReceipt({ order, settings }) {
 }
 
 function fallbackBrowserPrint(html) {
-  const w = window.open('', '_blank', 'width=420,height=720');
-  if (!w) return false;
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  w.location.href = url;
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  const printFrame = document.createElement('iframe');
+  printFrame.style.position = 'fixed';
+  printFrame.style.right = '0';
+  printFrame.style.bottom = '0';
+  printFrame.style.width = '0';
+  printFrame.style.height = '0';
+  printFrame.style.border = '0';
+  
+  document.body.appendChild(printFrame);
+  
+  try {
+    const frameDoc = printFrame.contentWindow ? printFrame.contentWindow.document : printFrame.contentDocument;
+    frameDoc.open();
+    frameDoc.write(html);
+    frameDoc.close();
+  } catch (e) {
+    console.error('Iframe print error', e);
+  }
+  
+  // Clean up the iframe after a delay to ensure print dialog has time to spawn
+  setTimeout(() => {
+    if (document.body.contains(printFrame)) {
+      document.body.removeChild(printFrame);
+    }
+  }, 60000);
+  
   return true;
 }
 
