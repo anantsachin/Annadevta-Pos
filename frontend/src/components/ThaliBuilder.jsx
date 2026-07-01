@@ -107,9 +107,22 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
                               ? "border-terracotta bg-terracotta-light text-foreground"
                               : "border-border bg-white hover:border-terracotta/50"
                           }`}>
-                          <div className="flex items-start justify-between">
-                            <span className="text-sm font-semibold">{it.name}</span>
-                            {selected && <Check className="w-4 h-4 text-terracotta" />}
+                          <div className="flex items-start justify-between gap-1.5">
+                            <span className="text-sm font-semibold flex items-center gap-1.5 flex-wrap">
+                              <span>{it.name}</span>
+                              {it.current_stock !== undefined && it.current_stock !== null && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
+                                  it.current_stock <= 0 
+                                    ? "bg-red-50 text-red-600 border border-red-200" 
+                                    : it.current_stock <= (it.reorder_level || 5) 
+                                    ? "bg-amber-50 text-amber-700 border border-amber-200" 
+                                    : "bg-slate-50 text-slate-600 border border-slate-200"
+                                }`}>
+                                  {it.current_stock % 1 !== 0 ? it.current_stock.toFixed(3) : it.current_stock} kg
+                                </span>
+                              )}
+                            </span>
+                            {selected && <Check className="w-4 h-4 text-terracotta shrink-0" />}
                           </div>
                         </button>
                       );

@@ -34,7 +34,7 @@ function MenuTileComponent({ item, onClick }) {
               item.current_stock <= (item.reorder_level || 10) * 1.5 ? "bg-orange-100 text-orange-600" :
               "bg-green-100 text-green-700"
             }`}>
-              {Number(item.current_stock).toFixed(3)} kg
+              {item.current_stock % 1 !== 0 ? Number(item.current_stock).toFixed(3) : item.current_stock} kg
             </span>
           )}
         </div>

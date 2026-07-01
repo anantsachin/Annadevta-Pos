@@ -59,7 +59,7 @@ export default function ReceiptPreview({
     if (settings?.header_template === "compact") {
       return (
         <div className={headerAlignClass}>
-          <div className="font-bold text-sm tracking-wide mb-1 uppercase">{settings?.name || "Annapurna Thali House"}</div>
+          <div className="font-bold text-sm tracking-wide mb-1 uppercase">{settings?.name || "Anndevta Thali House"}</div>
           {settings?.phone && <div className="text-[10px] text-[#444] mb-0.5">PH: {settings.phone}</div>}
         </div>
       );
@@ -71,7 +71,7 @@ export default function ReceiptPreview({
           <div className="flex justify-center mb-1">
             <span className="border border-black px-2 py-0.5 font-bold tracking-wider text-xs bg-black text-[#fdfbf7] rounded-sm">ΨΦ</span>
           </div>
-          <div className="font-bold text-sm tracking-wide mb-1 uppercase">{settings?.name || "Annapurna Thali House"}</div>
+          <div className="font-bold text-sm tracking-wide mb-1 uppercase">{settings?.name || "Anndevta Thali House"}</div>
           {settings?.address && <div className="text-[10px] text-[#444] whitespace-pre-wrap">{settings.address}</div>}
         </div>
       );
@@ -80,7 +80,7 @@ export default function ReceiptPreview({
     // Classic Template (Default)
     return (
       <div className={headerAlignClass}>
-        <div className="font-bold text-sm tracking-wide mb-1 uppercase">{settings?.name || "Annapurna Thali House"}</div>
+        <div className="font-bold text-sm tracking-wide mb-1 uppercase">{settings?.name || "Anndevta Thali House"}</div>
         {settings?.address && <div className="text-[10px] text-[#444] whitespace-pre-wrap mb-0.5">{settings.address}</div>}
         {settings?.phone && <div className="text-[10px] text-[#444] mb-0.5">PH: {settings.phone}</div>}
         {settings?.gstin && <div className="text-[10px] text-[#444]">GSTIN: {settings.gstin}</div>}

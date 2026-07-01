@@ -64,7 +64,7 @@ export default function Settings() {
         receipt_padding: Number(s.receipt_padding) || 6,
         tax_label: s.tax_label ?? "GST",
         language: s.language ?? "en",
-        app_name: s.app_name ?? "Annapurna",
+        app_name: s.app_name ?? "Anndevta",
         app_tagline: s.app_tagline ?? "THALI BILLING COUNTER",
         default_printer: s.default_printer || null,
       };
@@ -93,7 +93,7 @@ export default function Settings() {
       // Create timestamped filename
       const now = new Date();
       const timestamp = now.toISOString().replace(/:/g, '-').split('.')[0];
-      const filename = `AnnapurnaPOS_Backup_${timestamp}.json`;
+      const filename = `AnndevtaPOS_Backup_${timestamp}.json`;
       
       // Create download link
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -310,10 +310,10 @@ export default function Settings() {
                 <div>
                   <label className="text-xs uppercase tracking-wider text-muted-foreground">App Name</label>
                   <Input 
-                    value={s.app_name ?? "Annapurna"} 
+                    value={s.app_name ?? "Anndevta"} 
                     onChange={(e) => setS({ ...s, app_name: e.target.value })} 
                     className="mt-1" 
-                    placeholder="Annapurna"
+                    placeholder="Anndevta"
                     data-testid="set-app-name" 
                   />
                   <div className="text-[10px] text-muted-foreground mt-1">Displayed at the top of the sidebar</div>
@@ -579,7 +579,7 @@ export default function Settings() {
 
             <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-border">
               <p><strong>Backup includes:</strong> All orders, revenue, menu items, daily menu templates, Thali configurations, users, and settings.</p>
-              <p><strong>File format:</strong> JSON file with timestamp (e.g., AnnapurnaPOS_Backup_2026-06-22.json)</p>
+              <p><strong>File format:</strong> JSON file with timestamp (e.g., AnndevtaPOS_Backup_2026-06-22.json)</p>
               <p><strong>Restore:</strong> Select a backup file to restore all data. Current data will be overwritten.</p>
             </div>
           </Card>
@@ -602,7 +602,7 @@ export default function Settings() {
               <div className="border-t border-blue-300 pt-4 space-y-2 text-sm text-blue-800">
                 <div className="flex justify-between">
                   <span className="font-semibold">Product:</span>
-                  <span>Annapurna POS System</span>
+                  <span>Anndevta POS System</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-semibold">Version:</span>

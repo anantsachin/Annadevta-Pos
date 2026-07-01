@@ -49,7 +49,7 @@ export default function Signup() {
         <div className="absolute inset-0 p-12 flex flex-col justify-between text-white">
           <div className="flex items-center gap-2">
             <Receipt className="w-5 h-5" />
-            <span className="font-display font-extrabold tracking-tight text-lg">ANNAPURNA</span>
+            <span className="font-display font-extrabold tracking-tight text-lg">ANNDEVTA</span>
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-[0.3em] mb-3 opacity-80">A billing counter for thali kitchens</div>
@@ -67,7 +67,7 @@ export default function Signup() {
       <div className="flex items-center justify-center p-8 grid-bg">
         <Card className="w-full max-w-md p-8 border-border shadow-none">
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-2">Create Account</div>
-          <h2 className="font-display text-2xl font-bold tracking-tight mb-1">Join Annapurna</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight mb-1">Join Anndevta</h2>
           <p className="text-sm text-muted-foreground mb-6">Enter your details to create your restaurant workspace.</p>
           <form onSubmit={onSubmit} className="space-y-4" data-testid="signup-form">
             <div>

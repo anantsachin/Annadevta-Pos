@@ -58,7 +58,7 @@ export default function Login() {
         <div className="absolute inset-0 p-12 flex flex-col justify-between text-white">
           <div className="flex items-center gap-2">
             <Receipt className="w-5 h-5" />
-            <span className="font-display font-extrabold tracking-tight text-lg">ANNAPURNA</span>
+            <span className="font-display font-extrabold tracking-tight text-lg">ANNDEVTA</span>
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-[0.3em] mb-3 opacity-80">A billing counter for thali kitchens</div>

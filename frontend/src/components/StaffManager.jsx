@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import api from "../lib/api";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Users, Trash2, Plus, Loader2 } from "lucide-react";
+import { Users, Trash2, Plus, Loader2, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import EmployeeDetailsDrawer from "./payroll/EmployeeDetailsDrawer";
@@ -15,6 +16,8 @@ export default function StaffManager() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
   
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "cashier" });
 
@@ -32,6 +35,13 @@ export default function StaffManager() {
   useEffect(() => {
     fetchStaff();
   }, []);
+
+  useEffect(() => {
+    if (editId && staff.length > 0) {
+      const target = staff.find(s => s.id === editId);
+      if (target) setSelectedStaff(target);
+    }
+  }, [editId, staff]);
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -129,8 +139,12 @@ export default function StaffManager() {
                 <tr key={u.id} className="border-b border-border last:border-0 hover:bg-sand/30 cursor-pointer" onClick={() => setSelectedStaff(u)}>
                   <td className="px-4 py-3 font-medium">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-terracotta/10 text-terracotta flex items-center justify-center font-bold text-xs uppercase">
-                        {u.name.charAt(0)}
+                      <div className="w-8 h-8 rounded-full bg-terracotta/10 text-terracotta flex items-center justify-center font-bold text-xs uppercase overflow-hidden border border-border">
+                        {u.photo ? (
+                          <img src={u.photo} alt={u.name} className="w-full h-full object-cover" />
+                        ) : (
+                          u.name.charAt(0)
+                        )}
                       </div>
                       <div>
                         <div className="font-medium text-foreground">{u.name}</div>
@@ -150,9 +164,14 @@ export default function StaffManager() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(u.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex justify-end gap-1.5">
+                      <Button variant="ghost" size="icon" onClick={() => setSelectedStaff(u)} className="h-8 w-8 text-slate-600 hover:bg-slate-100" title="Edit Profile Details">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(u.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10" title="Delete Account">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller spec for Annapurna POS backend (FastAPI + uvicorn).
+PyInstaller spec for Anndevta POS backend (FastAPI + uvicorn).
 
 Build with:
     cd backend

@@ -113,7 +113,7 @@ export default function Layout() {
             <Menu className="w-6 h-6" />
           </button>
           <div className="font-display font-extrabold text-xl tracking-tight">
-            {(settings?.app_name !== undefined && settings?.app_name !== null) ? settings.app_name : "Annapurna"}
+            {(settings?.app_name !== undefined && settings?.app_name !== null) ? settings.app_name : "Anndevta"}
           </div>
         </div>
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-terracotta to-amber-600 flex items-center justify-center text-white font-bold text-sm shadow">
@@ -137,7 +137,7 @@ export default function Layout() {
         <div className="px-6 py-5 border-b border-border flex items-center justify-between">
           <div>
             <div className="font-display font-extrabold text-2xl tracking-tight">
-              {(settings?.app_name !== undefined && settings?.app_name !== null) ? settings.app_name : "Annapurna"}<span className="text-terracotta">.</span>
+              {(settings?.app_name !== undefined && settings?.app_name !== null) ? settings.app_name : "Anndevta"}<span className="text-terracotta">.</span>
             </div>
             <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mt-1">
               {(settings?.app_tagline !== undefined && settings?.app_tagline !== null) ? settings.app_tagline : t("thali_billing_counter")}

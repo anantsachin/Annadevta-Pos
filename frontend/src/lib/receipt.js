@@ -49,7 +49,7 @@ export function printReceipt({ order, settings }) {
   let headerHTML = '';
   if (settings?.header_template === 'compact') {
     headerHTML = `
-      <div class="header-title">${safe(settings?.name || 'Annapurna Thali House')}</div>
+      <div class="header-title">${safe(settings?.name || 'Anndevta Thali House')}</div>
       ${settings?.phone ? `<div class="header-detail">PH: ${safe(settings.phone)}</div>` : ''}
     `;
   } else if (settings?.header_template === 'modern') {
@@ -57,12 +57,12 @@ export function printReceipt({ order, settings }) {
       <div class="center" style="margin-bottom: 6px;">
         <span style="border: 1px solid #000; padding: 2px 6px; font-weight: bold; font-size: 13px; background-color: #000; color: #fff; border-radius: 2px;">ΨΦ</span>
       </div>
-      <div class="header-title">${safe(settings?.name || 'Annapurna Thali House')}</div>
+      <div class="header-title">${safe(settings?.name || 'Anndevta Thali House')}</div>
       ${settings?.address ? `<div class="header-detail">${safe(settings.address)}</div>` : ''}
     `;
   } else { // classic (default)
     headerHTML = `
-      <div class="header-title">${safe(settings?.name || 'Annapurna Thali House')}</div>
+      <div class="header-title">${safe(settings?.name || 'Anndevta Thali House')}</div>
       ${settings?.address ? `<div class="header-detail">${safe(settings.address)}</div>` : ''}
       ${settings?.phone ? `<div class="header-detail">PH: ${safe(settings.phone)}</div>` : ''}
       ${settings?.gstin ? `<div class="header-detail">GSTIN: ${safe(settings.gstin)}</div>` : ''}

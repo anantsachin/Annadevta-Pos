@@ -1,5 +1,5 @@
 /**
- * Annapurna POS — Electron Main Process
+ * Anndevta POS — Electron Main Process
  *
  * Startup sequence:
  *  1. Spawn mongod.exe (local MongoDB)
@@ -171,7 +171,7 @@ async function startServices() {
     logToFile('main', 'ERROR: Backend did not become ready in time');
     const choice = dialog.showMessageBoxSync({
       type: 'error',
-      title: 'Annapurna POS — Startup Error',
+      title: 'Anndevta POS — Startup Error',
       message: 'The backend server failed to start.',
       detail: `Check logs at:\n${MONGO_LOG_DIR}\n\nDo you want to open the log folder?`,
       buttons: ['Open Logs', 'Quit'],
@@ -192,7 +192,7 @@ function createWindow() {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    title: 'Annapurna POS',
+    title: 'Anndevta POS',
     icon: IS_PACKAGED ? path.join(__dirname, 'icon.ico') : path.join(__dirname, 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

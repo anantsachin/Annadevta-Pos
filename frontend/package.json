@@ -1,9 +1,9 @@
 {
-  "name": "annapurna-pos",
+  "name": "anndevta-pos",
   "version": "1.0.0",
   "private": true,
-  "description": "Annapurna Restaurant POS System — Offline Desktop App",
-  "author": "Annapurna Restaurant",
+  "description": "Anndevta Restaurant POS System — Offline Desktop App",
+  "author": "Anndevta Restaurant",
   "main": "electron/main.js",
   "homepage": "./",
   "dependencies": {
@@ -75,9 +75,9 @@
   },
   "build": {
     "extends": null,
-    "appId": "com.annapurna.pos",
-    "productName": "Annapurna POS",
-    "copyright": "Copyright © 2025 Annapurna Restaurant",
+    "appId": "com.anndevta.pos",
+    "productName": "Anndevta POS",
+    "copyright": "Copyright © 2025 Anndevta Restaurant",
     "directories": {
       "buildResources": "../electron",
       "output": "../dist"
@@ -131,7 +131,7 @@
       "installerIcon": "../electron/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Annapurna POS",
+      "shortcutName": "Anndevta POS",
       "warningsAsErrors": false
     },
     "asar": true

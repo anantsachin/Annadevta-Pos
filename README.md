@@ -1,6 +1,6 @@
-# Annapurna — Thali Billing Counter POS
+# Anndevta — Thali Billing Counter POS
 
-Annapurna is a highly dense, rapid-billing counter Point of Sale (POS) system designed specifically for busy restaurants serving daily-changing Thali and à-la-carte menus. Unlike complex enterprise SaaS systems, Annapurna focuses purely on speed, simplicity, and accuracy for a single cashier on-site.
+Anndevta is a highly dense, rapid-billing counter Point of Sale (POS) system designed specifically for busy restaurants serving daily-changing Thali and à-la-carte menus. Unlike complex enterprise SaaS systems, Anndevta focuses purely on speed, simplicity, and accuracy for a single cashier on-site.
 
 ---
 

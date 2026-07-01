@@ -489,8 +489,12 @@ async def list_staff(user=Depends(get_current_user)):
     profiles = await db.staff_profiles.find({}, {"_id": 0}).to_list(500)
     profile_map = {p["user_id"]: p for p in profiles}
     
+    structures = await db.employees_salary_structure.find({}, {"_id": 0}).to_list(500)
+    structure_map = {s["employee_id"]: s for s in structures}
+    
     for u in users:
         p = profile_map.get(u["id"], {})
+        s = structure_map.get(u["id"], {})
         # ensure employee_id alias for frontend
         u["employee_id"] = u["id"]
         for k, v in p.items():
@@ -500,6 +504,11 @@ async def list_staff(user=Depends(get_current_user)):
         if "status" not in u: u["status"] = "Active"
         if "designation" not in u: u["designation"] = ""
         if "department" not in u: u["department"] = ""
+        
+        # Merge salary details for frontend display
+        u["salary_wage_type"] = s.get("wage_type", "Fixed")
+        u["salary_basic"] = s.get("basic_salary", 0)
+        u["salary_hourly_rate"] = s.get("hourly_rate", 0)
         
     return users
 
@@ -761,20 +770,24 @@ async def create_order(body: OrderIn, user: dict = Depends(get_current_user)):
                 remarks=f"Sale #{order['receipt_no']} (Thali Base)"
             )
             # Deduct for each selected sub-item
-            for group, sub_items in item["thali_selections"].get("by_category", {}).items():
-                for sub_item_name in sub_items:
-                    # find the item by name to get its portion weight
-                    sub_db_item = await db.menu.find_one({"name": sub_item_name})
-                    if sub_db_item:
-                        sub_pw = sub_db_item.get("portion_weight_kg", 0.0)
-                        sub_deduction = (qty * sub_pw) if sub_pw > 0 else qty
-                        await _update_stock_and_record(
-                            product_id=sub_db_item["id"], 
-                            qty_change=-sub_deduction, 
-                            tx_type="sale",
-                            reference_id=order["id"], user_id=user.get("id", ""),
-                            remarks=f"Sale #{order['receipt_no']} (Thali Selection)"
-                        )
+            thali_sel = item.get("thali_selections", {})
+            if isinstance(thali_sel, dict):
+                selections_dict = thali_sel.get("by_category", thali_sel)
+                for group, sub_items in selections_dict.items():
+                    if isinstance(sub_items, list):
+                        for sub_item_name in sub_items:
+                            # find the item by name to get its portion weight
+                            sub_db_item = await db.menu.find_one({"name": sub_item_name})
+                            if sub_db_item:
+                                sub_pw = sub_db_item.get("portion_weight_kg", 0.0)
+                                sub_deduction = (qty * sub_pw) if sub_pw > 0 else qty
+                                await _update_stock_and_record(
+                                    product_id=sub_db_item["id"], 
+                                    qty_change=-sub_deduction, 
+                                    tx_type="sale",
+                                    reference_id=order["id"], user_id=user.get("id", ""),
+                                    remarks=f"Sale #{order['receipt_no']} (Thali Selection)"
+                                )
         else:
             # Standard item
             deduction = (qty * pw_kg) if pw_kg > 0 else qty
@@ -1056,7 +1069,7 @@ async def _seed_settings():
         return
     await db.settings.insert_one({
         "id": "restaurant",
-        "name": "Annapurna Thali House",
+        "name": "Anndevta Thali House",
         "address": "12, MG Road, Bengaluru 560001",
         "gstin": "29ABCDE1234F1Z5",
         "phone": "+91 98765 43210",
@@ -2189,7 +2202,7 @@ async def process_payroll(body: PayrollProcessIn, user=Depends(require_roles("ad
             "employee_name": emp.get("name", "Unknown"),
             "days_credited": days_credited,
             "gross_pay": gross,
-            "deductions": total_deductions,
+            "deductions": deductions,
             "advance_deduction": advance_deduction,
             "direct_payments_deduction": direct_payments_total,
             "bonuses": total_bonuses,

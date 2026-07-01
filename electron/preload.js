@@ -1,5 +1,5 @@
 /**
- * Annapurna POS — Electron Preload Script
+ * Anndevta POS — Electron Preload Script
  *
  * Exposes a minimal, safe API to the renderer via contextBridge.
  * Node integration is disabled in the renderer for security.

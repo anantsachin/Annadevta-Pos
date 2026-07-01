@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import api from "../../lib/api";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
@@ -13,24 +14,53 @@ export default function SalaryStructures() {
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const { t } = useLanguage();
+  const [searchParams] = useSearchParams();
+  const empIdParam = searchParams.get("emp");
 
   const fetchEmps = useCallback(async () => {
     try {
       const { data } = await api.get("/staff");
       setEmps(data);
-      if (data.length > 0) selectEmp(data[0]);
     } catch { toast.error("Failed to load employees"); }
   }, []);
 
-  useEffect(() => { fetchEmps(); }, [fetchEmps]);
-
-  const selectEmp = async (emp) => {
+  const selectEmp = useCallback(async (emp) => {
     setSelectedEmp(emp);
     try {
       const { data } = await api.get(`/payroll/employees/${emp.id}/structure`);
       setForm(data);
-    } catch { toast.error("Failed to load structure"); }
-  };
+    } catch (err) {
+      if (err.response && err.response.status === 404) {
+        // Initialize default structure for legacy employees who don't have one in DB yet
+        setForm({
+          employee_id: emp.id,
+          wage_type: "Fixed",
+          basic_salary: 0,
+          hra: 0,
+          conveyance: 0,
+          medical: 0,
+          special_allowance: 0,
+          pf_deduction: 0,
+          esi_deduction: 0,
+          professional_tax: 0,
+          hourly_rate: 0
+        });
+      } else {
+        toast.error("Failed to load structure");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEmps();
+  }, [fetchEmps]);
+
+  useEffect(() => {
+    if (emps.length > 0) {
+      const target = empIdParam ? emps.find(e => e.id === empIdParam) : emps[0];
+      if (target) selectEmp(target);
+    }
+  }, [emps, empIdParam, selectEmp]);
 
   const save = async () => {
     setBusy(true);

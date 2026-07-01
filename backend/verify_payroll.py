@@ -1,23 +1,33 @@
 import asyncio
 import datetime
-from server import db
+from server import db, master_db
 
 async def verify():
     print("Testing Payroll API functionality via backend direct DB insertion + engine...")
     
-    # Clean previous test
-    await db.employees.delete_many({"full_name": "Test Employee"})
-    
-    # 1. Create employee
     emp_id = "test-emp-123"
-    await db.employees.insert_one({
+    # Clean previous test
+    await master_db.users.delete_many({"id": emp_id})
+    await db.staff_profiles.delete_many({"user_id": emp_id})
+    await db.employees_salary_structure.delete_many({"employee_id": emp_id})
+    await db.salary_advances.delete_many({"employee_id": emp_id})
+    await db.attendance_records.delete_many({"employee_id": emp_id})
+    
+    # 1. Create employee in master_db and db.staff_profiles
+    await master_db.users.insert_one({
         "id": emp_id,
-        "full_name": "Test Employee",
+        "name": "Test Employee",
+        "email": "testemp@pos.com",
+        "role": "staff",
+        "tenant_id": "default"
+    })
+    await db.staff_profiles.insert_one({
+        "user_id": emp_id,
+        "status": "Active",
         "designation": "Manager",
         "department": "Operations",
         "joining_date": "2023-01-01",
-        "employment_type": "Full-Time",
-        "status": "Active"
+        "employment_type": "Full-Time"
     })
     
     # 2. Add Salary Structure
@@ -40,14 +50,15 @@ async def verify():
     # Statutory Deductions = 2200
     # Base Net = 27800
     
-    # 3. Add Loan
-    await db.employee_loans.insert_one({
-        "id": "loan-123",
+    # 3. Add Salary Advance
+    await db.salary_advances.insert_one({
+        "id": "advance-123",
         "employee_id": emp_id,
-        "loan_amount": 10000,
+        "amount": 10000,
         "emi_amount": 3000,
         "balance": 10000,
         "reason": "Medical emergency",
+        "status": "Approved",
         "created_at": datetime.datetime.now().isoformat()
     })
     
@@ -79,16 +90,16 @@ async def verify():
     # 6. Verify Results
     item = await db.payroll_items.find_one({"employee_id": emp_id, "payroll_id": run_id})
     print(f"Gross Pay: {item['gross_pay']} (Expected: 30000)")
-    print(f"Stat Deductions: {item['deductions'] - item['loan_deduction']} (Expected: 2200)")
-    print(f"EMI Deduction: {item['loan_deduction']} (Expected: 3000)")
+    print(f"Stat Deductions: {item['deductions']} (Expected: 2200)")
+    print(f"EMI Deduction: {item['advance_deduction']} (Expected: 3000)")
     print(f"Net Pay: {item['net_pay']} (Expected: 24800)")
     
     # 7. Update status to paid and check loan balance
     from server import update_payroll_status, PayrollStatusUpdate
     await update_payroll_status(run_id, PayrollStatusUpdate(status="Paid", payment_mode="Bank Transfer", transaction_id="TXN1234"), user={"email": "admin@pos.com"})
     
-    loan = await db.employee_loans.find_one({"id": "loan-123"})
-    print(f"New Loan Balance: {loan['balance']} (Expected: 7000)")
+    advance = await db.salary_advances.find_one({"id": "advance-123"})
+    print(f"New Advance Balance: {advance['balance']} (Expected: 7000)")
 
     print("✅ All verifications passed!")
 

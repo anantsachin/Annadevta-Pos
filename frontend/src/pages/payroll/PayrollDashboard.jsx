@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../lib/api";
 import { Card } from "../../components/ui/card";
-import { Users, Banknote, Clock, Wallet, FileText, UserCheck, UserMinus, HandCoins, Activity } from "lucide-react";
+import { Users, Banknote, Clock, Wallet, FileText, UserCheck, UserMinus, HandCoins, Activity, Coins } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -94,6 +94,10 @@ export default function PayrollDashboard() {
               <Link to="/staff" className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
                 <div className="w-8 h-8 rounded bg-indigo-50 flex items-center justify-center text-indigo-600"><Users className="w-4 h-4" /></div>
                 <div className="font-semibold text-sm text-slate-700">Employee Directory</div>
+              </Link>
+              <Link to="/payroll/structures" className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
+                <div className="w-8 h-8 rounded bg-sky-50 flex items-center justify-center text-sky-600"><Coins className="w-4 h-4" /></div>
+                <div className="font-semibold text-sm text-slate-700">Salary Structures</div>
               </Link>
               <Link to="/payroll/attendance" className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
                 <div className="w-8 h-8 rounded bg-emerald-50 flex items-center justify-center text-emerald-600"><Clock className="w-4 h-4" /></div>

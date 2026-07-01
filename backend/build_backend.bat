@@ -6,7 +6,7 @@
 
 setlocal
 
-echo [Annapurna POS] Building backend.exe...
+echo [Anndevta POS] Building backend.exe...
 
 :: Ensure we are in the backend directory
 cd /d "%~dp0"

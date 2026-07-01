@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.annapurna.pos',
-  appName: 'Annapurna POS',
+  appId: 'com.anndevta.pos',
+  appName: 'Anndevta POS',
   webDir: 'build'
 };
 
