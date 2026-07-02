@@ -72,9 +72,9 @@ export function printReceipt({ order, settings }) {
   const lineRows = order.items.map((i) => {
     const lineTotal = (i.price * i.qty).toFixed(2);
     
-    // Extract customizations/selections only if enabled
+    // Extract customizations/selections
     const subline = [];
-    if (settings?.show_thali_selections && i.thali_selections) {
+    if (i.thali_selections) {
       for (const cat of Object.keys(i.thali_selections)) {
         const names = i.thali_selections[cat];
         if (names && names.length) {
@@ -82,7 +82,7 @@ export function printReceipt({ order, settings }) {
         }
       }
     }
-    if (settings?.show_thali_selections && i.thali_extras) {
+    if (i.thali_extras) {
       subline.push(`${t("includes")} ${safe(i.thali_extras)}`);
     }
 

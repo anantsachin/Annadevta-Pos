@@ -53,25 +53,14 @@ export default function LoanManagement() {
     try {
       const { data } = await api.get(`/payroll/employees/${empId}/structure`);
       setSelectedSalaryStruct(data);
-      if (data && data.basic_salary) {
-        // Pre-fill EMI to 10% of basic salary
-        const emi = Math.round(data.basic_salary * 0.1);
-        setForm(f => ({ ...f, emi_amount: emi || "" }));
-      }
     } catch {
-      console.log("No salary structure found for this employee, fallback to division");
+      console.log("No salary structure found for this employee");
     }
   };
 
   const handleAmountChange = (amountVal) => {
     setForm(f => {
-      let emi = f.emi_amount;
-      if (selectedSalaryStruct && selectedSalaryStruct.basic_salary) {
-        emi = Math.round(selectedSalaryStruct.basic_salary * 0.1);
-      } else if (amountVal) {
-        emi = Math.ceil(Number(amountVal) / 3);
-      }
-      return { ...f, amount: amountVal, emi_amount: emi };
+      return { ...f, amount: amountVal, emi_amount: amountVal ? Number(amountVal) : "" };
     });
   };
 
@@ -208,11 +197,19 @@ export default function LoanManagement() {
               <div className="p-5 flex-1 bg-slate-50/50 space-y-3">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500 font-medium">Original Amount</span>
-                  <span className="font-mono font-bold text-slate-800">₹{adv.balance.toLocaleString('en-IN')}</span>
+                  <span className="font-mono font-bold text-slate-800">₹{(adv.amount || adv.balance).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500 font-medium">Monthly Deduction</span>
                   <span className="font-mono text-slate-600">₹{adv.emi_amount.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm border-t border-slate-200/60 pt-2 mt-2">
+                  <span className="text-slate-600 font-semibold">Net Salary Left</span>
+                  <span className="font-mono font-bold text-emerald-600">
+                    {emp.salary_wage_type === "Fixed" && emp.salary_basic 
+                      ? `₹${Math.max(0, emp.salary_basic - advances.filter(a => a.employee_id === emp.id).reduce((sum, a) => sum + a.balance, 0)).toLocaleString('en-IN')}`
+                      : 'N/A'}
+                  </span>
                 </div>
                 {adv.reason && <div className="text-xs italic text-slate-500 line-clamp-2 mt-2 bg-slate-100 p-2 rounded border border-slate-200/55">{adv.reason}</div>}
               </div>
@@ -251,9 +248,8 @@ export default function LoanManagement() {
                 {emps.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div><Label className="text-slate-600">Total Advance (₹)</Label><Input type="number" value={form.amount} onChange={e => handleAmountChange(e.target.value)} className="mt-1.5" /></div>
-              <div><Label className="text-slate-600">Monthly Deduction (₹)</Label><Input type="number" value={form.emi_amount} onChange={e => setForm(f => ({...f, emi_amount: Number(e.target.value)}))} className="mt-1.5" /></div>
             </div>
             <div>
               <Label className="text-slate-600">Reason</Label>

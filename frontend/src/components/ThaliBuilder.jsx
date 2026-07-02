@@ -7,11 +7,13 @@ import { useLanguage } from "../context/LanguageContext";
 export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
   const [picks, setPicks] = useState({});
   const [breadConsumed, setBreadConsumed] = useState(0);
+  const [thaliQty, setThaliQty] = useState(1);
   const { t } = useLanguage();
 
   useEffect(() => {
     if (open) {
       setPicks({});
+      setThaliQty(1);
       // Set initial bread consumed to included count
       setBreadConsumed(thali?.included_bread_count || 0);
     }
@@ -20,21 +22,54 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
   if (!thali) return null;
   const groups = thali.thali_groups || [];
 
-  const toggle = (catId, itemName, max) => {
+  const handleQtyChange = (delta) => {
+    setThaliQty((prev) => {
+      const next = Math.max(1, prev + delta);
+      // Scale bread
+      if (thali?.included_bread_count) {
+         setBreadConsumed(thali.included_bread_count * next);
+      }
+      // Trim picks if needed
+      setPicks(p => {
+         const np = { ...p };
+         let changed = false;
+         (thali.thali_groups || []).forEach(g => {
+            const max = g.count * next;
+            if ((np[g.category_id] || []).length > max) {
+               np[g.category_id] = np[g.category_id].slice(-max);
+               changed = true;
+            }
+         });
+         return changed ? np : p;
+      });
+      return next;
+    });
+  };
+
+  const addPick = (catId, itemName, max) => {
     setPicks((p) => {
       const cur = p[catId] || [];
-      if (cur.includes(itemName)) return { ...p, [catId]: cur.filter((x) => x !== itemName) };
       if (cur.length >= max) {
-        // replace oldest
         return { ...p, [catId]: [...cur.slice(1), itemName] };
       }
       return { ...p, [catId]: [...cur, itemName] };
     });
   };
 
-  const allFilled = groups.every((g) => (picks[g.category_id] || []).length === g.count);
+  const removePick = (catId, itemName) => {
+    setPicks((p) => {
+      const cur = p[catId] || [];
+      const idx = cur.lastIndexOf(itemName);
+      if (idx === -1) return p;
+      const nextArr = [...cur];
+      nextArr.splice(idx, 1);
+      return { ...p, [catId]: nextArr };
+    });
+  };
 
-  const includedBread = thali.included_bread_count || 0;
+  const allFilled = groups.every((g) => (picks[g.category_id] || []).length === g.count * thaliQty);
+
+  const includedBread = (thali.included_bread_count || 0) * thaliQty;
   const extraBreadPrice = thali.extra_bread_price || 10;
   const breadMode = thali.bread_mode || "fixed";
   const isUnlimited = breadMode === "unlimited";
@@ -51,7 +86,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
       menu_item_id: thali.id,
       name: thali.name,
       price: thali.price,
-      qty: 1,
+      qty: thaliQty,
       tax_rate: 5.0,
       is_thali: true,
       thali_selections: selections,
@@ -67,13 +102,25 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl" data-testid="thali-builder">
-        <DialogHeader>
-          <DialogTitle className="font-display text-2xl tracking-tight">
-            {thali.name} <span className="text-terracotta font-mono text-lg">₹{thali.price}</span>
-          </DialogTitle>
-          <DialogDescription>
-            {thali.thali_extras ? <span>{t("includes")}: <span className="text-foreground">{thali.thali_extras}</span></span> : t("pick_todays_items")}
-          </DialogDescription>
+        <DialogHeader className="mb-2">
+          <div className="flex items-start justify-between pr-8">
+            <div>
+              <DialogTitle className="font-display text-2xl tracking-tight">
+                {thali.name} <span className="text-terracotta font-mono text-lg ml-2">₹{thali.price * thaliQty}</span>
+              </DialogTitle>
+              <DialogDescription className="mt-1.5">
+                {thali.thali_extras ? <span>{t("includes")}: <span className="text-foreground">{thali.thali_extras}</span></span> : t("pick_todays_items")}
+              </DialogDescription>
+            </div>
+            <div className="flex flex-col items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Quantity</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-1">
+                <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded bg-white shadow-sm border border-slate-200" onClick={() => handleQtyChange(-1)} disabled={thaliQty <= 1}>−</Button>
+                <span className="font-mono font-bold text-base w-6 text-center">{thaliQty}</span>
+                <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded bg-white shadow-sm border border-slate-200" onClick={() => handleQtyChange(1)}>+</Button>
+              </div>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="space-y-5 max-h-[60vh] overflow-y-auto py-2">
@@ -86,8 +133,8 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
                   <div className="text-xs uppercase tracking-[0.2em] font-semibold text-muted-foreground">
                     {g.label || "Group"}
                   </div>
-                  <div className={`text-xs font-mono font-semibold ${chosen.length === g.count ? "text-forest" : "text-amber-600"}`}>
-                    {chosen.length} / {g.count} {t("picked")}
+                  <div className={`text-xs font-mono font-semibold ${chosen.length === g.count * thaliQty ? "text-forest" : "text-amber-600"}`}>
+                    {chosen.length} / {g.count * thaliQty} {t("picked")}
                   </div>
                 </div>
                 {items.length === 0 ? (
@@ -97,18 +144,19 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {items.map((it) => {
-                      const selected = chosen.includes(it.name);
+                      const countInChosen = chosen.filter(x => x === it.name).length;
+                      const maxQty = g.count * thaliQty;
                       return (
-                        <button key={it.id} type="button"
-                          onClick={() => toggle(g.category_id, it.name, g.count)}
+                        <div key={it.id}
+                          onClick={() => addPick(g.category_id, it.name, maxQty)}
                           data-testid={`thali-pick-${it.id}`}
-                          className={`tap-scale text-left p-3 rounded-md border transition-all ${
-                            selected
+                          className={`cursor-pointer tap-scale text-left p-3 rounded-md border transition-all ${
+                            countInChosen > 0
                               ? "border-terracotta bg-terracotta-light text-foreground"
                               : "border-border bg-white hover:border-terracotta/50"
                           }`}>
-                          <div className="flex items-start justify-between gap-1.5">
-                            <span className="text-sm font-semibold flex items-center gap-1.5 flex-wrap">
+                          <div className="flex items-start justify-between gap-1.5 min-h-[24px]">
+                            <span className="text-sm font-semibold flex items-center gap-1.5 flex-wrap flex-1">
                               <span>{it.name}</span>
                               {it.current_stock !== undefined && it.current_stock !== null && (
                                 <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
@@ -122,9 +170,19 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
                                 </span>
                               )}
                             </span>
-                            {selected && <Check className="w-4 h-4 text-terracotta shrink-0" />}
+                            {countInChosen > 0 && (
+                              <div className="flex items-center gap-2 bg-white rounded-md border border-terracotta/30 px-1 py-0.5" onClick={(e) => e.stopPropagation()}>
+                                <button type="button" onClick={() => removePick(g.category_id, it.name)} className="w-6 h-6 flex items-center justify-center text-terracotta hover:bg-terracotta/10 rounded">
+                                  −
+                                </button>
+                                <span className="font-bold text-sm text-terracotta w-3 text-center">{countInChosen}</span>
+                                <button type="button" onClick={() => addPick(g.category_id, it.name, maxQty)} className="w-6 h-6 flex items-center justify-center text-terracotta hover:bg-terracotta/10 rounded">
+                                  +
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>

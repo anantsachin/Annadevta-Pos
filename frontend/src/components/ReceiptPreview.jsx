@@ -129,7 +129,7 @@ export default function ReceiptPreview({
               </div>
               
               {/* Thali Custom Customizations list */}
-              {settings?.show_thali_selections && line.is_thali && Array.isArray(selectionsList) && selectionsList.length > 0 && (
+              {line.is_thali && Array.isArray(selectionsList) && selectionsList.length > 0 && (
                 <div className="text-[10px] text-[#555] pl-3 mt-0.5 leading-tight">
                   {selectionsList.map((sel, sIdx) => (
                     <div key={sIdx}>• {sel}</div>
