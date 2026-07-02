@@ -14,6 +14,8 @@ else:
     ROOT_DIR = Path(__file__).parent
 
 load_dotenv(ROOT_DIR / '.env')
+import google.generativeai as genai
+genai.configure(api_key=os.environ.get('GEMINI_API_KEY', ''))
 
 import io
 import csv
@@ -23,6 +25,7 @@ import bcrypt
 import jwt
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Literal, Dict
+import google.generativeai as genai
 
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
@@ -2295,6 +2298,46 @@ async def get_payslip(item_id: str, _=Depends(require_roles("admin"))):
     struct = await db.employees_salary_structure.find_one({"employee_id": item["employee_id"]}, {"_id": 0})
     
     return {"item": item, "employee": emp, "payroll": run, "structure": struct}
+
+class ChatMessage(BaseModel):
+    message: str
+    history: List[Dict[str, str]] = []
+
+@api.post("/ai/chat")
+async def ai_chat(body: ChatMessage, user: dict = Depends(get_current_user)):
+    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today_str = today.isoformat()
+    
+    orders_cursor = db.orders.find({"created_at": {"$gte": today_str}})
+    orders = await orders_cursor.to_list(None)
+    total_sales = sum(o.get("total", 0) for o in orders)
+    
+    staff_count = await master_db.users.count_documents({"status": "Active"})
+    stock_alerts = await db.stock_alerts.count_documents({"is_resolved": False})
+
+    system_prompt = f"""
+You are Anndevta, the AI growth manager and operational assistant for Anndevta Thali House.
+You have access to the current software data:
+- Today's Sales: Rs.{total_sales:.2f} ({len(orders)} orders)
+- Active Staff Members: {staff_count}
+- Unresolved Stock Alerts: {stock_alerts}
+
+Provide actionable advice for restaurant growth and answer questions accurately based on this data. Keep responses concise, helpful, and in a friendly, professional tone. Use markdown formatting.
+"""
+
+    model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_prompt)
+    
+    messages = []
+    for h in body.history:
+        messages.append({"role": "user" if h["role"] == "user" else "model", "parts": [h["content"]]})
+        
+    messages.append({"role": "user", "parts": [body.message]})
+    
+    try:
+        response = model.generate_content(messages)
+        return {"response": response.text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 app.include_router(api)
 

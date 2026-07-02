@@ -6,7 +6,7 @@ import { useLanguage } from "../context/LanguageContext";
 import PasswordChangeDialog from "./PasswordChangeDialog";
 import api from "../lib/api";
 import { useSyncManager } from "../lib/offlineManager";
-
+import AIChatWidget from "./AIChatWidget";
 const NAV_ITEMS = [
   { to: "/", key: "nav_billing", label: "Billing", icon: Receipt, hero: true, end: true, testid: "nav-billing" },
   { to: "/orders", key: "nav_orders", label: "Orders", icon: ListOrdered, testid: "nav-orders" },
@@ -259,6 +259,7 @@ export default function Layout() {
         onClose={handlePasswordChangeClose}
         isFirstLogin={true}
       />
+      <AIChatWidget />
     </div>
   );
 }
