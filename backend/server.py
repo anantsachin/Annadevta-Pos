@@ -422,7 +422,7 @@ async def signup(body: SignupIn):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    tenant_id = new_id()
+    tenant_id = str(uuid.uuid4()).replace('-', '')[:16]
     user_id = new_id()
     
     # Create master user
