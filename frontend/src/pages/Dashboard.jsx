@@ -57,9 +57,8 @@ export default function Dashboard() {
         <div className="flex items-center gap-1 p-1 bg-white border border-border rounded-md" data-testid="period-tabs">
           {periods.map(p => (
             <button key={p.key} onClick={() => setPeriod(p.key)} data-testid={`period-${p.key}`}
-              className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${
-                period === p.key ? "bg-foreground text-white" : "text-muted-foreground hover:text-foreground"
-              }`}>
+              className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${period === p.key ? "bg-foreground text-white" : "text-muted-foreground hover:text-foreground"
+                }`}>
               {p.label}
             </button>
           ))}
@@ -145,7 +144,7 @@ export default function Dashboard() {
               <li key={it.name} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
                 <div className="flex items-center gap-3">
                   <span className="w-6 h-6 rounded-md bg-terracotta-light text-terracotta flex items-center justify-center text-xs font-bold font-mono">{i + 1}</span>
-                  <span className="font-medium text-sm">{it.name}</span>
+                  <span className="font-medium text-sm">{t(it.name)}</span>
                 </div>
                 <div className="text-right">
                   <div className="font-mono text-sm font-semibold">{it.qty}</div>
@@ -167,7 +166,7 @@ export default function Dashboard() {
               <li key={it.name} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
                 <div className="flex items-center gap-3">
                   <span className="w-6 h-6 rounded-md bg-forest-light text-forest flex items-center justify-center text-xs font-bold font-mono">{i + 1}</span>
-                  <span className="font-medium text-sm">{it.name}</span>
+                  <span className="font-medium text-sm">{t(it.name)}</span>
                 </div>
                 <div className="text-right">
                   <div className="font-mono text-sm font-semibold">{it.qty}</div>

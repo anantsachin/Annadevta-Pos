@@ -1,7 +1,9 @@
+# pyrefly: ignore[missing-import]
 """
 Thali POS Backend Regression Suite.
 Covers: auth, settings, categories, menu+toggle, templates, orders+receipt_no atomic counter,
 dashboard summary, reports (sales/products/thalis), CSV+Excel export, removed-endpoints 404.
+# Trigger linter
 """
 import os
 import io
@@ -11,14 +13,17 @@ import requests
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
     # fallback from frontend .env if test runs locally
-    try:
-        with open('/app/frontend/.env') as f:
-            for line in f:
-                if line.startswith('REACT_APP_BACKEND_URL'):
-                    BASE_URL = line.split('=', 1)[1].strip().strip('"').rstrip('/')
-                    break
-    except Exception:
-        pass
+    for path in ['frontend/.env', '../frontend/.env', '../../frontend/.env', '/app/frontend/.env']:
+        try:
+            with open(path) as f:
+                for line in f:
+                    if line.startswith('REACT_APP_BACKEND_URL'):
+                        BASE_URL = line.split('=', 1)[1].strip().strip('"').rstrip('/')
+                        break
+            if BASE_URL:
+                break
+        except Exception:
+            pass
 API = f"{BASE_URL}/api"
 
 

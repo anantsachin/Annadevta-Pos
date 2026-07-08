@@ -29,6 +29,8 @@ next-env.d.ts
 /build
 dist/
 dist
+bin/
+/bin
 
 # Environment files (comprehensive coverage)
 
@@ -51,6 +53,7 @@ __pycache__/
 *pyc*
 venv/
 .venv/
+backend/build/
 
 # Development tools
 chainlit.md

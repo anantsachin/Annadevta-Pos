@@ -46,6 +46,11 @@ export const offlineStorage = {
   saveUser: (data) => save(KEYS.USER, data),
   loadUser: () => load(KEYS.USER) || null,
 
+  /** Clear only auth-related cached data (user profile) */
+  clearAuth: () => {
+    localStorage.removeItem(KEYS.USER);
+  },
+
   clear: () => {
     Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
   },

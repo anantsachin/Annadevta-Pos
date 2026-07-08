@@ -30,7 +30,20 @@ export default function DailyMenu() {
       console.error("DailyMenu load failed:", e);
     }
   };
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    const init = async () => {
+      if (!sessionStorage.getItem("menu_session_reset")) {
+        try {
+          await api.post("/menu/reset");
+          sessionStorage.setItem("menu_session_reset", "true");
+        } catch (e) {
+          console.error("Session menu reset failed:", e);
+        }
+      }
+      refresh();
+    };
+    init();
+  }, []);
 
   const safeMenu = safeArray(menu);
   const safeCategories = safeArray(categories);
@@ -140,7 +153,7 @@ export default function DailyMenu() {
         {safeArray(grouped).map((cat) => (
           <Card key={cat.id} className="border-border shadow-none" data-testid={`cat-section-${cat.id}`}>
             <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-              <div className="font-display font-bold text-lg">{cat.name}</div>
+              <div className="font-display font-bold text-lg">{t(cat.name)}</div>
               <div className="flex items-center gap-3 text-xs">
                 <span className="text-muted-foreground font-mono">{safeArray(cat.items).filter(i => i.available).length}/{safeArray(cat.items).length} {t("active")}</span>
                 <button onClick={() => setAllInCategory(cat.items, true)} className="text-terracotta hover:underline" data-testid={`all-on-${cat.id}`}>{t("all_on")}</button>
@@ -151,14 +164,13 @@ export default function DailyMenu() {
               {safeArray(cat.items).length === 0 && <div className="text-xs text-muted-foreground col-span-full p-4 text-center">{t("no_items_in_category")}</div>}
               {safeArray(cat.items).map(m => (
                 <label key={m.id}
-                  className={`flex items-center justify-between gap-3 p-3 rounded-md border transition-all cursor-pointer ${
-                    m.available ? "border-terracotta/40 bg-terracotta/5" : "border-border bg-white"
-                  }`}
+                  className={`flex items-center justify-between gap-3 p-3 rounded-md border transition-all cursor-pointer ${m.available ? "border-terracotta/40 bg-terracotta/5" : "border-border bg-white"
+                    }`}
                   data-testid={`daily-item-${m.id}`}>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold flex items-center gap-1.5 truncate">
                       {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">{t("thali")}</span>}
-                      {m.name}
+                      {t(m.name)}
                     </div>
                     <div className="text-xs text-muted-foreground font-mono">₹{m.price}</div>
                   </div>

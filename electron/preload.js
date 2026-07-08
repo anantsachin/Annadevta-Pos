@@ -16,4 +16,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   /** Platform info */
   platform: process.platform,
+
+  /** Secure persistent auth storage APIs */
+  setAuthData: (key, value) => ipcRenderer.invoke('set-auth-data', { key, value }),
+  getAuthData: (key) => ipcRenderer.invoke('get-auth-data', { key }),
+  deleteAuthData: (key) => ipcRenderer.invoke('delete-auth-data', { key }),
+  clearAuthData: () => ipcRenderer.invoke('clear-auth-data'),
+
+  /** Logger bridge */
+  log: (tag, message) => ipcRenderer.send('log-from-renderer', { tag, message }),
 });
+

@@ -70,7 +70,7 @@ export default function Login() {
               Tap, total, print. Built for the speed of a real thali counter.
             </p>
             <div className="flex items-center gap-3 opacity-90">
-              <img src="/tranferentlogo.png" alt="Career Craftly" className="h-8" />
+              <img src={`${process.env.PUBLIC_URL}/tranferentlogo.png`} alt="Career Craftly" className="h-8" />
               <div className="text-xs">
                 <div className="font-semibold">Powered by Career Craftly</div>
                 <div className="opacity-75">Crafting Digital Success, Intelligently</div>
@@ -96,7 +96,7 @@ export default function Login() {
               <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-2">Configuration</div>
               <h2 className="font-display text-2xl font-bold tracking-tight mb-1">Server Settings</h2>
               <p className="text-sm text-muted-foreground mb-6">Specify the local network or cloud API URL for your POS server.</p>
-              
+
               <form onSubmit={handleSaveSettings} className="space-y-4">
                 <div>
                   <Label htmlFor="serverUrl" className="text-xs uppercase tracking-wider text-muted-foreground">Server URL / IP</Label>
@@ -111,7 +111,7 @@ export default function Login() {
                     Leave blank to use relative API routes. Set your computer's local IP address if running backend on laptop.
                   </p>
                 </div>
-                
+
                 <div className="flex gap-2 pt-2">
                   <Button type="submit" className="flex-1 bg-terracotta hover:bg-terracotta-hover text-white">
                     Save Connection
@@ -127,7 +127,7 @@ export default function Login() {
               <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-2">{t("sign_in")}</div>
               <h2 className="font-display text-2xl font-bold tracking-tight mb-1">{t("welcome_back")}</h2>
               <p className="text-sm text-muted-foreground mb-6">{t("login_subtext")}</p>
-              
+
               <form onSubmit={onSubmit} className="space-y-4" data-testid="login-form">
                 <div>
                   <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">{t("email")}</Label>
@@ -145,7 +145,7 @@ export default function Login() {
                   {t("sign_in")}
                 </Button>
               </form>
-              
+
               <div className="mt-6 text-xs text-muted-foreground border-b border-border pb-4">
                 Demo: <code className="font-mono">admin@pos.com / admin123</code> &nbsp;·&nbsp; <code className="font-mono">cashier@pos.com / cashier123</code>
               </div>

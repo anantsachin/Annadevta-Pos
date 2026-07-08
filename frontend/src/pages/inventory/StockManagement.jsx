@@ -136,9 +136,8 @@ export default function StockManagement() {
         <div className="flex items-center gap-1 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 hide-scrollbar px-2">
           {statusTabs.map(st => (
             <button key={st.key} onClick={() => setStatusFilter(st.key)}
-              className={`whitespace-nowrap px-4 py-2 text-xs font-bold uppercase tracking-wide rounded-xl transition-all duration-300 ${
-                statusFilter === st.key ? "bg-foreground text-white shadow-md scale-105" : "text-muted-foreground hover:text-foreground hover:bg-sand-subtle"
-              }`}>{st.label}</button>
+              className={`whitespace-nowrap px-4 py-2 text-xs font-bold uppercase tracking-wide rounded-xl transition-all duration-300 ${statusFilter === st.key ? "bg-foreground text-white shadow-md scale-105" : "text-muted-foreground hover:text-foreground hover:bg-sand-subtle"
+                }`}>{st.label}</button>
           ))}
         </div>
       </div>
@@ -175,7 +174,7 @@ export default function StockManagement() {
                 return (
                   <tr key={item.id} className="group hover:bg-sand-subtle/40 transition-all duration-300 cursor-default animate-in fade-in slide-in-from-bottom-4" style={{ animationDelay: `${index * 30}ms`, animationFillMode: 'both' }}>
                     <td className="py-4 pr-4 pl-6">
-                      <div className="font-semibold text-[15px] text-foreground group-hover:text-terracotta transition-colors">{item.name}</div>
+                      <div className="font-semibold text-[15px] text-foreground group-hover:text-terracotta transition-colors">{t(item.name)}</div>
                       {item.barcode && <div className="text-[11px] font-mono text-muted-foreground/70 mt-0.5">{item.barcode}</div>}
                     </td>
                     <td className="py-4 pr-4 font-mono text-xs text-muted-foreground">{item.sku || "—"}</td>
@@ -223,7 +222,7 @@ export default function StockManagement() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="p-3 bg-sand-subtle rounded-lg">
-              <div className="text-sm font-semibold">{addDialog?.item?.name}</div>
+              <div className="text-sm font-semibold">{t(addDialog?.item?.name)}</div>
               <div className="text-xs text-muted-foreground">Current stock: {addDialog?.item?.current_stock ?? "Not tracked"}</div>
             </div>
             <div>
@@ -247,7 +246,7 @@ export default function StockManagement() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2">
-              <Settings2 className="w-5 h-5 text-terracotta" /> Inventory Settings — {settingsDialog?.name}
+              <Settings2 className="w-5 h-5 text-terracotta" /> Inventory Settings — {t(settingsDialog?.name)}
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4">

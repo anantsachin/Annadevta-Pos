@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import api, { API } from "../lib/api";
+import api, { API, tokenStore } from "../lib/api";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -63,7 +63,7 @@ export default function Reports() {
 
   const download = async (fmt) => {
     try {
-      const token = localStorage.getItem("pos_token");
+      const token = await tokenStore.getAccess();
       const url = `${API}/reports/export/${tab}.${fmt}?from_date=${encodeURIComponent(fromIso)}&to_date=${encodeURIComponent(toIsoStr)}`;
       const res = await window.fetch(url, {
         credentials: "include",
@@ -108,9 +108,8 @@ export default function Reports() {
             if (tTab.key === "thalis") label = t("tab_thali");
             return (
               <button key={tTab.key} onClick={() => setTab(tTab.key)} data-testid={`report-${tTab.key}`}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${
-                  tab === tTab.key ? "bg-foreground text-white" : "text-muted-foreground hover:text-foreground"
-                }`}>
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${tab === tTab.key ? "bg-foreground text-white" : "text-muted-foreground hover:text-foreground"
+                  }`}>
                 <tTab.icon className="w-3.5 h-3.5" /> {label}
               </button>
             );
@@ -126,9 +125,8 @@ export default function Reports() {
             if (p.key === "custom") label = t("custom_range");
             return (
               <button key={p.key} onClick={() => setPeriodKey(p.key)} data-testid={`rperiod-${p.key}`}
-                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${
-                  periodKey === p.key ? "bg-terracotta text-white" : "text-muted-foreground hover:text-foreground"
-                }`}>
+                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${periodKey === p.key ? "bg-terracotta text-white" : "text-muted-foreground hover:text-foreground"
+                  }`}>
                 {label}
               </button>
             );
@@ -193,7 +191,7 @@ export default function Reports() {
               {rows.map((it, i) => (
                 <tr key={it.name} className="border-t border-border">
                   <td className="px-4 py-3 font-mono text-muted-foreground">{i + 1}</td>
-                  <td className="px-4 py-3 font-medium">{it.name}</td>
+                  <td className="px-4 py-3 font-medium">{t(it.name)}</td>
                   <td className="px-4 py-3 text-right font-mono">{it.qty}</td>
                   <td className="px-4 py-3 text-right font-mono font-semibold">₹{it.revenue}</td>
                 </tr>
@@ -218,7 +216,7 @@ export default function Reports() {
                 {rows.map((it, i) => (
                   <tr key={it.name} className="border-t border-border">
                     <td className="px-4 py-3 font-mono text-muted-foreground">{i + 1}</td>
-                    <td className="px-4 py-3 font-medium">{it.name}</td>
+                    <td className="px-4 py-3 font-medium">{t(it.name)}</td>
                     <td className="px-4 py-3 text-right font-mono">{it.qty}</td>
                     <td className="px-4 py-3 text-right font-mono font-semibold">₹{it.revenue}</td>
                   </tr>
@@ -232,7 +230,7 @@ export default function Reports() {
                 <div className="flex flex-wrap gap-2">
                   {thaliPicks.slice(0, 20).map((p) => (
                     <span key={p.name} className="text-xs px-2.5 py-1 rounded-md bg-white border border-border">
-                      {p.name} <span className="font-mono text-muted-foreground">×{p.qty}</span>
+                      {t(p.name)} <span className="font-mono text-muted-foreground">×{p.qty}</span>
                     </span>
                   ))}
                 </div>

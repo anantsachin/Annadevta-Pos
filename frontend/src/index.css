@@ -13,12 +13,17 @@ body {
     color: #1C1C1C;
 }
 
-h1, h2, h3, h4, .font-display {
+h1,
+h2,
+h3,
+h4,
+.font-display {
     font-family: 'Manrope', system-ui, sans-serif;
     letter-spacing: -0.01em;
 }
 
-code, .font-mono {
+code,
+.font-mono {
     font-family: 'JetBrains Mono', monospace;
 }
 
@@ -56,6 +61,7 @@ code, .font-mono {
     * {
         @apply border-border;
     }
+
     body {
         @apply bg-background text-foreground;
     }
@@ -66,35 +72,101 @@ code, .font-mono {
     box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.6);
     animation: pulse-ring 2s infinite;
 }
+
 .pulse-dot-offline {
     box-shadow: 0 0 0 0 rgba(217, 4, 41, 0.6);
     animation: pulse-ring-red 2s infinite;
 }
+
 @keyframes pulse-ring {
-    0% { box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.6); }
-    70% { box-shadow: 0 0 0 8px rgba(45, 106, 79, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(45, 106, 79, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.6);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(45, 106, 79, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(45, 106, 79, 0);
+    }
 }
+
 @keyframes pulse-ring-red {
-    0% { box-shadow: 0 0 0 0 rgba(217, 4, 41, 0.6); }
-    70% { box-shadow: 0 0 0 8px rgba(217, 4, 41, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(217, 4, 41, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(217, 4, 41, 0.6);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(217, 4, 41, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(217, 4, 41, 0);
+    }
 }
 
 .tap-scale:active {
     transform: scale(0.97);
 }
 
-/* Slim scrollbars */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #E6E4DE; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #C9C6BE; }
+/* Slim scrollbars (global) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #E6E4DE;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #C9C6BE;
+}
+
+/* ── Cart items list — modern thin POS-style scrollbar ── */
+.cart-items-list {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: #bdbdbd transparent;
+    /* Smooth desktop scroll */
+    scroll-behavior: smooth;
+    /* Native momentum scroll on iOS / Android */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.cart-items-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cart-items-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.cart-items-list::-webkit-scrollbar-thumb {
+    background: #bdbdbd;
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+
+.cart-items-list::-webkit-scrollbar-thumb:hover,
+.cart-items-list::-webkit-scrollbar-thumb:active {
+    background: #9e9e9e;
+}
 
 /* Grid pattern bg */
 .grid-bg {
     background-image:
-        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+        linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
     background-size: 24px 24px;
 }

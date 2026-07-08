@@ -93,7 +93,7 @@ export default function OrderHistory() {
                 <tr key={o.id} className="border-t border-border hover:bg-sand-subtle/40" data-testid={`order-row-${o.id}`}>
                   <td className="px-4 py-3 font-mono font-semibold">#{o.receipt_no}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(o.paid_at).toLocaleString('en-IN')}</td>
-                  <td className="px-4 py-3 text-xs">{orderItems.map(i => `${i.name} ×${i.qty}`).join(", ")}</td>
+                  <td className="px-4 py-3 text-xs">{orderItems.map(i => `${t(i.name)} ×${i.qty}`).join(", ")}</td>
                   <td className="px-4 py-3"><span className="text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded-md bg-sand-subtle border border-border">{pm}</span></td>
                   <td className="px-4 py-3 text-right font-mono font-bold">₹{o.total}</td>
                   <td className="px-4 py-3 text-right">

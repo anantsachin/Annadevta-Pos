@@ -38,7 +38,7 @@ export default function Billing() {
         api.get("/menu"),
         api.get("/settings"),
       ]);
-      
+
       if (!Array.isArray(c.data) || !Array.isArray(m.data)) {
         throw new Error("Invalid format received from server (expected arrays)");
       }
@@ -173,20 +173,18 @@ export default function Billing() {
           {/* Horizontal Categories Bar */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
             <button onClick={() => setActiveCat("all")} data-testid="cat-all"
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all border ${
-                activeCat === "all" 
-                  ? "bg-terracotta text-white border-terracotta shadow-sm" 
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all border ${activeCat === "all"
+                  ? "bg-terracotta text-white border-terracotta shadow-sm"
                   : "bg-white hover:bg-sand-subtle border-border text-muted-foreground hover:text-foreground"
-              }`}>
+                }`}>
               {t("all_items")}
             </button>
             {Array.isArray(categories) && categories.map((c) => (
               <button key={c.id} onClick={() => setActiveCat(c.id)} data-testid={`cat-${c.id}`}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all border ${
-                  activeCat === c.id 
-                    ? "bg-terracotta text-white border-terracotta shadow-sm" 
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all border ${activeCat === c.id
+                    ? "bg-terracotta text-white border-terracotta shadow-sm"
                     : "bg-white hover:bg-sand-subtle border-border text-muted-foreground hover:text-foreground"
-                }`}>
+                  }`}>
                 {c.name}
               </button>
             ))}
@@ -205,16 +203,15 @@ export default function Billing() {
 
       {/* Mobile Cart Backdrop */}
       {showCartMobile && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 bg-black/40 z-30 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => setShowCartMobile(false)}
         />
       )}
 
       {/* Cart Panel - Slide-in on mobile, Sidebar column on desktop */}
-      <div className={`fixed inset-y-0 right-0 z-40 w-full sm:w-[420px] border-l border-border bg-white flex flex-col transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-auto lg:col-span-4 ${
-        showCartMobile ? "translate-x-0" : "translate-x-full"
-      }`}>
+      <div className={`fixed inset-y-0 right-0 z-40 w-full sm:w-[420px] border-l border-border bg-white flex flex-col overflow-hidden transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-auto lg:col-span-4 ${showCartMobile ? "translate-x-0" : "translate-x-full"
+        }`}>
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div>
             <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("current_bill")}</div>
@@ -229,7 +226,7 @@ export default function Billing() {
               }} data-testid="clear-cart"
                 className="text-xs text-muted-foreground hover:text-destructive">{t("clear")}</button>
             )}
-            <button 
+            <button
               onClick={() => setShowCartMobile(false)}
               className="lg:hidden p-1.5 rounded-md hover:bg-sand-subtle text-foreground transition-all"
             >
@@ -241,28 +238,26 @@ export default function Billing() {
         <div className="flex border-b border-border text-xs">
           <button
             onClick={() => setActiveTab("cart")}
-            className={`flex-1 py-2.5 font-bold uppercase tracking-wider text-center border-b-2 transition-all ${
-              activeTab === "cart"
+            className={`flex-1 py-2.5 font-bold uppercase tracking-wider text-center border-b-2 transition-all ${activeTab === "cart"
                 ? "border-terracotta text-terracotta bg-sand-subtle/30"
                 : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             {t("cart_list")}
           </button>
           <button
             onClick={() => setActiveTab("receipt")}
-            className={`flex-1 py-2.5 font-bold uppercase tracking-wider text-center border-b-2 transition-all ${
-              activeTab === "receipt"
+            className={`flex-1 py-2.5 font-bold uppercase tracking-wider text-center border-b-2 transition-all ${activeTab === "receipt"
                 ? "border-terracotta text-terracotta bg-sand-subtle/30"
                 : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             {t("receipt_preview")}
           </button>
         </div>
 
         {activeTab === "cart" ? (
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" data-testid="cart-items">
+          <div className="cart-items-list px-4 py-3 space-y-3" data-testid="cart-items">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-sm text-muted-foreground p-6">
                 <ChefHat className="w-10 h-10 mb-3 text-muted-foreground/60" />

@@ -74,11 +74,11 @@ export default function Settings() {
       if (data?.language) {
         changeLanguage(data.language);
       }
-      
+
       // Notify other components (like Layout) that settings were updated
       console.log("Dispatching settingsUpdated event");
       window.dispatchEvent(new Event('settingsUpdated'));
-      
+
       toast.success(t("settings_saved_success"));
     } catch (e) {
       toast.error(e?.response?.data?.detail || "Save failed");
@@ -89,12 +89,12 @@ export default function Settings() {
     setBackupBusy(true);
     try {
       const { data } = await api.post("/backup/create");
-      
+
       // Create timestamped filename
       const now = new Date();
       const timestamp = now.toISOString().replace(/:/g, '-').split('.')[0];
       const filename = `AnndevtaPOS_Backup_${timestamp}.json`;
-      
+
       // Create download link
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
@@ -105,11 +105,11 @@ export default function Settings() {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
+
       // Save backup timestamp
       localStorage.setItem("lastBackupTime", now.toISOString());
       setLastBackup(now);
-      
+
       toast.success(`${t("backup_created")}: ${filename}`);
     } catch (e) {
       toast.error(e?.response?.data?.detail || "Backup failed");
@@ -123,41 +123,41 @@ export default function Settings() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    
+
     input.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      
+
       // Confirm before restore
       if (!window.confirm(t("confirm_restore"))) {
         return;
       }
-      
+
       setRestoreBusy(true);
       try {
         const text = await file.text();
         const backupData = JSON.parse(text);
-        
+
         // Validate backup structure
         if (!backupData.collections || !backupData.timestamp) {
           throw new Error(t("invalid_backup_format"));
         }
-        
+
         await api.post("/backup/restore", backupData);
-        
+
         toast.success(t("backup_restored"));
-        
+
         // Reload page after 2 seconds
         setTimeout(() => {
           window.location.reload();
         }, 2000);
-        
+
       } catch (e) {
         toast.error(e?.response?.data?.detail || e.message || "Restore failed");
         setRestoreBusy(false);
       }
     };
-    
+
     input.click();
   };
 
@@ -166,13 +166,13 @@ export default function Settings() {
       toast.error("Printer API not available. Please run in Electron app.");
       return;
     }
-    
+
     setTestPrinting(true);
     try {
       const printerName = s.default_printer || null;
       const paperWidth = Number(s.paper_width) || 80;
       const success = await window.electronAPI.printer.testPrint(printerName, paperWidth);
-      
+
       if (success) {
         toast.success("Test print sent successfully!");
       } else {
@@ -187,9 +187,9 @@ export default function Settings() {
 
   const getBackupStatus = () => {
     if (!lastBackup) return { text: "No Backup Found", color: "text-destructive", showWarning: true };
-    
+
     const daysSince = Math.floor((Date.now() - lastBackup.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (daysSince >= 30) {
       return { text: "Backup Overdue", color: "text-destructive", showWarning: true };
     } else if (daysSince >= 7) {
@@ -261,7 +261,7 @@ export default function Settings() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Side: Form Controls */}
         <div className="lg:col-span-7 space-y-6">
-          
+
           {/* Section 1: Restaurant Profile */}
           <Card className="p-6 border-border shadow-none space-y-4">
             <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
@@ -309,23 +309,23 @@ export default function Settings() {
               <div className="space-y-3">
                 <div>
                   <label className="text-xs uppercase tracking-wider text-muted-foreground">App Name</label>
-                  <Input 
-                    value={s.app_name ?? "Anndevta"} 
-                    onChange={(e) => setS({ ...s, app_name: e.target.value })} 
-                    className="mt-1" 
+                  <Input
+                    value={s.app_name ?? "Anndevta"}
+                    onChange={(e) => setS({ ...s, app_name: e.target.value })}
+                    className="mt-1"
                     placeholder="Anndevta"
-                    data-testid="set-app-name" 
+                    data-testid="set-app-name"
                   />
                   <div className="text-[10px] text-muted-foreground mt-1">Displayed at the top of the sidebar</div>
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-wider text-muted-foreground">Tagline</label>
-                  <Input 
-                    value={s.app_tagline ?? "THALI BILLING COUNTER"} 
-                    onChange={(e) => setS({ ...s, app_tagline: e.target.value })} 
-                    className="mt-1" 
+                  <Input
+                    value={s.app_tagline ?? "THALI BILLING COUNTER"}
+                    onChange={(e) => setS({ ...s, app_tagline: e.target.value })}
+                    className="mt-1"
                     placeholder="THALI BILLING COUNTER"
-                    data-testid="set-app-tagline" 
+                    data-testid="set-app-tagline"
                   />
                   <div className="text-[10px] text-muted-foreground mt-1">Subtitle below the app name</div>
                 </div>
@@ -536,7 +536,7 @@ export default function Settings() {
             <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
               <Database className="w-4 h-4" /> {t("data_management")}
             </h2>
-            
+
             <div className="bg-sand-subtle/40 border border-border rounded-md p-4">
               <div className="flex items-start gap-3">
                 <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${getBackupStatus().showWarning ? 'text-amber-600' : 'text-muted-foreground'}`} />
@@ -589,16 +589,16 @@ export default function Settings() {
             <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
               <Info className="w-4 h-4" /> System Information
             </h2>
-            
+
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
               <div className="flex items-center gap-4 mb-4">
-                <img src="/tranferentlogo.png" alt="Career Craftly" className="h-16" />
+                <img src={`${process.env.PUBLIC_URL}/tranferentlogo.png`} alt="Career Craftly" className="h-16" />
                 <div>
                   <div className="text-xl font-bold text-blue-900">Career Craftly</div>
                   <div className="text-sm text-blue-700">Crafting Digital Success, Intelligently</div>
                 </div>
               </div>
-              
+
               <div className="border-t border-blue-300 pt-4 space-y-2 text-sm text-blue-800">
                 <div className="flex justify-between">
                   <span className="font-semibold">Product:</span>
@@ -617,11 +617,11 @@ export default function Settings() {
                   <span>Commercial</span>
                 </div>
               </div>
-              
+
               <div className="mt-4 pt-4 border-t border-blue-300 text-xs text-blue-700">
                 <p className="leading-relaxed">
-                  This Point of Sale system is professionally developed by <strong>Career Craftly</strong>, 
-                  a leading digital solutions provider. For support, updates, or custom features, 
+                  This Point of Sale system is professionally developed by <strong>Career Craftly</strong>,
+                  a leading digital solutions provider. For support, updates, or custom features,
                   contact Career Craftly.
                 </p>
               </div>

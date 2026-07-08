@@ -9,7 +9,7 @@
  *  5. On quit: gracefully terminate backend → mongod
  */
 
-const { app, BrowserWindow, dialog, shell } = require('electron');
+const { app, BrowserWindow, dialog, shell, ipcMain } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
@@ -234,7 +234,13 @@ function killProcess(proc, name) {
   if (!proc) return;
   try {
     logToFile('main', `Terminating ${name} (PID ${proc.pid})...`);
-    process.kill(proc.pid, 'SIGTERM');
+    if (process.platform === 'win32') {
+      // Use taskkill to kill the process and all its children recursively and forcibly.
+      // This is crucial to prevent zombie PyInstaller backend/mongod processes on Windows.
+      spawn('taskkill', ['/F', '/T', '/PID', proc.pid.toString()]);
+    } else {
+      process.kill(proc.pid, 'SIGTERM');
+    }
   } catch (e) {
     logToFile('main', `Failed to kill ${name}: ${e.message}`);
   }
@@ -245,6 +251,93 @@ function shutdownServices() {
   // Wait briefly before killing mongod so backend can flush writes
   setTimeout(() => killProcess(mongodProc, 'mongod'), 1500);
 }
+
+// ─── IPC Handlers for Authentication Persistence ────────────────────────────
+function getSessionFilePath() {
+  const userDataDir = app.getPath('userData');
+  if (!fs.existsSync(userDataDir)) {
+    fs.mkdirSync(userDataDir, { recursive: true });
+  }
+  return path.join(userDataDir, 'session.json');
+}
+
+function readSession() {
+  const sessionFile = getSessionFilePath();
+  try {
+    if (fs.existsSync(sessionFile)) {
+      const data = fs.readFileSync(sessionFile, 'utf8');
+      if (!data || data.trim() === '') {
+        logToFile('main', 'Session file is empty');
+        return {};
+      }
+      return JSON.parse(data);
+    }
+  } catch (e) {
+    logToFile('main', `Failed to read session file: ${e.message}. Resetting...`);
+    try { fs.writeFileSync(sessionFile, '{}', 'utf8'); } catch (_) {}
+  }
+  return {};
+}
+
+function writeSession(session) {
+  const sessionFile = getSessionFilePath();
+  try {
+    fs.writeFileSync(sessionFile, JSON.stringify(session, null, 2), 'utf8');
+  } catch (e) {
+    logToFile('main', `Failed to write session file: ${e.message}`);
+  }
+}
+
+ipcMain.on('log-from-renderer', (event, { tag, message }) => {
+  logToFile(`renderer:${tag}`, message);
+});
+
+ipcMain.handle('set-auth-data', (event, { key, value }) => {
+  logToFile('ipc', `set-auth-data for key: ${key}`);
+  const session = readSession();
+  session[key] = value;
+  writeSession(session);
+  return true;
+});
+
+ipcMain.handle('get-auth-data', (event, { key }) => {
+  logToFile('ipc', `get-auth-data for key: ${key}`);
+  const session = readSession();
+  const val = session[key] || null;
+  logToFile('ipc', `get-auth-data result for ${key}: ${val ? 'found' : 'not found'}`);
+  return val;
+});
+
+ipcMain.handle('delete-auth-data', (event, { key }) => {
+  logToFile('ipc', `delete-auth-data for key: ${key}`);
+  const session = readSession();
+  delete session[key];
+  writeSession(session);
+  return true;
+});
+
+ipcMain.handle('clear-auth-data', () => {
+  logToFile('ipc', 'clear-auth-data');
+  const sessionFile = getSessionFilePath();
+  try {
+    if (fs.existsSync(sessionFile)) {
+      fs.unlinkSync(sessionFile);
+    }
+  } catch (e) {
+    logToFile('main', `Failed to delete session file: ${e.message}`);
+  }
+  return true;
+});
+
+
+ipcMain.handle('get-version', () => {
+  return app.getVersion();
+});
+
+ipcMain.handle('open-logs', () => {
+  shell.openPath(MONGO_LOG_DIR);
+  return true;
+});
 
 // ─── App lifecycle ───────────────────────────────────────────────────────────
 

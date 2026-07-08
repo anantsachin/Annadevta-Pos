@@ -11,6 +11,21 @@ import { useLanguage } from "../context/LanguageContext";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { safeArray } from "../lib/safeArray";
 
+function translateExtras(extrasStr, t) {
+  if (!extrasStr) return "";
+  return extrasStr
+    .split(",")
+    .map((part) => {
+      const trimmed = part.trim();
+      const match = trimmed.match(/^(.+?)\s*(?:\((\d+)\))?$/);
+      if (!match) return trimmed;
+      const name = match[1].trim();
+      const qty = match[2] ? ` (${match[2]})` : "";
+      return `${t(name)}${qty}`;
+    })
+    .join(", ");
+}
+
 export default function MenuPage() {
   const [categories, setCategories] = useState([]);
   const [menu, setMenu] = useState([]);
@@ -42,7 +57,7 @@ export default function MenuPage() {
       name: "",
       category_id: categories[0]?.id || "",
       price: 0,
-      available: true,
+      available: false,
       is_thali: false,
       thali_groups: [],
       thali_extras: "",
@@ -134,17 +149,17 @@ export default function MenuPage() {
         {categories.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
             {safeArray(categories).map(c => (
-              <div 
-                key={c.id} 
+              <div
+                key={c.id}
                 className="group relative flex items-center justify-between px-4 py-3 rounded-lg bg-gradient-to-br from-sand-subtle to-white border border-border hover:border-terracotta/50 hover:shadow-sm transition-all"
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <div className="w-2 h-2 rounded-full bg-terracotta flex-shrink-0"></div>
-                  <span className="text-sm font-semibold text-foreground truncate">{c.name}</span>
+                  <span className="text-sm font-semibold text-foreground truncate">{t(c.name)}</span>
                 </div>
-                <button 
-                  onClick={() => removeCat(c)} 
-                  data-testid={`del-cat-${c.id}`} 
+                <button
+                  onClick={() => removeCat(c)}
+                  data-testid={`del-cat-${c.id}`}
                   className="opacity-0 group-hover:opacity-100 ml-2 p-1.5 rounded-md text-muted-foreground hover:text-white hover:bg-destructive transition-all flex-shrink-0"
                   title="Delete category"
                 >
@@ -161,18 +176,18 @@ export default function MenuPage() {
 
         {/* Add Category Input */}
         <div className="flex gap-2 pt-4 border-t border-border">
-          <Input 
-            value={catName} 
-            onChange={(e) => setCatName(e.target.value)} 
+          <Input
+            value={catName}
+            onChange={(e) => setCatName(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && addCategory()}
-            placeholder={t("category_name_placeholder") || "e.g., Sabji, Dal, Rice"} 
+            placeholder={t("category_name_placeholder") || "e.g., Sabji, Dal, Rice"}
             className="flex-1"
-            data-testid="cat-name" 
+            data-testid="cat-name"
           />
-          <Button 
-            onClick={addCategory} 
+          <Button
+            onClick={addCategory}
             disabled={!catName.trim()}
-            className="bg-terracotta hover:bg-terracotta-hover text-white px-6" 
+            className="bg-terracotta hover:bg-terracotta-hover text-white px-6"
             data-testid="add-cat-btn"
           >
             <Plus className="w-4 h-4 mr-2" /> Add
@@ -197,16 +212,16 @@ export default function MenuPage() {
                 <td className="px-4 py-3 font-medium">
                   <div className="flex items-center gap-2">
                     {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">{t("thali")}</span>}
-                    {m.name}
+                    {t(m.name)}
                   </div>
                   {m.is_thali && m.thali_groups?.length > 0 && (
                     <div className="text-[11px] text-muted-foreground mt-1">
-                      {m.thali_groups.map(g => `${g.count} ${g.label}`).join(' + ')}
-                      {m.thali_extras ? ` + ${m.thali_extras}` : ''}
+                      {m.thali_groups.map(g => `${g.count} ${t(g.label)}`).join(' + ')}
+                      {m.thali_extras ? ` + ${translateExtras(m.thali_extras, t)}` : ''}
                     </div>
                   )}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{categories.find(c => c.id === m.category_id)?.name || "—"}</td>
+                <td className="px-4 py-3 text-muted-foreground">{t(categories.find(c => c.id === m.category_id)?.name) || "—"}</td>
                 <td className="px-4 py-3 text-right font-mono">₹{m.price}</td>
                 <td className="px-4 py-3 text-center">
                   <Switch checked={m.available} onCheckedChange={() => toggle(m)} data-testid={`toggle-${m.id}`} />

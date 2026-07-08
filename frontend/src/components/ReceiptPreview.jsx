@@ -2,12 +2,59 @@ import React, { useMemo } from "react";
 import { Plus, Minus, Trash2 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
-function formatThaliSelections(selections) {
-  if (!selections) return [];
-  return Object.entries(selections)
-    .map(([k, v]) => (v && v.length ? v : null))
-    .filter(Boolean)
-    .flat();
+function getGroupedThaliItems(selections, extras, t) {
+  const itemMap = new Map();
+
+  const parseItem = (str) => {
+    if (!str) return null;
+    const trimmed = str.trim();
+    const match = trimmed.match(/^(.+?)\s*(?:\((\d+)\))?$/);
+    if (!match) return null;
+    const name = match[1].trim();
+    const qty = match[2] ? parseInt(match[2], 10) : 1;
+    return { name, qty };
+  };
+
+  // 1. Process selections
+  if (selections) {
+    let selectionsArray = [];
+    if (Array.isArray(selections)) {
+      selectionsArray = selections;
+    } else if (typeof selections === 'object') {
+      selectionsArray = Object.entries(selections)
+        .map(([k, v]) => (v && v.length ? v : null))
+        .filter(Boolean)
+        .flat();
+    }
+
+    for (const itemStr of selectionsArray) {
+      const parsed = parseItem(itemStr);
+      if (parsed && parsed.name) {
+        const currentQty = itemMap.get(parsed.name) || 0;
+        itemMap.set(parsed.name, currentQty + parsed.qty);
+      }
+    }
+  }
+
+  // 2. Process extras
+  if (extras && typeof extras === 'string') {
+    const parts = extras.split(',');
+    for (const part of parts) {
+      const parsed = parseItem(part);
+      if (parsed && parsed.name) {
+        const currentQty = itemMap.get(parsed.name) || 0;
+        itemMap.set(parsed.name, currentQty + parsed.qty);
+      }
+    }
+  }
+
+  // 3. Format into list: "Name (Qty)"
+  const result = [];
+  for (const [name, qty] of itemMap.entries()) {
+    const displayName = t ? t(name) : name;
+    result.push(`${displayName} (${qty})`);
+  }
+  return result;
 }
 
 export default function ReceiptPreview({
@@ -35,7 +82,7 @@ export default function ReceiptPreview({
   // Read configurations
   const prefix = settings?.receipt_prefix || '';
   const paddingCount = Number(settings?.receipt_padding) || 6;
-  
+
   // Format receipt number: if order is being billed (no receipt_no yet), show PENDING
   const receiptNoFormatted = order.receipt_no !== undefined
     ? `${prefix}${String(order.receipt_no).padStart(paddingCount, '0')}`
@@ -45,11 +92,11 @@ export default function ReceiptPreview({
   const gstRate = settings?.gst_rate ?? 5.0;
 
   // Formatting styles matching settings
-  const previewFontClass = 
-    settings?.font_size === "small" ? "text-[10px]" : 
-    settings?.font_size === "large" ? "text-sm" : "text-xs";
+  const previewFontClass =
+    settings?.font_size === "small" ? "text-[10px]" :
+      settings?.font_size === "large" ? "text-sm" : "text-xs";
 
-  const previewWidthClass = 
+  const previewWidthClass =
     Number(settings?.paper_width) === 58 ? "w-[220px]" : "w-[290px]";
 
   const headerAlignClass = settings?.header_alignment === "left" ? "text-left" : "text-center";
@@ -64,7 +111,7 @@ export default function ReceiptPreview({
         </div>
       );
     }
-    
+
     if (settings?.header_template === "modern") {
       return (
         <div className={headerAlignClass}>
@@ -90,7 +137,7 @@ export default function ReceiptPreview({
 
   return (
     <div className={`bg-[#fdfbf7] p-5 shadow-[0px_4px_10px_rgba(0,0,0,0.15)] border-y border-dashed border-[#e6e4de] font-mono leading-relaxed text-[#1a1a1a] transition-all duration-300 ${previewFontClass} ${previewWidthClass}`}>
-      
+
       {/* Header */}
       {renderHeader()}
 
@@ -105,9 +152,15 @@ export default function ReceiptPreview({
           <div>
             {t("cashier")}: {
               order.cashier_name === "Owner" ? t("owner") :
-              order.cashier_name === "Cashier" ? t("cashier") : order.cashier_name
+                order.cashier_name === "Cashier" ? t("cashier") : order.cashier_name
             }
           </div>
+        )}
+        {order.customer_name && (
+          <div>{t("customer")}: {order.customer_name}</div>
+        )}
+        {order.customer_phone && (
+          <div>{t("phone")}: {order.customer_phone}</div>
         )}
       </div>
 
@@ -119,22 +172,21 @@ export default function ReceiptPreview({
       <div className="space-y-2">
         {Array.isArray(order?.items) && order.items.map((line, idx) => {
           const key = line._key || `${line.menu_item_id}-${idx}`;
-          const selectionsList = formatThaliSelections(line.thali_selections);
+          const selectionsList = getGroupedThaliItems(line.thali_selections, line.thali_extras, t);
           return (
             <div key={key} className="group relative">
-              <div className="font-bold text-left">{line.name}</div>
+              <div className="font-bold text-left">{t(line.name)}</div>
               <div className="flex justify-between text-[11px] text-[#222]">
                 <span>{line.qty} x Rs.{Number(line.price).toFixed(2)}</span>
                 <span className="font-bold">Rs.{(line.price * line.qty).toFixed(2)}</span>
               </div>
-              
+
               {/* Thali Custom Customizations list */}
               {line.is_thali && Array.isArray(selectionsList) && selectionsList.length > 0 && (
-                <div className="text-[10px] text-[#555] pl-3 mt-0.5 leading-tight">
+                <div className="text-[10px] text-[#555] pl-3 mt-0.5 leading-tight" data-testid={`thali-selections-${key}`}>
                   {selectionsList.map((sel, sIdx) => (
                     <div key={sIdx}>• {sel}</div>
                   ))}
-                  {line.thali_extras && <div>• {t("includes")} {line.thali_extras}</div>}
                 </div>
               )}
 
@@ -181,12 +233,12 @@ export default function ReceiptPreview({
       </div>
 
       <div className="my-2 border-t border-dashed border-black" />
-      
+
       <div className="flex justify-between font-extrabold text-sm py-0.5">
         <span>{t("total_uppercase")}</span>
         <span>Rs.{Number(order.total || 0).toFixed(2)}</span>
       </div>
-      
+
       <div className="my-2 border-t border-dashed border-black" />
 
       {/* Payment details */}
@@ -194,8 +246,8 @@ export default function ReceiptPreview({
         <div className="font-bold text-[10px] uppercase">
           {t("payment")} : {
             order.payment_mode === "cash" ? t("cash") :
-            order.payment_mode === "upi" ? t("upi") :
-            order.payment_mode === "card" ? t("card") : order.payment_mode
+              order.payment_mode === "upi" ? t("upi") :
+                order.payment_mode === "card" ? t("card") : order.payment_mode
           }
         </div>
       )}
@@ -206,9 +258,9 @@ export default function ReceiptPreview({
       <div className="text-center font-bold uppercase text-[10px] space-y-0.5">
         <div>
           {
-            (!settings?.footer_msg || 
-             settings.footer_msg === "Thank you! Please visit again." || 
-             settings.footer_msg === "Thank you for dining with us!")
+            (!settings?.footer_msg ||
+              settings.footer_msg === "Thank you! Please visit again." ||
+              settings.footer_msg === "Thank you for dining with us!")
               ? `${t("thank_you")}! ${t("visit_again")}`
               : settings.footer_msg
           }

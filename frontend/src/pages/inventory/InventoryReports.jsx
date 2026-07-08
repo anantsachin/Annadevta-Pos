@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import api, { API } from "../../lib/api";
+import api, { API, tokenStore } from "../../lib/api";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -49,7 +49,7 @@ export default function InventoryReports() {
 
   const download = async (fmt) => {
     try {
-      const token = localStorage.getItem("pos_token");
+      const token = await tokenStore.getAccess();
       const params = new URLSearchParams();
       if (["movement", "purchases"].includes(tab)) {
         params.set("from_date", new Date(fromDate).toISOString());

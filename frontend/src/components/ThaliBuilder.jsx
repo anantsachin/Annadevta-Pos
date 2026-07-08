@@ -4,6 +4,21 @@ import { Button } from "../components/ui/button";
 import { Check } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
+function translateExtras(extrasStr, t) {
+  if (!extrasStr) return "";
+  return extrasStr
+    .split(",")
+    .map((part) => {
+      const trimmed = part.trim();
+      const match = trimmed.match(/^(.+?)\s*(?:\((\d+)\))?$/);
+      if (!match) return trimmed;
+      const name = match[1].trim();
+      const qty = match[2] ? ` (${match[2]})` : "";
+      return `${t(name)}${qty}`;
+    })
+    .join(", ");
+}
+
 export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
   const [picks, setPicks] = useState({});
   const [breadConsumed, setBreadConsumed] = useState(0);
@@ -27,20 +42,20 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
       const next = Math.max(1, prev + delta);
       // Scale bread
       if (thali?.included_bread_count) {
-         setBreadConsumed(thali.included_bread_count * next);
+        setBreadConsumed(thali.included_bread_count * next);
       }
       // Trim picks if needed
       setPicks(p => {
-         const np = { ...p };
-         let changed = false;
-         (thali.thali_groups || []).forEach(g => {
-            const max = g.count * next;
-            if ((np[g.category_id] || []).length > max) {
-               np[g.category_id] = np[g.category_id].slice(-max);
-               changed = true;
-            }
-         });
-         return changed ? np : p;
+        const np = { ...p };
+        let changed = false;
+        (thali.thali_groups || []).forEach(g => {
+          const max = g.count * next;
+          if ((np[g.category_id] || []).length > max) {
+            np[g.category_id] = np[g.category_id].slice(-max);
+            changed = true;
+          }
+        });
+        return changed ? np : p;
       });
       return next;
     });
@@ -73,7 +88,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
   const extraBreadPrice = thali.extra_bread_price || 10;
   const breadMode = thali.bread_mode || "fixed";
   const isUnlimited = breadMode === "unlimited";
-  
+
   const extraBread = isUnlimited ? 0 : Math.max(0, breadConsumed - includedBread);
   const extraBreadCharge = extraBread * extraBreadPrice;
 
@@ -106,10 +121,10 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
           <div className="flex items-start justify-between pr-8">
             <div>
               <DialogTitle className="font-display text-2xl tracking-tight">
-                {thali.name} <span className="text-terracotta font-mono text-lg ml-2">₹{thali.price * thaliQty}</span>
+                {t(thali.name)} <span className="text-terracotta font-mono text-lg ml-2">₹{thali.price * thaliQty}</span>
               </DialogTitle>
               <DialogDescription className="mt-1.5">
-                {thali.thali_extras ? <span>{t("includes")}: <span className="text-foreground">{thali.thali_extras}</span></span> : t("pick_todays_items")}
+                {thali.thali_extras ? <span>{t("includes")}: <span className="text-foreground">{translateExtras(thali.thali_extras, t)}</span></span> : t("pick_todays_items")}
               </DialogDescription>
             </div>
             <div className="flex flex-col items-center gap-1.5">
@@ -131,7 +146,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
               <div key={g.category_id} data-testid={`thali-group-${g.category_id}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-xs uppercase tracking-[0.2em] font-semibold text-muted-foreground">
-                    {g.label || "Group"}
+                    {t(g.label) || "Group"}
                   </div>
                   <div className={`text-xs font-mono font-semibold ${chosen.length === g.count * thaliQty ? "text-forest" : "text-amber-600"}`}>
                     {chosen.length} / {g.count * thaliQty} {t("picked")}
@@ -150,22 +165,20 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
                         <div key={it.id}
                           onClick={() => addPick(g.category_id, it.name, maxQty)}
                           data-testid={`thali-pick-${it.id}`}
-                          className={`cursor-pointer tap-scale text-left p-3 rounded-md border transition-all ${
-                            countInChosen > 0
+                          className={`cursor-pointer tap-scale text-left p-3 rounded-md border transition-all ${countInChosen > 0
                               ? "border-terracotta bg-terracotta-light text-foreground"
                               : "border-border bg-white hover:border-terracotta/50"
-                          }`}>
+                            }`}>
                           <div className="flex items-start justify-between gap-1.5 min-h-[24px]">
                             <span className="text-sm font-semibold flex items-center gap-1.5 flex-wrap flex-1">
-                              <span>{it.name}</span>
+                              <span>{t(it.name)}</span>
                               {it.current_stock !== undefined && it.current_stock !== null && (
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
-                                  it.current_stock <= 0 
-                                    ? "bg-red-50 text-red-600 border border-red-200" 
-                                    : it.current_stock <= (it.reorder_level || 5) 
-                                    ? "bg-amber-50 text-amber-700 border border-amber-200" 
-                                    : "bg-slate-50 text-slate-600 border border-slate-200"
-                                }`}>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${it.current_stock <= 0
+                                    ? "bg-red-50 text-red-600 border border-red-200"
+                                    : it.current_stock <= (it.reorder_level || 5)
+                                      ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                      : "bg-slate-50 text-slate-600 border border-slate-200"
+                                  }`}>
                                   {it.current_stock % 1 !== 0 ? it.current_stock.toFixed(3) : it.current_stock} kg
                                 </span>
                               )}
@@ -199,7 +212,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
               <div className="text-sm font-semibold text-amber-900 mb-3">
                 🍞 Bread Consumption
               </div>
-              
+
               {isUnlimited ? (
                 <div className="text-center py-2">
                   <div className="text-lg font-bold text-forest">
@@ -215,7 +228,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
                     <span className="text-muted-foreground">Included:</span>
                     <span className="font-mono font-semibold">{includedBread}</span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Consumed:</span>
                     <div className="flex items-center gap-2">
@@ -249,7 +262,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
                         <span className="text-amber-800 font-medium">Extra Bread:</span>
                         <span className="font-mono font-semibold text-amber-900">{extraBread}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-amber-800 font-medium">Extra Charge:</span>
                         <span className="font-mono font-bold text-lg text-terracotta">

@@ -126,9 +126,8 @@ export default function PurchaseOrders() {
       <div className="flex items-center gap-1 p-1 bg-white border border-border rounded-md mb-4 w-fit">
         {statusTabs.map(st => (
           <button key={st.key} onClick={() => setStatusFilter(st.key)}
-            className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${
-              statusFilter === st.key ? "bg-foreground text-white" : "text-muted-foreground hover:text-foreground"
-            }`}>{st.label}</button>
+            className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${statusFilter === st.key ? "bg-foreground text-white" : "text-muted-foreground hover:text-foreground"
+              }`}>{st.label}</button>
         ))}
       </div>
 

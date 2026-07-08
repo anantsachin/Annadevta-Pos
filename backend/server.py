@@ -14,8 +14,18 @@ else:
     ROOT_DIR = Path(__file__).parent
 
 load_dotenv(ROOT_DIR / '.env')
-import google.generativeai as genai
-genai.configure(api_key=os.environ.get('GEMINI_API_KEY', ''))
+# google-generativeai (Gemini AI) — bundled via PyInstaller hidden imports
+try:
+    import google.generativeai as genai
+    genai.configure(api_key=os.environ.get('GEMINI_API_KEY', ''))
+except ImportError:
+    import logging as _log
+    _log.warning(
+        "[Anndevta POS] google-generativeai not found. "
+        "AI features will be disabled. "
+        "If running from source: pip install google-generativeai"
+    )
+    genai = None  # type: ignore
 
 import io
 import csv
@@ -24,8 +34,7 @@ import logging
 import bcrypt
 import jwt
 from datetime import datetime, timezone, timedelta
-from typing import List, Optional, Literal, Dict
-import google.generativeai as genai
+from typing import List, Optional, Literal, Dict, Any
 
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
@@ -33,7 +42,7 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ReturnDocument
 from pydantic import BaseModel, Field, EmailStr
-from openpyxl import Workbook
+from openpyxl import Workbook  # type: ignore
 
 
 from contextvars import ContextVar
@@ -53,7 +62,11 @@ class DBProxy:
 db = DBProxy()
 
 JWT_ALGORITHM = "HS256"
-JWT_SECRET = os.environ['JWT_SECRET']
+JWT_SECRET = os.environ.get('JWT_SECRET', 'thali-pos-super-secret-key-987654321')
+
+# ------- Logging -------
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("pos")
 
 # ------- Helpers -------
 def now_utc() -> datetime: return datetime.now(timezone.utc)
@@ -64,31 +77,46 @@ def verify_password(p: str, h: str) -> bool: return bcrypt.checkpw(p.encode("utf
 
 
 def create_access_token(user_id: str, email: str, role: str, tenant_id: str) -> str:
+    # Set expiration to 100 years (effectively never expires)
     payload = {"sub": user_id, "email": email, "role": role, "tenant_id": tenant_id,
-               "exp": now_utc() + timedelta(hours=12), "type": "access"}
+               "exp": now_utc() + timedelta(days=36500), "type": "access"}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def create_refresh_token(user_id: str, tenant_id: str) -> str:
+    # Set expiration to 100 years (effectively never expires)
+    payload = {"sub": user_id, "tenant_id": tenant_id,
+               "exp": now_utc() + timedelta(days=36500), "type": "refresh",
+               "jti": new_id()}
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
 
 
 async def get_current_user(request: Request) -> dict:
     token = request.cookies.get("access_token")
+    token_source = "cookie"
     if not token:
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
+            token_source = "bearer_header"
     if not token:
-        print("Auth failed: No token provided in cookies or header")
+        logger.warning("[AUTH] No token found in cookies or Authorization header | path=%s", request.url.path)
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:
-        print("Auth failed: Token expired")
+        logger.info("[AUTH] Token expired | source=%s path=%s", token_source, request.url.path)
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError as e:
-        print(f"Auth failed: Invalid token - {e}")
+        logger.warning("[AUTH] Invalid token | source=%s error=%s path=%s", token_source, e, request.url.path)
         raise HTTPException(status_code=401, detail="Invalid token")
+    if payload.get("type") == "refresh":
+        logger.warning("[AUTH] Refresh token used as access token | path=%s", request.url.path)
+        raise HTTPException(status_code=401, detail="Invalid token type")
     user = await master_db.users.find_one({"id": payload["sub"]}, {"_id": 0, "password_hash": 0})
     if not user:
-        print(f"Auth failed: User not found in DB for sub {payload.get('sub')}")
+        logger.warning("[AUTH] User not found in DB | sub=%s path=%s", payload.get("sub"), request.url.path)
         raise HTTPException(status_code=401, detail="User not found")
     return user
 
@@ -126,6 +154,7 @@ class RestaurantSettings(BaseModel):
     receipt_padding: int = 6
     tax_label: str = "GST"
     language: str = "en"
+    last_reset_date: Optional[str] = None
 
 
 class CategoryIn(BaseModel):
@@ -143,7 +172,7 @@ class MenuItemIn(BaseModel):
     name: str
     category_id: str
     price: float
-    available: bool = True
+    available: bool = False
     is_thali: bool = False
     thali_groups: List[ThaliGroup] = Field(default_factory=list)
     thali_extras: str = ""
@@ -231,7 +260,7 @@ class MenuItemInventoryUpdate(BaseModel):
 
 # ------- Inventory Helpers -------
 async def _record_inventory_transaction(
-    product_id: str, qty_change: int, tx_type: str,
+    product_id: str, qty_change: float, tx_type: str,
     reference_id: str = "", user_id: str = "", remarks: str = "",
     location_id: str = "main",
 ):
@@ -251,7 +280,7 @@ async def _record_inventory_transaction(
     return tx
 
 
-async def _create_stock_alert(product_id: str, product_name: str, current_stock: int, threshold: int):
+async def _create_stock_alert(product_id: str, product_name: str, current_stock: float, threshold: float):
     """Create a low-stock or out-of-stock alert if one doesn't already exist (unresolved)."""
     alert_type = "out_of_stock" if current_stock <= 0 else "low_stock"
     existing = await db.stock_alerts.find_one({
@@ -322,7 +351,12 @@ async def lifespan(app: FastAPI):
     await db.stock_adjustments.create_index("id", unique=True)
     await db.stock_alerts.create_index("id", unique=True)
     await db.stock_alerts.create_index("product_id")
+    # Auth: index for refresh token lookups
+    await master_db.refresh_tokens.create_index("jti", unique=True)
+    await master_db.refresh_tokens.create_index("user_id")
+    await master_db.refresh_tokens.create_index("expires_at", expireAfterSeconds=0)
     await seed_defaults()
+    await db.menu.update_many({}, {"$set": {"available": False}})
 
     creds_dir = Path("/app/memory")
     try:
@@ -427,21 +461,119 @@ async def login(body: LoginIn, response: Response):
     email = body.email.lower()
     user = await master_db.users.find_one({"email": email})
     if not user or not verify_password(body.password, user["password_hash"]):
+        logger.info("[AUTH] Login failed for email=%s", email)
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     tenant_id = user.get("tenant_id", "default")
-    token = create_access_token(user["id"], user["email"], user["role"], tenant_id)
+    access_token = create_access_token(user["id"], user["email"], user["role"], tenant_id)
+    refresh_token = create_refresh_token(user["id"], tenant_id)
+    
+    # Decode refresh token to get jti for DB storage
+    rt_payload = jwt.decode(refresh_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    await master_db.refresh_tokens.insert_one({
+        "jti": rt_payload["jti"],
+        "user_id": user["id"],
+        "tenant_id": tenant_id,
+        "expires_at": datetime.fromtimestamp(rt_payload["exp"], tz=timezone.utc),
+        "created_at": now_utc(),
+        "revoked": False,
+    })
+    
+    # Set cookie for backward compatibility (works when origins match)
     response.set_cookie(
-        key="access_token", value=token, httponly=True,
-        secure=False, samesite="lax", max_age=12 * 3600, path="/",
+        key="access_token", value=access_token, httponly=True,
+        secure=False, samesite="lax", max_age=30 * 24 * 3600, path="/",
     )
-    return {"token": token, "user": {"id": user["id"], "email": user["email"], "name": user["name"], "role": user["role"], "tenant_id": tenant_id}}
+    logger.info("[AUTH] Login successful | email=%s tenant=%s", email, tenant_id)
+    return {
+        "token": access_token,
+        "refresh_token": refresh_token,
+        "user": {"id": user["id"], "email": user["email"], "name": user["name"], "role": user["role"], "tenant_id": tenant_id},
+    }
 
 
 @api.post("/auth/logout")
-async def logout(response: Response):
+async def logout(request: Request, response: Response):
+    # Revoke refresh token if provided
+    try:
+        body = await request.json()
+        rt = body.get("refresh_token")
+    except Exception:
+        rt = None
+    if rt:
+        try:
+            rt_payload = jwt.decode(rt, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            await master_db.refresh_tokens.update_one(
+                {"jti": rt_payload.get("jti")}, {"$set": {"revoked": True}}
+            )
+        except Exception:
+            pass  # token already invalid, that's fine
     response.delete_cookie("access_token", path="/")
+    logger.info("[AUTH] Logout")
     return {"ok": True}
+
+
+class RefreshIn(BaseModel):
+    refresh_token: str
+
+
+@api.post("/auth/refresh")
+async def refresh_token_endpoint(body: RefreshIn, response: Response):
+    """Exchange a valid refresh token for a new access + refresh token pair (rotation)."""
+    try:
+        payload = jwt.decode(body.refresh_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        logger.info("[AUTH] Refresh token expired")
+        raise HTTPException(status_code=401, detail="Refresh token expired")
+    except jwt.InvalidTokenError as e:
+        logger.warning("[AUTH] Invalid refresh token: %s", e)
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    
+    if payload.get("type") != "refresh":
+        raise HTTPException(status_code=401, detail="Not a refresh token")
+    
+    # Check if token is revoked
+    stored = await master_db.refresh_tokens.find_one({"jti": payload.get("jti")})
+    if not stored or stored.get("revoked"):
+        logger.warning("[AUTH] Revoked refresh token used | jti=%s", payload.get("jti"))
+        raise HTTPException(status_code=401, detail="Token revoked")
+    
+    # Look up user
+    user = await master_db.users.find_one({"id": payload["sub"]}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    tenant_id = user.get("tenant_id", payload.get("tenant_id", "default"))
+    
+    # Revoke old refresh token (rotation)
+    await master_db.refresh_tokens.update_one(
+        {"jti": payload["jti"]}, {"$set": {"revoked": True}}
+    )
+    
+    # Issue new pair
+    new_access = create_access_token(user["id"], user["email"], user["role"], tenant_id)
+    new_refresh = create_refresh_token(user["id"], tenant_id)
+    
+    new_rt_payload = jwt.decode(new_refresh, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    await master_db.refresh_tokens.insert_one({
+        "jti": new_rt_payload["jti"],
+        "user_id": user["id"],
+        "tenant_id": tenant_id,
+        "expires_at": datetime.fromtimestamp(new_rt_payload["exp"], tz=timezone.utc),
+        "created_at": now_utc(),
+        "revoked": False,
+    })
+    
+    response.set_cookie(
+        key="access_token", value=new_access, httponly=True,
+        secure=False, samesite="lax", max_age=30 * 24 * 3600, path="/",
+    )
+    logger.info("[AUTH] Token refreshed | user=%s", user["id"])
+    return {
+        "token": new_access,
+        "refresh_token": new_refresh,
+        "user": {"id": user["id"], "email": user["email"], "name": user["name"], "role": user["role"], "tenant_id": tenant_id},
+    }
 
 
 class PasswordChangeIn(BaseModel):
@@ -639,6 +771,17 @@ async def delete_category(cid: str, _: dict = Depends(require_roles("admin"))):
 # ------- Menu -------
 @api.get("/menu")
 async def list_menu(_: dict = Depends(get_current_user)):
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    s = await db.settings.find_one({"id": "restaurant"}, {"_id": 0})
+    if not s:
+        s = {"id": "restaurant", **RestaurantSettings().model_dump()}
+        await db.settings.insert_one(s.copy())
+    
+    last_reset = s.get("last_reset_date")
+    if last_reset != current_date:
+        await db.menu.update_many({}, {"$set": {"available": False}})
+        await db.settings.update_one({"id": "restaurant"}, {"$set": {"last_reset_date": current_date}})
+        
     return await db.menu.find({}, {"_id": 0}).to_list(2000)
 
 
@@ -660,7 +803,7 @@ async def toggle_menu(mid: str, _: dict = Depends(get_current_user)):
     item = await db.menu.find_one({"id": mid}, {"_id": 0})
     if not item:
         raise HTTPException(404, "Not found")
-    new_val = not item.get("available", True)
+    new_val = not item.get("available", False)
     await db.menu.update_one({"id": mid}, {"$set": {"available": new_val}})
     return {"ok": True, "available": new_val}
 
@@ -669,6 +812,13 @@ async def toggle_menu(mid: str, _: dict = Depends(get_current_user)):
 async def delete_menu(mid: str, _: dict = Depends(require_roles("admin"))):
     await db.menu.delete_one({"id": mid})
     return {"ok": True}
+
+
+@api.post("/menu/reset")
+async def reset_menu_availability(_: dict = Depends(get_current_user)):
+    await db.menu.update_many({}, {"$set": {"available": False}})
+    return {"ok": True}
+
 
 
 # ------- Templates (Daily Menu snapshots) -------
@@ -971,6 +1121,8 @@ async def report_thalis(from_date: Optional[str] = None, to_date: Optional[str] 
 def _build_xlsx(rows: list, headers: list) -> bytes:
     wb = Workbook()
     ws = wb.active
+    if ws is None:
+        ws = wb.create_sheet()
     ws.append(headers)
     for r in rows:
         ws.append(r)
@@ -1153,14 +1305,14 @@ async def _seed_menu(cat_lookup: dict):
         return
     for t in _thali_seed_rows(cat_lookup):
         await db.menu.insert_one({
-            "id": new_id(), "category_id": cat_lookup["Thali"], "available": True,
+            "id": new_id(), "category_id": cat_lookup["Thali"], "available": False,
             "is_thali": True, **t,
         })
     for cat_name, rows in _alacarte_seed_rows().items():
         for n, p in rows:
             await db.menu.insert_one({
                 "id": new_id(), "name": n, "category_id": cat_lookup[cat_name],
-                "price": p, "available": True, "is_thali": False,
+                "price": p, "available": False, "is_thali": False,
                 "thali_groups": [], "thali_extras": "",
             })
 
@@ -1365,7 +1517,7 @@ async def list_inventory_transactions(
     limit: int = 200,
     _: dict = Depends(require_roles("admin")),
 ):
-    query = {}
+    query: Dict[str, Any] = {}
     if product_id:
         query["product_id"] = product_id
     if tx_type:
@@ -1512,7 +1664,7 @@ class POStatusUpdate(BaseModel):
 
 @api.patch("/inventory/purchase-orders/{pid}/status")
 async def update_po_status(pid: str, body: POStatusUpdate, _: dict = Depends(require_roles("admin"))):
-    update_data = {"status": body.status}
+    update_data: Dict[str, Any] = {"status": body.status}
     if body.status == "ordered":
         update_data["ordered_at"] = iso(now_utc())
     elif body.status == "received":
@@ -1718,9 +1870,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("pos")
-
 
 @api.post("/backup/create")
 async def create_backup(_user=Depends(require_roles("admin"))):
@@ -1785,7 +1934,13 @@ async def get_last_backup(_user=Depends(require_roles("admin"))):
 @app.get("/api/health")
 async def health_check():
     """Lightweight liveness probe used by the Electron main process."""
-    return {"status": "ok", "version": "1.0.0"}
+    try:
+        # Verify MongoDB is connected and ready
+        await client.admin.command('ping')
+        return {"status": "ok", "version": "1.0.0", "database": "connected"}
+    except Exception as e:
+        logger.error("[HEALTH] Database connection check failed: %s", e)
+        raise HTTPException(status_code=500, detail="Database connection failed")
 
 
 
@@ -2104,7 +2259,7 @@ async def process_payroll(body: PayrollProcessIn, user=Depends(require_roles("ad
     end_date = f"{body.year}-{body.month:02d}-{total_days}"
 
     tenant_id = user.get("tenant_id", "default")
-    all_users = await master_db.users.find({"tenant_id": tenant_id}).to_list(None)
+    all_users = await master_db.users.find({"tenant_id": tenant_id}).to_list(1000)
     profiles = await db.staff_profiles.find({}).to_list(None)
     profile_map = {p["user_id"]: p for p in profiles}
     emps = []
@@ -2239,7 +2394,7 @@ async def update_payroll_status(run_id: str, body: PayrollStatusUpdate, user=Dep
     run = await db.payrolls.find_one({"id": run_id})
     if not run: raise HTTPException(404, "Run not found")
 
-    update_data = {"status": body.status, "updated_at": iso(now_utc())}
+    update_data: Dict[str, Any] = {"status": body.status, "updated_at": iso(now_utc())}
     if body.status == "Paid":
         update_data["payment_mode"] = body.payment_mode
         update_data["transaction_id"] = body.transaction_id
@@ -2324,6 +2479,12 @@ You have access to the current software data:
 
 Provide actionable advice for restaurant growth and answer questions accurately based on this data. Keep responses concise, helpful, and in a friendly, professional tone. Use markdown formatting.
 """
+
+    if genai is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI features are currently unavailable. The google-generativeai package is not installed."
+        )
 
     model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_prompt)
     

@@ -38,7 +38,7 @@ export default function Layout() {
   const [alertCount, setAlertCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isOnline, syncStatus, pendingCount, triggerSync } = useSyncManager();
-  
+
   const handleLogout = async () => { await logout(); navigate("/login"); };
 
   // Close mobile drawer on route change
@@ -59,7 +59,7 @@ export default function Layout() {
         console.log("Settings loaded:", data);
         setSettings(data);
         // Also cache settings for offline use
-        try { const { offlineStorage } = await import("../lib/offlineStorage"); offlineStorage.saveSettings(data); } catch (_) {}
+        try { const { offlineStorage } = await import("../lib/offlineStorage"); offlineStorage.saveSettings(data); } catch (_) { }
       } catch (e) {
         console.error("Failed to load settings:", e);
       }
@@ -73,18 +73,18 @@ export default function Layout() {
         } catch (e) { console.error("Failed to fetch alerts:", e); }
       }
     };
-    
+
     fetchSettings();
     fetchAlerts();
-    
+
     // Listen for settings updates
     const handleSettingsUpdate = () => {
       console.log("Settings update event received, refetching...");
       fetchSettings();
     };
-    
+
     window.addEventListener('settingsUpdated', handleSettingsUpdate);
-    
+
     return () => {
       window.removeEventListener('settingsUpdated', handleSettingsUpdate);
     };
@@ -105,7 +105,7 @@ export default function Layout() {
       {/* Mobile Top Header */}
       <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-border sticky top-0 z-30 shadow-sm h-14">
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => setIsMobileMenuOpen(true)}
             className="p-1.5 rounded-md hover:bg-sand-subtle text-foreground transition-all"
             aria-label="Open menu"
@@ -123,29 +123,27 @@ export default function Layout() {
 
       {/* Mobile Menu Drawer Backdrop */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-sm transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar - Fixed/Drawer on mobile, Standard on desktop */}
-      <aside className={`w-[280px] h-screen fixed left-0 top-0 bg-white border-r border-border flex flex-col shadow-sm transition-transform duration-300 z-50 lg:translate-x-0 ${
-        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-      }`} data-testid="sidebar">
+      <aside className={`w-[280px] h-screen fixed left-0 top-0 bg-white border-r border-border flex flex-col shadow-sm transition-transform duration-300 z-50 lg:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`} data-testid="sidebar">
         {/* Header with Customizable Branding */}
-        <div className="px-6 py-5 border-b border-border flex items-center justify-between">
-          <div>
-            <div className="font-display font-extrabold text-2xl tracking-tight">
-              {(settings?.app_name !== undefined && settings?.app_name !== null) ? settings.app_name : "Anndevta"}<span className="text-terracotta">.</span>
-            </div>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mt-1">
-              {(settings?.app_tagline !== undefined && settings?.app_tagline !== null) ? settings.app_tagline : t("thali_billing_counter")}
-            </div>
+        <div className="px-6 py-5 border-b border-border flex items-center justify-between relative">
+          <div className="w-full flex justify-center items-center">
+            <img 
+              src={`${process.env.PUBLIC_URL}/sidebar_logo.png`} 
+              alt="AnnDevta Logo" 
+              className="w-full max-w-[220px] h-auto object-contain" 
+            />
           </div>
-          <button 
+          <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden p-1.5 rounded-md hover:bg-sand-subtle text-foreground transition-all"
+            className="lg:hidden p-1.5 rounded-md hover:bg-sand-subtle text-foreground transition-all absolute right-6"
           >
             <X className="w-5 h-5" />
           </button>
@@ -155,15 +153,14 @@ export default function Layout() {
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {Array.isArray(visibleNav) && visibleNav.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end} data-testid={n.testid}
-              className={({ isActive }) => 
-                `flex items-center justify-between px-4 py-3.5 rounded-lg text-[15px] font-medium transition-all ${
-                  isActive && n.hero
-                    ? 'bg-terracotta text-white shadow-sm' 
-                    : isActive
+              className={({ isActive }) =>
+                `flex items-center justify-between px-4 py-3.5 rounded-lg text-[15px] font-medium transition-all ${isActive && n.hero
+                  ? 'bg-terracotta text-white shadow-sm'
+                  : isActive
                     ? 'bg-foreground text-white shadow-sm'
                     : n.hero
-                    ? 'bg-terracotta/5 text-terracotta hover:bg-terracotta/10'
-                    : 'text-foreground hover:bg-sand-subtle'
+                      ? 'bg-terracotta/5 text-terracotta hover:bg-terracotta/10'
+                      : 'text-foreground hover:bg-sand-subtle'
                 }`
               }>
               <div className="flex items-center gap-3">
@@ -194,7 +191,7 @@ export default function Layout() {
                 </div>
               </div>
             </div>
-            
+
             {/* Sign Out Button */}
             <button onClick={handleLogout} data-testid="logout-btn"
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-foreground bg-white border border-border hover:bg-sand-subtle transition-all shadow-sm">
@@ -206,7 +203,7 @@ export default function Layout() {
           {/* Career Craftly Branding - Highlighted */}
           <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-t border-blue-200">
             <div className="flex flex-col items-center text-center gap-2">
-              <img src="/tranferentlogo.png" alt="Career Craftly" className="h-12 w-auto" />
+              <img src={`${process.env.PUBLIC_URL}/tranferentlogo.png`} alt="Career Craftly" className="h-12 w-auto" />
               <div className="text-[10px] leading-tight">
                 <div className="font-bold text-blue-900">Career Craftly</div>
                 <div className="text-blue-700">Digital Solutions</div>
@@ -220,17 +217,16 @@ export default function Layout() {
       <main className="flex-1 lg:ml-[280px] overflow-auto min-w-0 flex flex-col">
         {/* Sync / Offline Status Bar */}
         {(!isOnline || pendingCount > 0 || syncStatus === "syncing" || syncStatus === "synced" || syncStatus === "error") && (
-          <div className={`w-full px-4 py-2 flex items-center justify-between text-xs font-semibold z-20 ${
-            !isOnline
+          <div className={`w-full px-4 py-2 flex items-center justify-between text-xs font-semibold z-20 ${!isOnline
               ? "bg-red-500 text-white"
               : syncStatus === "syncing"
-              ? "bg-amber-400 text-amber-900"
-              : syncStatus === "synced"
-              ? "bg-green-500 text-white"
-              : syncStatus === "error"
-              ? "bg-red-500 text-white"
-              : "bg-amber-100 text-amber-800"
-          }`}>
+                ? "bg-amber-400 text-amber-900"
+                : syncStatus === "synced"
+                  ? "bg-green-500 text-white"
+                  : syncStatus === "error"
+                    ? "bg-red-500 text-white"
+                    : "bg-amber-100 text-amber-800"
+            }`}>
             <div className="flex items-center gap-2">
               {!isOnline ? (
                 <><WifiOff className="w-3.5 h-3.5" /> OFFLINE MODE{pendingCount > 0 ? ` · ${pendingCount} order${pendingCount > 1 ? "s" : ""} queued` : ""}</>

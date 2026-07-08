@@ -5,6 +5,61 @@ import bilingual from "../translations/bilingual.json";
 
 const translations = { en, gu, bilingual };
 
+function getGroupedThaliItems(selections, extras, t) {
+  const itemMap = new Map();
+
+  const parseItem = (str) => {
+    if (!str) return null;
+    const trimmed = str.trim();
+    const match = trimmed.match(/^(.+?)\s*(?:\((\d+)\))?$/);
+    if (!match) return null;
+    const name = match[1].trim();
+    const qty = match[2] ? parseInt(match[2], 10) : 1;
+    return { name, qty };
+  };
+
+  // 1. Process selections
+  if (selections) {
+    let selectionsArray = [];
+    if (Array.isArray(selections)) {
+      selectionsArray = selections;
+    } else if (typeof selections === 'object') {
+      selectionsArray = Object.entries(selections)
+        .map(([k, v]) => (v && v.length ? v : null))
+        .filter(Boolean)
+        .flat();
+    }
+
+    for (const itemStr of selectionsArray) {
+      const parsed = parseItem(itemStr);
+      if (parsed && parsed.name) {
+        const currentQty = itemMap.get(parsed.name) || 0;
+        itemMap.set(parsed.name, currentQty + parsed.qty);
+      }
+    }
+  }
+
+  // 2. Process extras
+  if (extras && typeof extras === 'string') {
+    const parts = extras.split(',');
+    for (const part of parts) {
+      const parsed = parseItem(part);
+      if (parsed && parsed.name) {
+        const currentQty = itemMap.get(parsed.name) || 0;
+        itemMap.set(parsed.name, currentQty + parsed.qty);
+      }
+    }
+  }
+
+  // 3. Format into list: "Name (Qty)"
+  const result = [];
+  for (const [name, qty] of itemMap.entries()) {
+    const displayName = t ? t(name) : name;
+    result.push(`${displayName} (${qty})`);
+  }
+  return result;
+}
+
 export function printReceipt({ order, settings }) {
   if (!order) return;
   const lang = localStorage.getItem("pos_language") || settings?.language || "en";
@@ -39,9 +94,9 @@ export function printReceipt({ order, settings }) {
   const containerWidth = is58 ? "48mm" : "72mm";
   const containerPadding = is58 ? "2mm" : "4mm";
 
-  const fontSize = 
+  const fontSize =
     settings?.font_size === "small" ? "10px" :
-    settings?.font_size === "large" ? "14px" : "12px";
+      settings?.font_size === "large" ? "14px" : "12px";
 
   const headerAlign = settings?.header_alignment === "left" ? "left" : "center";
 
@@ -71,24 +126,19 @@ export function printReceipt({ order, settings }) {
 
   const lineRows = order.items.map((i) => {
     const lineTotal = (i.price * i.qty).toFixed(2);
-    
+
     // Extract customizations/selections
     const subline = [];
-    if (i.thali_selections) {
-      for (const cat of Object.keys(i.thali_selections)) {
-        const names = i.thali_selections[cat];
-        if (names && names.length) {
-          subline.push(`+ ${safe(names.join(', '))}`);
-        }
+    if (i.is_thali || i.thali_selections || i.thali_extras) {
+      const selectionsList = getGroupedThaliItems(i.thali_selections, i.thali_extras, t);
+      for (const sel of selectionsList) {
+        subline.push(`• ${safe(sel)}`);
       }
-    }
-    if (i.thali_extras) {
-      subline.push(`${t("includes")} ${safe(i.thali_extras)}`);
     }
 
     return `
       <tr>
-        <td colspan="2" style="text-align: left; font-weight: bold; padding-top: 4px;">${safe(i.name)}</td>
+        <td colspan="2" style="text-align: left; font-weight: bold; padding-top: 4px;">${safe(t(i.name))}</td>
       </tr>
       <tr>
         <td style="text-align: left; padding-bottom: 4px;">${i.qty} x Rs.${Number(i.price).toFixed(2)}</td>
@@ -302,12 +352,12 @@ export function printReceipt({ order, settings }) {
 
   // Check if running in Electron
   const isElectron = window.electronAPI && window.electronAPI.printer;
-  
+
   if (isElectron) {
     // Use Electron direct printing (no dialog)
     const printerName = settings?.default_printer || null;
     const paperWidth = Number(settings?.paper_width) || 80;
-    
+
     window.electronAPI.printer.print(html, printerName, paperWidth)
       .then(success => {
         if (!success) {
@@ -320,7 +370,7 @@ export function printReceipt({ order, settings }) {
         console.error('Print error:', error);
         fallbackBrowserPrint(html);
       });
-    
+
     return true;
   } else {
     // Fallback to browser print for development/web mode
@@ -336,9 +386,9 @@ function fallbackBrowserPrint(html) {
   printFrame.style.width = '0';
   printFrame.style.height = '0';
   printFrame.style.border = '0';
-  
+
   document.body.appendChild(printFrame);
-  
+
   try {
     const frameDoc = printFrame.contentWindow ? printFrame.contentWindow.document : printFrame.contentDocument;
     frameDoc.open();
@@ -347,14 +397,14 @@ function fallbackBrowserPrint(html) {
   } catch (e) {
     console.error('Iframe print error', e);
   }
-  
+
   // Clean up the iframe after a delay to ensure print dialog has time to spawn
   setTimeout(() => {
     if (document.body.contains(printFrame)) {
       document.body.removeChild(printFrame);
     }
   }, 60000);
-  
+
   return true;
 }
 
