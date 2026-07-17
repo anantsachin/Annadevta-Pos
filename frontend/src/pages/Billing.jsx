@@ -25,6 +25,7 @@ export default function Billing() {
   const [thaliFor, setThaliFor] = useState(null);
   const [activeTab, setActiveTab] = useState("cart"); // "cart" or "receipt"
   const [showCartMobile, setShowCartMobile] = useState(false);
+  const [customerName, setCustomerName] = useState("");
 
   const { user } = useAuth();
   const { language, changeLanguage, t } = useLanguage();
@@ -217,6 +218,16 @@ export default function Billing() {
             <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("current_bill")}</div>
             <div className="font-display text-lg font-bold">{cart.length} {cart.length === 1 ? t("line") : t("lines")}</div>
           </div>
+
+          <div className="mt-3"> 
+            <Input
+              placeholder="Customer Name"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              className="bg-white"
+            />
+          </div>
+
           <div className="flex items-center gap-4">
             {cart.length > 0 && (
               <button onClick={() => {

@@ -14,6 +14,8 @@ export default function DailyMenu() {
   const [categories, setCategories] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [templateName, setTemplateName] = useState("");
+
+  const [openCategories, setOpenCategories] = useState([]);
   const { t } = useLanguage();
 
   const refresh = async () => {
@@ -152,14 +154,34 @@ export default function DailyMenu() {
       <div className="space-y-4">
         {safeArray(grouped).map((cat) => (
           <Card key={cat.id} className="border-border shadow-none" data-testid={`cat-section-${cat.id}`}>
-            <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-              <div className="font-display font-bold text-lg">{t(cat.name)}</div>
+            <div
+              className="px-5 py-3 border-b border-border flex items-center justify-between cursor-pointer"
+              onClick={() => {
+                setOpenCategories((prev) =>
+                  prev.includes(cat.id)
+                    ? prev.filter((id) => id !== cat.id)
+                    : [...prev, cat.id]
+                );
+              }}
+            >
+              
+
+
+              <div className="flex items-center gap-2 font-display font-bold text-lg"> 
+                <span>
+                {openCategories.includes(cat.id) ? "▼" : "▶"}
+                </span>
+                <span>
+                {t(cat.name)}
+                </span>
+              </div>
               <div className="flex items-center gap-3 text-xs">
                 <span className="text-muted-foreground font-mono">{safeArray(cat.items).filter(i => i.available).length}/{safeArray(cat.items).length} {t("active")}</span>
                 <button onClick={() => setAllInCategory(cat.items, true)} className="text-terracotta hover:underline" data-testid={`all-on-${cat.id}`}>{t("all_on")}</button>
                 <button onClick={() => setAllInCategory(cat.items, false)} className="text-muted-foreground hover:underline" data-testid={`all-off-${cat.id}`}>{t("all_off")}</button>
               </div>
             </div>
+            {openCategories.includes(cat.id) && (
             <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {safeArray(cat.items).length === 0 && <div className="text-xs text-muted-foreground col-span-full p-4 text-center">{t("no_items_in_category")}</div>}
               {safeArray(cat.items).map(m => (
@@ -177,10 +199,15 @@ export default function DailyMenu() {
                   <Switch checked={m.available} onCheckedChange={() => toggle(m)} data-testid={`daily-toggle-${m.id}`} />
                 </label>
               ))}
-            </div>
-          </Card>
-        ))}
+              </div>
+  
+            )}
+  
+            </Card>
+  
+          ))}
+  
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

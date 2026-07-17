@@ -23,6 +23,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
   const [picks, setPicks] = useState({});
   const [breadConsumed, setBreadConsumed] = useState(0);
   const [thaliQty, setThaliQty] = useState(1);
+  const [openGroups, setOpenGroups] = useState([]);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -30,6 +31,9 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
       setPicks({});
       setThaliQty(1);
       // Set initial bread consumed to included count
+      setOpenGroups(
+        (thali?.thali_groups || []).map(g => g.category_id)
+      );
       setBreadConsumed(thali?.included_bread_count || 0);
     }
   }, [open, thali?.id, thali?.included_bread_count]);
@@ -144,7 +148,35 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
             const chosen = picks[g.category_id] || [];
             return (
               <div key={g.category_id} data-testid={`thali-group-${g.category_id}`}>
-                <div className="flex items-center justify-between mb-2">
+                <div 
+                  className="flex items-center justify-between mb-2 cursor-pointer"
+                  onClick={() =>
+                    setOpenGroups(prev =>
+                      prev.includes(g.category_id)
+                        ? prev.filter(id => id !== g.category_id)
+                        : [...prev, g.category_id]
+                    )
+                  }
+                >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">
+                          {openGroups.includes(g.category_id) ? "▼" : "▶"}
+                        </span>
+
+                        <div className="text-xs uppercase tracking-[0.2em] font-semibold text-muted-foreground">
+                          {t(g.label)}
+                        </div>
+                      </div>
+
+                      <div
+                        className={`text-xs font-mono font-semibold ${
+                          chosen.length === g.count * thaliQty
+                            ? "text-forest"
+                            : "text-amber-600"
+                         }`}
+                       >
+                        {chosen.length} / {g.count * thaliQty} {t("picked")}
+                      </div>
                   <div className="text-xs uppercase tracking-[0.2em] font-semibold text-muted-foreground">
                     {t(g.label) || "Group"}
                   </div>
@@ -152,9 +184,11 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
                     {chosen.length} / {g.count * thaliQty} {t("picked")}
                   </div>
                 </div>
-                {items.length === 0 ? (
+                {openGroups.includes(g.category_id) && (
+                  <>{items.length === 0 ? (
                   <div className="text-xs text-muted-foreground py-3 px-3 border border-dashed border-border rounded-md">
                     {t("no_items_available_today")}
+                  
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -199,6 +233,8 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
                       );
                     })}
                   </div>
+                )}
+                </>
                 )}
               </div>
             );
