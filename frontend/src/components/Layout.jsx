@@ -101,7 +101,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-sand-app">
+    <div className="min-h-screen bg-[#f5f7fb]">
       {/* Mobile Top Header */}
       <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-border sticky top-0 z-30 shadow-sm h-14">
         <div className="flex items-center gap-3">
@@ -130,91 +130,116 @@ export default function Layout() {
       )}
 
       {/* Sidebar - Fixed/Drawer on mobile, Standard on desktop */}
-      <aside className={`w-[280px] h-screen fixed left-0 top-0 bg-white border-r border-border flex flex-col shadow-sm transition-transform duration-300 z-50 lg:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`} data-testid="sidebar">
+      <aside className="fixed left-0 top-0 h-screen w-[260px] p-4">
         {/* Header with Customizable Branding */}
-        <div className="px-6 py-5 border-b border-border flex items-center justify-between relative">
-          <div className="w-full flex justify-center items-center">
-            <img 
-              src={`${process.env.PUBLIC_URL}/sidebar_logo.png`} 
-              alt="AnnDevta Logo" 
-              className="w-full max-w-[220px] h-auto object-contain" 
-            />
+        <div className="h-full bg-white rounded-[28px] shadow-xl overflow-hidden flex flex-col">
+
+        {/* Logo */}
+          <div className="relative px-5 pt-5 pb-3">
+          <div className="flex justify-center">
+          <img
+             src={`${process.env.PUBLIC_URL}/sidebar_logo.png`}
+              alt="AnnDevta Logo"
+              className="w-full max-w-[170px] object-contain"
+          />
           </div>
+
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden p-1.5 rounded-md hover:bg-sand-subtle text-foreground transition-all absolute right-6"
+            className="lg:hidden absolute top-5 right-5"
           >
-            <X className="w-5 h-5" />
+          <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {Array.isArray(visibleNav) && visibleNav.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.end} data-testid={n.testid}
-              className={({ isActive }) =>
-                `flex items-center justify-between px-4 py-3.5 rounded-lg text-[15px] font-medium transition-all ${isActive && n.hero
-                  ? 'bg-terracotta text-white shadow-sm'
+        <nav className="flex-1 overflow-y-auto px-4 py-2">
+          <div className="space-y-2">
+            {Array.isArray(visibleNav) &&
+              visibleNav.map((n) => (
+          <NavLink
+            key={n.to}
+            to={n.to}
+            end={n.end}
+            data-testid={n.testid}
+            className={({ isActive }) =>
+              `flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-medium transition-all ${
+                isActive && n.hero
+                  ? "bg-terracotta text-white"
                   : isActive
-                    ? 'bg-foreground text-white shadow-sm'
-                    : n.hero
-                      ? 'bg-terracotta/5 text-terracotta hover:bg-terracotta/10'
-                      : 'text-foreground hover:bg-sand-subtle'
-                }`
-              }>
-              <div className="flex items-center gap-3">
-                <n.icon className="w-5 h-5 flex-shrink-0" />
-                <span>{t(n.key)}</span>
-              </div>
-              {n.key === "nav_inventory" && alertCount > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                  {alertCount}
-                </span>
-              )}
-            </NavLink>
+                  ? "bg-foreground text-white"
+                  : n.hero
+                  ? "bg-terracotta/5 text-terracotta hover:bg-terracotta/10"
+                  : "text-foreground hover:bg-sand-subtle"
+              }`
+            }
+          >
+            <div className="flex items-center gap-3">
+              <n.icon className="w-5 h-5" />
+              <span>{t(n.key)}</span>
+            </div>
+
+            {n.key === "nav_inventory" && alertCount > 0 && (
+              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {alertCount}
+              </span>
+            )}
+          </NavLink>
           ))}
+        </div>
         </nav>
 
-        {/* Professional User Section - Sticky Bottom */}
-        <div className="mt-auto border-t border-border">
-          {/* User Profile Card */}
-          <div className="p-4 bg-sand-subtle/30">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-terracotta to-amber-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                {user?.name?.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-foreground truncate">{user?.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {user?.role === "admin" ? "Administrator" : "Cashier"}
-                </div>
-              </div>
-            </div>
+        {/* Bottom */}
+          <div className="border-t border-border">
 
-            {/* Sign Out Button */}
-            <button onClick={handleLogout} data-testid="logout-btn"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-foreground bg-white border border-border hover:bg-sand-subtle transition-all shadow-sm">
-              <LogOut className="w-4 h-4" />
-              {t("sign_out")}
-            </button>
+          <div className="p-4 bg-sand-subtle/30">
+          <div className="flex items-center gap-3 mb-3">
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-terracotta to-amber-600 flex items-center justify-center text-white font-bold">
+          {user?.name?.charAt(0).toUpperCase()}
           </div>
 
-          {/* Career Craftly Branding - Highlighted */}
-          <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-t border-blue-200">
-            <div className="flex flex-col items-center text-center gap-2">
-              <img src={`${process.env.PUBLIC_URL}/tranferentlogo.png`} alt="Career Craftly" className="h-12 w-auto" />
-              <div className="text-[10px] leading-tight">
-                <div className="font-bold text-blue-900">Career Craftly</div>
-                <div className="text-blue-700">Digital Solutions</div>
-              </div>
-            </div>
+          <div>
+          <div className="text-sm font-semibold">
+            {user?.name}
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            {user?.role === "admin" ? "Administrator" : "Cashier"}
           </div>
         </div>
-      </aside>
+      </div>
+
+      <button
+        onClick={handleLogout}
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border"
+      >
+        <LogOut className="w-4 h-4" />
+        {t("sign_out")}
+      </button>
+    </div>
+
+    <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-t border-blue-200">
+      <div className="flex flex-col items-center">
+        <img
+          src={`${process.env.PUBLIC_URL}/tranferentlogo.png`}
+          alt="Career Craftly"
+          className="h-12"
+        />
+        <div className="text-[10px] text-center mt-2">
+          <div className="font-bold text-blue-900">Career Craftly</div>
+          <div className="text-blue-700">Digital Solutions</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</aside>
+
 
       {/* Main Content - Offset by sidebar width on desktop */}
-      <main className="flex-1 lg:ml-[280px] overflow-auto min-w-0 flex flex-col">
+      <main className="lg:ml-[260px] h-screen p-4 overflow-hidden">
         {/* Sync / Offline Status Bar */}
         {(!isOnline || pendingCount > 0 || syncStatus === "syncing" || syncStatus === "synced" || syncStatus === "error") && (
           <div className={`w-full px-4 py-2 flex items-center justify-between text-xs font-semibold z-20 ${!isOnline
@@ -247,7 +272,11 @@ export default function Layout() {
             )}
           </div>
         )}
+        <div className="h-[calc(100vh-32px)] bg-white rounded-[28px] shadow-xl p-6 overflow-y-auto scroll-smooth">
+        
         <Outlet />
+      </div>
+      
       </main>
 
       <PasswordChangeDialog

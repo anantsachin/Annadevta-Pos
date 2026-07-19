@@ -1,44 +1,75 @@
 import React from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Plus } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
 function MenuTileComponent({ item, onClick }) {
   const { t } = useLanguage();
+
+  const stockColor =
+    item.current_stock <= 0
+      ? "bg-red-100 text-red-600"
+      : item.current_stock <= (item.reorder_level || 10)
+      ? "bg-orange-100 text-orange-700"
+      : "bg-green-100 text-green-700";
+
   return (
     <button
       onClick={onClick}
       data-testid={`menu-item-${item.id}`}
-      className={`tap-scale group text-left bg-white border rounded-md p-3 hover:-translate-y-0.5 transition-all ${item.is_thali
-          ? "border-terracotta/40 hover:border-terracotta ring-1 ring-terracotta/10"
-          : "border-border hover:border-terracotta"
-        }`}>
-      <div className="flex items-start justify-between min-h-[18px]">
-        {item.is_thali && (
-          <span className="text-[9px] uppercase tracking-[0.2em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">
-            Thali
+      className="group relative bg-white border border-slate-200 rounded-3xl p-5 text-left hover:border-terracotta/40 hover:shadow-lg transition-all duration-200"
+    >
+      {/* Category Badge */}
+      <div className="flex items-center justify-between">
+        {item.is_thali ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-terracotta text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider">
+            <Sparkles className="w-3 h-3" />
+            THALI
+          </span>
+        ) : (
+          <span className="inline-flex rounded-full bg-slate-100 text-slate-500 text-[10px] font-semibold px-3 py-1 uppercase tracking-wider">
+            ITEM
           </span>
         )}
-        {item.is_thali && <Sparkles className="w-3.5 h-3.5 text-terracotta" />}
-      </div>
-      <div className="mt-2 text-sm font-semibold text-foreground leading-tight">{t(item.name)}</div>
-      <div className="mt-2 flex items-center justify-between">
-        <div className="font-mono text-base font-bold text-terracotta">₹{item.price}</div>
-      </div>
-      {item.current_stock !== null && item.current_stock !== undefined && (
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-[10px] text-muted-foreground font-medium">Available Stock:</span>
-          {item.current_stock <= 0 ? (
-            <span className="text-[10px] font-mono font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded">Out of Stock</span>
-          ) : (
-            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${item.current_stock <= (item.reorder_level || 10) ? "bg-red-100 text-red-600" :
-                item.current_stock <= (item.reorder_level || 10) * 1.5 ? "bg-orange-100 text-orange-600" :
-                  "bg-green-100 text-green-700"
-              }`}>
-              {item.current_stock % 1 !== 0 ? Number(item.current_stock).toFixed(3) : item.current_stock} kg
+
+        {item.current_stock !== null &&
+          item.current_stock !== undefined && (
+            <span
+              className={`text-[10px] font-semibold px-2 py-1 rounded-full ${stockColor}`}
+            >
+              {item.current_stock % 1 !== 0
+                ? Number(item.current_stock).toFixed(3)
+                : item.current_stock}
             </span>
           )}
+      </div>
+
+      {/* Name */}
+      <div className="mt-6">
+        <h3 className="text-xl font-bold text-slate-800 leading-tight">
+          {t(item.name)}
+        </h3>
+
+        <p className="text-sm text-slate-400 mt-2">
+          Ready to serve
+        </p>
+      </div>
+
+      {/* Bottom */}
+      <div className="mt-10 flex items-end justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-widest text-slate-400">
+            Price
+          </div>
+
+          <div className="text-3xl font-extrabold text-terracotta">
+            ₹{item.price}
+          </div>
         </div>
-      )}
+
+        <div className="w-12 h-12 rounded-2xl bg-terracotta text-white flex items-center justify-center group-hover:scale-110 transition-transform">
+          <Plus className="w-6 h-6" />
+        </div>
+      </div>
     </button>
   );
 }

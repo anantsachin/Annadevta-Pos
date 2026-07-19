@@ -16,7 +16,8 @@ import { offlineStorage } from "../lib/offlineStorage";
 import { syncQueue } from "../lib/syncQueue";
 import { useOnlineStatus } from "../lib/offlineManager";
 
-export default function Billing() {
+export default function Billing() 
+{
   const [categories, setCategories] = useState([]);
   const [menu, setMenu] = useState([]);
   const [settings, setSettings] = useState(null);
@@ -33,41 +34,47 @@ export default function Billing() {
   const isOnline = useOnlineStatus();
 
   const refresh = useCallback(async () => {
-    try {
-      const [c, m, s] = await Promise.all([
-        api.get("/categories"),
-        api.get("/menu"),
-        api.get("/settings"),
-      ]);
+    // ---------- Load cache immediately ----------
+  const cachedCats = offlineStorage.loadCategories();
+  const cachedMenu = offlineStorage.loadMenu();
+  const cachedSettings = offlineStorage.loadSettings();
 
-      if (!Array.isArray(c.data) || !Array.isArray(m.data)) {
-        throw new Error("Invalid format received from server (expected arrays)");
-      }
+  if (cachedCats.length) setCategories(cachedCats);
+  if (cachedMenu.length) setMenu(cachedMenu);
+  if (cachedSettings) setSettings(cachedSettings);
 
-      setCategories(c.data);
-      setMenu(m.data);
-      setSettings(s.data);
-      // Cache data for offline use
-      offlineStorage.saveCategories(c.data);
-      offlineStorage.saveMenu(m.data);
-      offlineStorage.saveSettings(s.data);
-      if (s.data && s.data.language && !localStorage.getItem("pos_language")) {
-        changeLanguage(s.data.language);
-      }
-    } catch (e) {
-      // Network error or format error — load from cache
-      const cachedCats = offlineStorage.loadCategories();
-      const cachedMenu = offlineStorage.loadMenu();
-      const cachedSettings = offlineStorage.loadSettings();
-      if (cachedMenu && cachedMenu.length) {
-        setCategories(cachedCats);
-        setMenu(cachedMenu);
-        setSettings(cachedSettings);
-      } else {
-        console.error("No cached data and server unreachable:", e);
-      }
+  // ---------- Fetch latest silently ----------
+  try {
+
+    const [c, m, s] = await Promise.all([
+      api.get("/categories"),
+      api.get("/menu"),
+      api.get("/settings"),
+    ]);
+
+    setCategories(c.data);
+    setMenu(m.data);
+    setSettings(s.data);
+
+    offlineStorage.saveCategories(c.data);
+    offlineStorage.saveMenu(m.data);
+    offlineStorage.saveSettings(s.data);
+
+    if (
+      s.data &&
+      s.data.language &&
+      !localStorage.getItem("pos_language")
+    ) {
+      changeLanguage(s.data.language);
     }
-  }, [changeLanguage]);
+
+  } catch (e) {
+
+    console.log("Using cached POS data.");
+
+  }
+
+}, [changeLanguage]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -154,16 +161,16 @@ export default function Billing() {
   }, [cart, totals, isOnline, settings, clear, refresh, t]);
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] lg:h-screen grid grid-cols-12 gap-0 overflow-hidden relative">
+    <div className="h-full grid grid-cols-12 gap-6  bg-white">
       {/* Items grid */}
-      <div className="col-span-12 lg:col-span-8 p-4 overflow-y-auto bg-sand-app h-full">
-        <div className="flex flex-col gap-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
+      <div className="col-span-12 lg:col-span-9 flex flex-col h-full min-h-0 px-8 pt-8 bg-white rounded-[24px]">
+        <div className="flex flex-col gap-6  pb-4">
+          <div className="flex items-start justify-between gap-8">
+            <div className="space-y-2">
               <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("thali_billing_counter")}</div>
               <h1 className="font-display text-2xl font-extrabold tracking-tight">{t("tap_to_bill")}</h1>
             </div>
-            <div className="relative w-full max-w-sm">
+            <div className="relative w-[420px]">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input data-testid="menu-search" placeholder={t("search_menu")}
                 value={search} onChange={(e) => setSearch(e.target.value)}
@@ -172,7 +179,7 @@ export default function Billing() {
           </div>
 
           {/* Horizontal Categories Bar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
             <button onClick={() => setActiveCat("all")} data-testid="cat-all"
               className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all border ${activeCat === "all"
                   ? "bg-terracotta text-white border-terracotta shadow-sm"
@@ -191,7 +198,8 @@ export default function Billing() {
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-20 lg:pb-0" data-testid="menu-grid">
+        <div className="flex-1 min-h-0 overflow-y-auto pb-2">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-5" data-testid="menu-grid">
           {filtered.length === 0 ? (
             <div className="col-span-full text-center py-16 text-muted-foreground border border-dashed border-border rounded-md bg-white/60">
               {t("no_items_match")}
@@ -200,6 +208,7 @@ export default function Billing() {
             <MenuTile key={item.id} item={item} onClick={() => handleItemClick(item)} />
           ))}
         </div>
+      </div>
       </div>
 
       {/* Mobile Cart Backdrop */}
@@ -211,8 +220,20 @@ export default function Billing() {
       )}
 
       {/* Cart Panel - Slide-in on mobile, Sidebar column on desktop */}
-      <div className={`fixed inset-y-0 right-0 z-40 w-full sm:w-[420px] border-l border-border bg-white flex flex-col overflow-hidden transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-auto lg:col-span-4 ${showCartMobile ? "translate-x-0" : "translate-x-full"
-        }`}>
+      <div className={`
+        fixed inset-y-0 right-0 z-40
+        w-full sm:w-[420px]
+        transform transition-transform duration-300
+        lg:relative lg:translate-x-0
+        lg:col-span-3
+        lg:w-auto
+        bg-white
+        rounded-[22px]
+        border border-slate-200
+        overflow-hidden
+        flex flex-col
+        ${showCartMobile ? "translate-x-0" : "translate-x-full"}`}
+      >
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div>
             <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("current_bill")}</div>
@@ -268,7 +289,7 @@ export default function Billing() {
         </div>
 
         {activeTab === "cart" ? (
-          <div className="cart-items-list px-4 py-3 space-y-3" data-testid="cart-items">
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3" data-testid="cart-items">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-sm text-muted-foreground p-6">
                 <ChefHat className="w-10 h-10 mb-3 text-muted-foreground/60" />
@@ -308,7 +329,7 @@ export default function Billing() {
           </div>
         )}
 
-        <div className="p-4 border-t border-border bg-sand-subtle">
+        <div className="border-t border-slate-200 bg-white p-5 space-y-4">
           <div className="flex items-center justify-between text-sm mb-1">
             <span className="text-muted-foreground">{t("subtotal")}</span>
             <span className="font-mono" data-testid="subtotal">₹{totals.subtotal.toFixed(2)}</span>

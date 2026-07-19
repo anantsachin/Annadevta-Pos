@@ -106,7 +106,7 @@ export default function DailyMenu() {
   const activeCount = safeMenu.filter(m => m.available).length;
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl">
+    <div className="h-full overflow-y-auto p-6 lg:p-10 max-w-6xl">
       <div className="mb-6 flex items-end justify-between flex-wrap gap-4">
         <div>
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{today}</div>
