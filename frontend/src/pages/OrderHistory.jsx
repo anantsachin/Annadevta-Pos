@@ -98,7 +98,7 @@ export default function OrderHistory() {
                   <td className="px-4 py-3 text-right font-mono font-bold">₹{o.total}</td>
                   <td className="px-4 py-3 text-right">
                     <button onClick={() => setView(o)} className="p-1.5 hover:bg-sand-subtle rounded-md mr-1" data-testid={`view-${o.id}`}><Eye className="w-4 h-4" /></button>
-                    <button onClick={() => reprint(o)} className="p-1.5 hover:bg-sand-subtle rounded-md text-terracotta" data-testid={`reprint-${o.id}`}><Printer className="w-4 h-4" /></button>
+                    <button onClick={() => reprint(o)} className="p-1.5 hover:bg-sand-subtle rounded-md text-terracota" data-testid={`reprint-${o.id}`}><Printer className="w-4 h-4" /></button>
                   </td>
                 </tr>
               );
@@ -117,7 +117,7 @@ export default function OrderHistory() {
             <div className="flex justify-center">
               <ReceiptPreview order={view} settings={settings} />
             </div>
-            <Button onClick={() => reprint(view)} className="w-full mt-4 bg-terracotta hover:bg-terracotta-hover text-white" data-testid="dialog-reprint">
+            <Button onClick={() => reprint(view)} className="w-full mt-4 bg-terracota hover:bg-terracota-hover text-white" data-testid="dialog-reprint">
               <Printer className="w-4 h-4 mr-2" /> {t("reprint")}
             </Button>
           </DialogContent>

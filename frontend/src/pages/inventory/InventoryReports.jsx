@@ -171,7 +171,7 @@ export default function InventoryReports() {
         <div className="grid grid-cols-2 gap-4 mb-4">
           <Card className="p-4 border-border shadow-none">
             <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Total Cost Value</div>
-            <div className="font-display text-2xl font-extrabold text-terracotta mt-1">₹{summary.total_cost_value?.toLocaleString("en-IN")}</div>
+            <div className="font-display text-2xl font-extrabold text-terracota mt-1">₹{summary.total_cost_value?.toLocaleString("en-IN")}</div>
           </Card>
           <Card className="p-4 border-border shadow-none">
             <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Total Retail Value</div>

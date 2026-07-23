@@ -62,7 +62,7 @@ export default function PasswordChangeDialog({ open, onClose, isFirstLogin = fal
       <DialogContent className="max-w-md" onInteractOutside={(e) => isFirstLogin && e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lock className="w-5 h-5 text-terracotta" />
+            <Lock className="w-5 h-5 text-terracota" />
             {isFirstLogin ? "Change Default Password" : "Change Password"}
           </DialogTitle>
           <DialogDescription>
@@ -130,7 +130,7 @@ export default function PasswordChangeDialog({ open, onClose, isFirstLogin = fal
           <Button
             onClick={handleSubmit}
             disabled={busy}
-            className="bg-terracotta hover:bg-terracotta-hover text-white"
+            className="bg-terracota hover:bg-terracota-hover text-white"
             data-testid="change-password-btn"
           >
             {busy ? "Changing..." : "Change Password"}

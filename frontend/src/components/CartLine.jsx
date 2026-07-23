@@ -35,7 +35,7 @@ function CartLineComponent({ line, onInc, onDec, onRemove }) {
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            {line.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">Thali</span>}
+            {line.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracota text-white px-1.5 py-0.5 rounded">Thali</span>}
             <span className="text-sm font-semibold truncate">{t(line.name)}</span>
           </div>
           {line.is_thali && selectionsText && (

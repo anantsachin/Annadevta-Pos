@@ -7,8 +7,8 @@ export default function StaffAccounts() {
     <div className="p-6 lg:p-10 max-w-6xl mx-auto">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-terracotta/10 rounded-lg">
-            <Users className="w-6 h-6 text-terracotta" />
+          <div className="p-2 bg-terracota/10 rounded-lg">
+            <Users className="w-6 h-6 text-terracota" />
           </div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground">
             Staff Accounts

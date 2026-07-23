@@ -9,24 +9,44 @@ function MenuTileComponent({ item, onClick }) {
     item.current_stock <= 0
       ? "bg-red-100 text-red-600"
       : item.current_stock <= (item.reorder_level || 10)
-      ? "bg-orange-100 text-orange-700"
-      : "bg-green-100 text-green-700";
+      ? "bg-amber-100 text-amber-700"
+      : "bg-emerald-100 text-emerald-700";
 
   return (
     <button
       onClick={onClick}
       data-testid={`menu-item-${item.id}`}
-      className="group relative bg-white border border-slate-200 rounded-3xl p-5 text-left hover:border-terracotta/40 hover:shadow-lg transition-all duration-200"
+      className="
+        group
+        relative
+        overflow-hidden
+        h-[250px] flex flex-col
+        w-full
+        rounded-[26px]
+        border
+        border-orange-100
+        bg-white
+        p-6
+        text-left
+        shadow-sm
+        hover:shadow-md
+        transition-all
+        duration-300
+        hover:border-orange-200
+      "
     >
-      {/* Category Badge */}
-      <div className="flex items-center justify-between">
+      {/* Decorative Glow */}
+      {/* <div className="pointer-events-none absolute -right-8 -bottom-8 h-40 w-40 rounded-full bg-gradient-to-br from-terracota-100 via-terracota-200 to-terracota-400 opacity-[0.08] blur-3xl transition-opacity duration-300 group-hover:opacity-[0.16]" /> */}
+
+      {/* Header */}
+      <div className="flex items-start justify-between relative z-10">
         {item.is_thali ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-terracotta text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider">
-            <Sparkles className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-white">
+            <Sparkles className="h-3 w-3" />
             THALI
           </span>
         ) : (
-          <span className="inline-flex rounded-full bg-slate-100 text-slate-500 text-[10px] font-semibold px-3 py-1 uppercase tracking-wider">
+          <span className="rounded-full bg-[#F0F8DC] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#6B9A1F]">
             ITEM
           </span>
         )}
@@ -34,7 +54,7 @@ function MenuTileComponent({ item, onClick }) {
         {item.current_stock !== null &&
           item.current_stock !== undefined && (
             <span
-              className={`text-[10px] font-semibold px-2 py-1 rounded-full ${stockColor}`}
+              className={`rounded-full px-2 py-1 text-[10px] font-semibold ${stockColor}`}
             >
               {item.current_stock % 1 !== 0
                 ? Number(item.current_stock).toFixed(3)
@@ -43,32 +63,67 @@ function MenuTileComponent({ item, onClick }) {
           )}
       </div>
 
-      {/* Name */}
-      <div className="mt-6">
-        <h3 className="text-xl font-bold text-slate-800 leading-tight">
-          {t(item.name)}
-        </h3>
+      {/* Content */}
+      <div className="relative z-10 mt-5 flex-1 flex flex-col">
 
-        <p className="text-sm text-slate-400 mt-2">
-          Ready to serve
-        </p>
+      <h3 className="line-clamp-2 text-[24px] font-bold leading-tight text-slate-900">
+      {t(item.name)}
+      </h3>
+
+      <div className="mt-auto border-t border-dashed border-orange-100 pt-4">
+
+      <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-semibold">
+      Price
       </div>
 
-      {/* Bottom */}
-      <div className="mt-10 flex items-end justify-between">
-        <div>
-          <div className="text-xs uppercase tracking-widest text-slate-400">
-            Price
-          </div>
+    </div>
 
-          <div className="text-3xl font-extrabold text-terracotta">
+</div>
+
+      {/* Bottom */}
+      <div className="relative z-10 mt-auto flex w-full items-end justify-between">
+        <div>
+      
+          <div className="mt-1 text-[26px] font-black tracking-[-0.04em] text-brand-600">
             ₹{item.price}
           </div>
         </div>
 
-        <div className="w-12 h-12 rounded-2xl bg-terracotta text-white flex items-center justify-center group-hover:scale-110 transition-transform">
-          <Plus className="w-6 h-6" />
+        <div
+          className="
+            flex
+            h-10
+            w-10
+            items-center
+            justify-center
+            rounded-full
+            bg-gradient-to-br
+            from-brand-400
+            to-brand-600
+            text-white
+            shadow-button
+            transition-all
+            duration-300
+            group-hover:scale-110
+          "
+        >
+          <Plus className="h-5 w-5" />
         </div>
+      </div>
+
+      {/* Watermark */}
+      <div
+        className="
+        pointer-events-none
+        absolute
+        bottom-8
+        right-0
+        opacity-[0.1]
+        text-[80px]
+        select-none
+        -scale-x-100"
+      >
+      🌿
       </div>
     </button>
   );

@@ -43,7 +43,7 @@ function AppRoutes() {
   if (!ready) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-sand-app gap-4">
-        <div className="w-14 h-14 rounded-full border-4 border-terracotta border-t-transparent animate-spin" />
+        <div className="w-14 h-14 rounded-full border-4 border-terracota border-t-transparent animate-spin" />
         <p className="text-sm text-muted-foreground font-medium">Starting up…</p>
       </div>
     );

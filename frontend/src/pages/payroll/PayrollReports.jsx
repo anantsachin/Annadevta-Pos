@@ -60,7 +60,7 @@ export default function PayrollReports() {
         {reports.map((r, i) => (
           <Card key={i} className="p-5 border-border shadow-none hover:shadow-sm transition-all flex flex-col justify-between">
             <div className="flex items-start gap-4 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-sand-subtle flex items-center justify-center text-terracotta">
+              <div className="w-10 h-10 rounded-lg bg-sand-subtle flex items-center justify-center text-terracota">
                 <FileBarChart className="w-5 h-5" />
               </div>
               <div>

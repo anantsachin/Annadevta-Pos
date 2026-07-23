@@ -52,7 +52,7 @@ export default function AIChatWidget() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 p-4 bg-terracotta hover:bg-terracotta-hover text-white rounded-full shadow-xl transition-transform transform ${isOpen ? 'scale-0' : 'scale-100'} z-50`}
+        className={`fixed bottom-6 right-6 p-4 bg-terracota hover:bg-terracota-hover text-white rounded-full shadow-xl transition-transform transform ${isOpen ? 'scale-0' : 'scale-100'} z-50`}
       >
         <Sparkles className="w-6 h-6" />
       </button>
@@ -61,7 +61,7 @@ export default function AIChatWidget() {
       <div className={`fixed bottom-6 right-6 w-80 sm:w-96 bg-white border border-border shadow-2xl rounded-2xl flex flex-col overflow-hidden transition-all duration-300 transform origin-bottom-right z-50 ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`} style={{ height: "500px", maxHeight: "80vh" }}>
         
         {/* Header */}
-        <div className="bg-terracotta text-white p-4 flex items-center justify-between shadow-sm">
+        <div className="bg-terracota text-white p-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
               <Bot className="w-5 h-5" />
@@ -93,9 +93,9 @@ export default function AIChatWidget() {
           {loading && (
             <div className="flex justify-start">
               <div className="bg-white border border-border shadow-sm text-foreground rounded-2xl rounded-tl-sm p-3 text-sm flex items-center gap-2">
-                <div className="w-2 h-2 bg-terracotta/50 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-terracotta/50 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                <div className="w-2 h-2 bg-terracotta/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <div className="w-2 h-2 bg-terracota/50 rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-terracota/50 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                <div className="w-2 h-2 bg-terracota/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
               </div>
             </div>
           )}
@@ -109,12 +109,12 @@ export default function AIChatWidget() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask Anndevta..."
-            className="flex-1 px-3 py-2 text-sm border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-terracotta/50 bg-sand-subtle/50"
+            className="flex-1 px-3 py-2 text-sm border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-terracota/50 bg-sand-subtle/50"
           />
           <button
             type="submit"
             disabled={!input.trim() || loading}
-            className="p-2 bg-terracotta text-white rounded-full hover:bg-terracotta-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 bg-terracota text-white rounded-full hover:bg-terracota-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Send className="w-4 h-4" />
           </button>

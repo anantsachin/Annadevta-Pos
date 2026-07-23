@@ -64,7 +64,7 @@ export default function Login() {
             <div className="text-[10px] uppercase tracking-[0.3em] mb-3 opacity-80">A billing counter for thali kitchens</div>
             <h1 className="font-display text-4xl lg:text-5xl font-extrabold leading-tight max-w-md">
               Punch the bill.<br />
-              <span className="text-terracotta-light">Feed the next guest.</span>
+              <span className="text-terracota-light">Feed the next guest.</span>
             </h1>
             <p className="mt-4 text-sm opacity-80 max-w-sm mb-12">
               Tap, total, print. Built for the speed of a real thali counter.
@@ -113,7 +113,7 @@ export default function Login() {
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <Button type="submit" className="flex-1 bg-terracotta hover:bg-terracotta-hover text-white">
+                  <Button type="submit" className="flex-1 bg-terracota hover:bg-terracota-hover text-white">
                     Save Connection
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setShowSettings(false)}>
@@ -140,7 +140,7 @@ export default function Login() {
                     onChange={(e) => setPassword(e.target.value)} required className="mt-1" />
                 </div>
                 <Button type="submit" disabled={busy} data-testid="login-submit"
-                  className="w-full bg-terracotta hover:bg-terracotta-hover text-white">
+                  className="w-full bg-terracota hover:bg-terracota-hover text-white">
                   {busy && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                   {t("sign_in")}
                 </Button>
@@ -150,7 +150,7 @@ export default function Login() {
                 Demo: <code className="font-mono">admin@pos.com / admin123</code> &nbsp;·&nbsp; <code className="font-mono">cashier@pos.com / cashier123</code>
               </div>
               <div className="mt-4 text-center text-sm text-muted-foreground">
-                Don't have an account? <Link to="/signup" className="text-terracotta hover:underline font-medium">Sign up</Link>
+                Don't have an account? <Link to="/signup" className="text-terracota hover:underline font-medium">Sign up</Link>
               </div>
             </div>
           )}

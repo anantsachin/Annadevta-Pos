@@ -66,7 +66,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" data-testid="kpi-cards">
-        <Stat label={t("revenue_card")} value={k.revenue.toLocaleString('en-IN')} accent="text-terracotta" />
+        <Stat label={t("revenue_card")} value={k.revenue.toLocaleString('en-IN')} accent="text-terracota" />
         <Stat label={t("orders_card")} value={k.orders} sub={k.orders > 0 ? `${k.orders} ${t("bills")}` : t("no_bills_yet")} />
         <Stat label={t("avg_bill_card")} value={k.avg.toLocaleString('en-IN')} sub={t("per_receipt")} />
       </div>
@@ -135,7 +135,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-6 border-border shadow-none">
           <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-4 h-4 text-terracotta" />
+            <Sparkles className="w-4 h-4 text-terracota" />
             <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("top_thalis")} · {activePeriodLabel.toLowerCase()}</div>
           </div>
           <h3 className="font-display text-lg font-semibold mb-4">{t("top_thalis")}</h3>
@@ -143,7 +143,7 @@ export default function Dashboard() {
             {topThalis.length === 0 ? <li className="text-sm text-muted-foreground">{t("no_thalis_sold")}</li> : topThalis.map((it, i) => (
               <li key={it.name} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-md bg-terracotta-light text-terracotta flex items-center justify-center text-xs font-bold font-mono">{i + 1}</span>
+                  <span className="w-6 h-6 rounded-md bg-terracota-light text-terracota flex items-center justify-center text-xs font-bold font-mono">{i + 1}</span>
                   <span className="font-medium text-sm">{t(it.name)}</span>
                 </div>
                 <div className="text-right">

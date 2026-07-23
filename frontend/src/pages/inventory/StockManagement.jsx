@@ -111,7 +111,7 @@ export default function StockManagement() {
 
   const SortHeader = ({ field, children }) => (
     <th className="pb-4 pt-4 pr-4 cursor-pointer select-none group/th" onClick={() => toggleSort(field)}>
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold group-hover/th:text-terracotta transition-colors">
+      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold group-hover/th:text-terracota transition-colors">
         {children}
         <ArrowUpDown className="w-3 h-3 opacity-40 group-hover/th:opacity-100 transition-opacity" />
       </div>
@@ -174,7 +174,7 @@ export default function StockManagement() {
                 return (
                   <tr key={item.id} className="group hover:bg-sand-subtle/40 transition-all duration-300 cursor-default animate-in fade-in slide-in-from-bottom-4" style={{ animationDelay: `${index * 30}ms`, animationFillMode: 'both' }}>
                     <td className="py-4 pr-4 pl-6">
-                      <div className="font-semibold text-[15px] text-foreground group-hover:text-terracotta transition-colors">{t(item.name)}</div>
+                      <div className="font-semibold text-[15px] text-foreground group-hover:text-terracota transition-colors">{t(item.name)}</div>
                       {item.barcode && <div className="text-[11px] font-mono text-muted-foreground/70 mt-0.5">{item.barcode}</div>}
                     </td>
                     <td className="py-4 pr-4 font-mono text-xs text-muted-foreground">{item.sku || "—"}</td>
@@ -246,7 +246,7 @@ export default function StockManagement() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2">
-              <Settings2 className="w-5 h-5 text-terracotta" /> Inventory Settings — {t(settingsDialog?.name)}
+              <Settings2 className="w-5 h-5 text-terracota" /> Inventory Settings — {t(settingsDialog?.name)}
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4">
@@ -279,7 +279,7 @@ export default function StockManagement() {
               <Input type="number" step="0.01" value={invSettings.unit_cost} onChange={e => setInvSettings(s => ({ ...s, unit_cost: Number(e.target.value) }))} className="mt-1" />
             </div>
           </div>
-          <Button onClick={handleSettingsSave} className="w-full bg-terracotta hover:bg-terracotta-hover text-white mt-2">
+          <Button onClick={handleSettingsSave} className="w-full bg-terracota hover:bg-terracota-hover text-white mt-2">
             Save Inventory Settings
           </Button>
         </DialogContent>

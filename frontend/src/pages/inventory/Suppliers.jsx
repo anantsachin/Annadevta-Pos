@@ -69,7 +69,7 @@ export default function Suppliers() {
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("inv_module") || "Inventory Management"}</div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("inv_suppliers") || "Suppliers"}</h1>
         </div>
-        <Button onClick={openAdd} className="bg-terracotta hover:bg-terracotta-hover text-white">
+        <Button onClick={openAdd} className="bg-terracota hover:bg-terracota-hover text-white">
           <Plus className="w-4 h-4 mr-2" /> Add Supplier
         </Button>
       </div>
@@ -153,7 +153,7 @@ export default function Suppliers() {
               <Label>GSTIN</Label>
               <Input value={form.gstin} onChange={e => setForm(f => ({ ...f, gstin: e.target.value }))} className="mt-1" placeholder="29ABCDE1234F1Z5" />
             </div>
-            <Button onClick={save} disabled={busy} className="w-full bg-terracotta hover:bg-terracotta-hover text-white">
+            <Button onClick={save} disabled={busy} className="w-full bg-terracota hover:bg-terracota-hover text-white">
               {dialog?.mode === "add" ? "Create Supplier" : "Save Changes"}
             </Button>
           </div>

@@ -81,7 +81,7 @@ export default function SalaryStructures() {
         <div className="space-y-2 overflow-y-auto max-h-[70vh] pr-2">
           {emps.map(e => (
             <button key={e.id} onClick={() => selectEmp(e)}
-              className={`w-full text-left p-3 rounded-lg border transition-all ${selectedEmp?.id === e.id ? "bg-sand-subtle border-terracotta" : "bg-white border-border hover:border-terracotta"}`}>
+              className={`w-full text-left p-3 rounded-lg border transition-all ${selectedEmp?.id === e.id ? "bg-sand-subtle border-terracota" : "bg-white border-border hover:border-terracota"}`}>
               <div className="font-semibold text-sm">{e.name}</div>
               <div className="text-xs text-muted-foreground">{e.designation}</div>
             </button>
@@ -123,7 +123,7 @@ export default function SalaryStructures() {
             )}
             
             <div className="mt-6">
-              <Button onClick={save} disabled={busy} className="bg-terracotta hover:bg-terracotta-hover text-white">Save Salary Structure</Button>
+              <Button onClick={save} disabled={busy} className="bg-terracota hover:bg-terracota-hover text-white">Save Salary Structure</Button>
             </div>
           </Card>
         )}

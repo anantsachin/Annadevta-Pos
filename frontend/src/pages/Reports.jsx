@@ -125,7 +125,7 @@ export default function Reports() {
             if (p.key === "custom") label = t("custom_range");
             return (
               <button key={p.key} onClick={() => setPeriodKey(p.key)} data-testid={`rperiod-${p.key}`}
-                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${periodKey === p.key ? "bg-terracotta text-white" : "text-muted-foreground hover:text-foreground"
+                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${periodKey === p.key ? "bg-terracota text-white" : "text-muted-foreground hover:text-foreground"
                   }`}>
                 {label}
               </button>

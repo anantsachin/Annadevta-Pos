@@ -48,7 +48,7 @@ export default function ConfirmDialog({
             onClick={handleConfirm}
             className={variant === "destructive" 
               ? "bg-destructive hover:bg-destructive/90 text-white" 
-              : "bg-terracotta hover:bg-terracotta-hover text-white"
+              : "bg-terracota hover:bg-terracota-hover text-white"
             }
           >
             {confirmText}

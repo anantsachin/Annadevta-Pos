@@ -146,7 +146,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
         {/* Header */}
         <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-sand-subtle">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-terracotta text-white flex items-center justify-center font-bold text-xl uppercase overflow-hidden border border-border">
+            <div className="w-12 h-12 rounded-full bg-terracota text-white flex items-center justify-center font-bold text-xl uppercase overflow-hidden border border-border">
               {form.photo ? (
                 <img src={form.photo} alt={form.name} className="w-full h-full object-cover" />
               ) : (
@@ -170,7 +170,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab ? "border-terracotta text-terracotta" : "border-transparent text-muted-foreground hover:text-foreground"
+                activeTab === tab ? "border-terracota text-terracota" : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               {tab}
@@ -216,7 +216,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
                 <div>
                   <Label>System Role</Label>
                   <select
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-terracotta"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-terracota"
                     value={form.role}
                     onChange={e => setForm({...form, role: e.target.value})}
                   >
@@ -244,7 +244,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
                 <div>
                   <Label>Employment Type</Label>
                   <select
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-terracotta"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-terracota"
                     value={form.employment_type || "Full-Time"}
                     onChange={e => setForm({...form, employment_type: e.target.value})}
                   >
@@ -288,7 +288,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
                         </div>
                       ) : (
                         <label className="cursor-pointer flex flex-col items-center justify-center text-muted-foreground py-4 w-full">
-                          <Camera className="w-6 h-6 mb-2 text-terracotta/50" />
+                          <Camera className="w-6 h-6 mb-2 text-terracota/50" />
                           <span className="text-xs">Upload Government ID Image</span>
                           <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, "government_id")} />
                         </label>
@@ -309,7 +309,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
                         </div>
                       ) : (
                         <label className="cursor-pointer flex flex-col items-center justify-center text-muted-foreground py-4 w-full">
-                          <Camera className="w-6 h-6 mb-2 text-terracotta/50" />
+                          <Camera className="w-6 h-6 mb-2 text-terracota/50" />
                           <span className="text-xs">Upload UPI / Bank QR Code Image</span>
                           <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, "bank_qr_code")} />
                         </label>
@@ -322,7 +322,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
               <div className="border-t border-border pt-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-semibold text-lg">Salary & Payroll</h3>
-                  <button type="button" onClick={() => setActiveTab("Salary & Payroll")} className="text-xs text-terracotta hover:underline font-semibold">
+                  <button type="button" onClick={() => setActiveTab("Salary & Payroll")} className="text-xs text-terracota hover:underline font-semibold">
                     Manage Salary
                   </button>
                 </div>
@@ -337,7 +337,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
                         <span className="text-muted-foreground block text-xs">
                           {salaryForm.wage_type === "Fixed" ? "Basic Salary" : "Hourly Rate"}
                         </span>
-                        <span className="font-bold text-terracotta">
+                        <span className="font-bold text-terracota">
                           ₹{salaryForm.wage_type === "Fixed" 
                             ? salaryForm.basic_salary?.toLocaleString("en-IN") 
                             : `${salaryForm.hourly_rate?.toLocaleString("en-IN")}/hr`}
@@ -347,7 +347,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
                   ) : (
                     <div className="flex justify-between items-center text-sm text-muted-foreground">
                       <span>Salary structure not configured yet.</span>
-                      <button type="button" onClick={() => setActiveTab("Salary & Payroll")} className="text-xs bg-terracotta/10 text-terracotta px-2.5 py-1.5 rounded font-semibold hover:bg-terracotta/20 transition-colors">
+                      <button type="button" onClick={() => setActiveTab("Salary & Payroll")} className="text-xs bg-terracota/10 text-terracota px-2.5 py-1.5 rounded font-semibold hover:bg-terracota/20 transition-colors">
                         Configure Now
                       </button>
                     </div>
@@ -370,7 +370,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={busy} className="bg-terracotta text-white">
+                <Button type="submit" disabled={busy} className="bg-terracota text-white">
                   Save Changes
                 </Button>
               </div>
@@ -389,7 +389,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
                     <select
                       value={salaryForm.wage_type}
                       onChange={e => setSalaryForm(f => ({ ...f, wage_type: e.target.value }))}
-                      className="w-full max-w-xs mt-1.5 px-3 py-2.5 rounded-md border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-terracotta"
+                      className="w-full max-w-xs mt-1.5 px-3 py-2.5 rounded-md border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-terracota"
                     >
                       <option value="Fixed">Fixed Monthly Salary</option>
                       <option value="Hourly">Hourly Wage</option>
@@ -449,7 +449,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
                   )}
 
                   <div className="flex justify-end pt-4 border-t border-border">
-                    <Button type="submit" disabled={savingSalary} className="bg-terracotta text-white flex items-center gap-2">
+                    <Button type="submit" disabled={savingSalary} className="bg-terracota text-white flex items-center gap-2">
                       <Save className="w-4 h-4" />
                       {savingSalary ? "Saving..." : "Save Salary Details"}
                     </Button>
@@ -466,10 +466,10 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
             <div className="space-y-6">
               <div className="flex justify-between items-center pb-4 border-b border-border">
                 <h3 className="font-semibold text-lg text-foreground flex items-center gap-2">
-                  <HandCoins className="w-5 h-5 text-terracotta" />
+                  <HandCoins className="w-5 h-5 text-terracota" />
                   Salary Advances
                 </h3>
-                <Button size="sm" onClick={() => setShowAddAdvance(!showAddAdvance)} className="bg-terracotta text-white hover:bg-terracotta-hover flex items-center gap-1">
+                <Button size="sm" onClick={() => setShowAddAdvance(!showAddAdvance)} className="bg-terracota text-white hover:bg-terracota-hover flex items-center gap-1">
                   <Plus className="w-4 h-4" />
                   {showAddAdvance ? "View Advances" : "Issue Advance"}
                 </Button>
@@ -494,7 +494,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
                   </div>
                   <div className="pt-2 flex justify-end gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => setShowAddAdvance(false)}>Cancel</Button>
-                    <Button type="submit" size="sm" disabled={savingAdvance} className="bg-terracotta text-white">
+                    <Button type="submit" size="sm" disabled={savingAdvance} className="bg-terracota text-white">
                       {savingAdvance ? "Granting..." : "Approve & Grant"}
                     </Button>
                   </div>
@@ -541,7 +541,7 @@ export default function EmployeeDetailsDrawer({ employee, onClose, onUpdate }) {
           {activeTab !== "Profile" && activeTab !== "Salary & Payroll" && activeTab !== "Advances" && (
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <div className="w-16 h-16 bg-sand rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl text-terracotta/50">🚧</span>
+                <span className="text-2xl text-terracota/50">🚧</span>
               </div>
               <h3 className="text-lg font-semibold text-foreground">Under Construction</h3>
               <p className="text-sm text-muted-foreground mt-1 max-w-sm">

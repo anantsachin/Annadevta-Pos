@@ -161,20 +161,25 @@ export default function Billing()
   }, [cart, totals, isOnline, settings, clear, refresh, t]);
 
   return (
-    <div className="h-full grid grid-cols-12 gap-6  bg-white">
+    <div className="h-full grid grid-cols-12 gap-2  bg-transparent">
       {/* Items grid */}
-      <div className="col-span-12 lg:col-span-9 flex flex-col h-full min-h-0 px-8 pt-8 bg-white rounded-[24px]">
-        <div className="flex flex-col gap-6  pb-4">
+      <div
+      className="
+        col-span-12
+        lg:col-span-9 flex flex-col h-full min-h-0
+        bg-[#FFFDF9] rounded-[32px] shadow-lg border border-[#F4E6D7] p-8"
+      >
+        <div className="flex flex-col gap-4  pb-3">
           <div className="flex items-start justify-between gap-8">
             <div className="space-y-2">
               <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("thali_billing_counter")}</div>
-              <h1 className="font-display text-2xl font-extrabold tracking-tight">{t("tap_to_bill")}</h1>
+              <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-900">{t("tap_to_bill")}</h1>
             </div>
-            <div className="relative w-[420px]">
+            <div className="relative w-[500px]">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input data-testid="menu-search" placeholder={t("search_menu")}
                 value={search} onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-white" />
+                className="pl-9 bg-white border-[#F3E5D5]" />
             </div>
           </div>
 
@@ -182,7 +187,7 @@ export default function Billing()
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
             <button onClick={() => setActiveCat("all")} data-testid="cat-all"
               className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all border ${activeCat === "all"
-                  ? "bg-terracotta text-white border-terracotta shadow-sm"
+                  ? "bg-terracota text-white border-terracota shadow-sm"
                   : "bg-white hover:bg-sand-subtle border-border text-muted-foreground hover:text-foreground"
                 }`}>
               {t("all_items")}
@@ -190,7 +195,7 @@ export default function Billing()
             {Array.isArray(categories) && categories.map((c) => (
               <button key={c.id} onClick={() => setActiveCat(c.id)} data-testid={`cat-${c.id}`}
                 className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all border ${activeCat === c.id
-                    ? "bg-terracotta text-white border-terracotta shadow-sm"
+                    ? "bg-terracota text-white border-terracota shadow-sm"
                     : "bg-white hover:bg-sand-subtle border-border text-muted-foreground hover:text-foreground"
                   }`}>
                 {c.name}
@@ -227,14 +232,16 @@ export default function Billing()
         lg:relative lg:translate-x-0
         lg:col-span-3
         lg:w-auto
-        bg-white
-        rounded-[22px]
-        border border-slate-200
+        bg-[#FFFDF9]
+        rounded-[32px]
+        shadow-sm
+        border
+        border-[#F4E6D7]
         overflow-hidden
         flex flex-col
         ${showCartMobile ? "translate-x-0" : "translate-x-full"}`}
       >
-        <div className="p-4 border-b border-border flex items-center justify-between">
+        <div className="p-5 border-b border-border flex items-center justify-between">
           <div>
             <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("current_bill")}</div>
             <div className="font-display text-lg font-bold">{cart.length} {cart.length === 1 ? t("line") : t("lines")}</div>
@@ -271,7 +278,7 @@ export default function Billing()
           <button
             onClick={() => setActiveTab("cart")}
             className={`flex-1 py-2.5 font-bold uppercase tracking-wider text-center border-b-2 transition-all ${activeTab === "cart"
-                ? "border-terracotta text-terracotta bg-sand-subtle/30"
+                ? "border-terracota text-terracota bg-sand-subtle/30"
                 : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
           >
@@ -280,7 +287,7 @@ export default function Billing()
           <button
             onClick={() => setActiveTab("receipt")}
             className={`flex-1 py-2.5 font-bold uppercase tracking-wider text-center border-b-2 transition-all ${activeTab === "receipt"
-                ? "border-terracotta text-terracotta bg-sand-subtle/30"
+                ? "border-terracota text-terracota bg-sand-subtle/30"
                 : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
           >
@@ -358,7 +365,7 @@ export default function Billing()
           </div>
           <div className="flex items-center justify-between border-t border-border pt-2 mb-3">
             <span className="font-display font-bold">{t("total")}</span>
-            <span className="font-mono text-2xl font-extrabold text-terracotta" data-testid="cart-total">
+            <span className="font-mono text-2xl font-extrabold text-terracota" data-testid="cart-total">
               ₹{totals.total.toFixed(2)}
             </span>
           </div>
@@ -368,7 +375,7 @@ export default function Billing()
               <Banknote className="w-4 h-4 mr-1.5" />{t("cash")}
             </Button>
             <Button onClick={() => checkout("upi")} disabled={!cart.length} data-testid="pay-upi"
-              className="bg-terracotta hover:bg-terracotta-hover text-white">
+              className="bg-terracota hover:bg-terracota-hover text-white">
               <Smartphone className="w-4 h-4 mr-1.5" />{t("upi")}
             </Button>
             <Button onClick={() => checkout("card")} disabled={!cart.length} data-testid="pay-card"
@@ -385,11 +392,11 @@ export default function Billing()
       {/* Floating Cart Button for Mobile */}
       <button
         onClick={() => setShowCartMobile(true)}
-        className="lg:hidden fixed bottom-6 right-6 bg-terracotta text-white p-4 rounded-full shadow-lg z-30 flex items-center gap-2 hover:bg-terracotta/90 transition-all active:scale-95 duration-150"
+        className="lg:hidden fixed bottom-6 right-6 bg-terracota text-white p-4 rounded-full shadow-lg z-30 flex items-center gap-2 hover:bg-terracota/90 transition-all active:scale-95 duration-150"
       >
         <ShoppingCart className="w-6 h-6" />
         {cart.length > 0 && (
-          <span className="bg-white text-terracotta text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
+          <span className="bg-white text-terracota text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
             {cart.length}
           </span>
         )}

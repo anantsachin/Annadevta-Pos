@@ -78,13 +78,13 @@ export default function StaffManager() {
     <Card className="p-6 mt-8 border-border">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-terracotta" />
+          <Users className="w-5 h-5 text-terracota" />
           <h2 className="text-xl font-bold font-display">Team Directory</h2>
         </div>
         
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="bg-terracotta hover:bg-terracotta-hover text-white">
+            <Button size="sm" className="bg-terracota hover:bg-terracota-hover text-white">
               <Plus className="w-4 h-4 mr-2" /> Add Employee
             </Button>
           </DialogTrigger>
@@ -106,7 +106,7 @@ export default function StaffManager() {
                 <Input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required placeholder="At least 8 characters" />
               </div>
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={busy} className="bg-terracotta text-white">
+                <Button type="submit" disabled={busy} className="bg-terracota text-white">
                   {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Create Account
                 </Button>
@@ -139,7 +139,7 @@ export default function StaffManager() {
                 <tr key={u.id} className="border-b border-border last:border-0 hover:bg-sand/30 cursor-pointer" onClick={() => setSelectedStaff(u)}>
                   <td className="px-4 py-3 font-medium">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-terracotta/10 text-terracotta flex items-center justify-center font-bold text-xs uppercase overflow-hidden border border-border">
+                      <div className="w-8 h-8 rounded-full bg-terracota/10 text-terracota flex items-center justify-center font-bold text-xs uppercase overflow-hidden border border-border">
                         {u.photo ? (
                           <img src={u.photo} alt={u.name} className="w-full h-full object-cover" />
                         ) : (

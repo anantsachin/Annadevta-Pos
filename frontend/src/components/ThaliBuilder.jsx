@@ -125,7 +125,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
           <div className="flex items-start justify-between pr-8">
             <div>
               <DialogTitle className="font-display text-2xl tracking-tight">
-                {t(thali.name)} <span className="text-terracotta font-mono text-lg ml-2">₹{thali.price * thaliQty}</span>
+                {t(thali.name)} <span className="text-terracota font-mono text-lg ml-2">₹{thali.price * thaliQty}</span>
               </DialogTitle>
               <DialogDescription className="mt-1.5">
                 {thali.thali_extras ? <span>{t("includes")}: <span className="text-foreground">{translateExtras(thali.thali_extras, t)}</span></span> : t("pick_todays_items")}
@@ -200,8 +200,8 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
                           onClick={() => addPick(g.category_id, it.name, maxQty)}
                           data-testid={`thali-pick-${it.id}`}
                           className={`cursor-pointer tap-scale text-left p-3 rounded-md border transition-all ${countInChosen > 0
-                              ? "border-terracotta bg-terracotta-light text-foreground"
-                              : "border-border bg-white hover:border-terracotta/50"
+                              ? "border-terracota bg-terracota-light text-foreground"
+                              : "border-border bg-white hover:border-terracota/50"
                             }`}>
                           <div className="flex items-start justify-between gap-1.5 min-h-[24px]">
                             <span className="text-sm font-semibold flex items-center gap-1.5 flex-wrap flex-1">
@@ -218,12 +218,12 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
                               )}
                             </span>
                             {countInChosen > 0 && (
-                              <div className="flex items-center gap-2 bg-white rounded-md border border-terracotta/30 px-1 py-0.5" onClick={(e) => e.stopPropagation()}>
-                                <button type="button" onClick={() => removePick(g.category_id, it.name)} className="w-6 h-6 flex items-center justify-center text-terracotta hover:bg-terracotta/10 rounded">
+                              <div className="flex items-center gap-2 bg-white rounded-md border border-terracota/30 px-1 py-0.5" onClick={(e) => e.stopPropagation()}>
+                                <button type="button" onClick={() => removePick(g.category_id, it.name)} className="w-6 h-6 flex items-center justify-center text-terracota hover:bg-terracota/10 rounded">
                                   −
                                 </button>
-                                <span className="font-bold text-sm text-terracotta w-3 text-center">{countInChosen}</span>
-                                <button type="button" onClick={() => addPick(g.category_id, it.name, maxQty)} className="w-6 h-6 flex items-center justify-center text-terracotta hover:bg-terracotta/10 rounded">
+                                <span className="font-bold text-sm text-terracota w-3 text-center">{countInChosen}</span>
+                                <button type="button" onClick={() => addPick(g.category_id, it.name, maxQty)} className="w-6 h-6 flex items-center justify-center text-terracota hover:bg-terracota/10 rounded">
                                   +
                                 </button>
                               </div>
@@ -301,7 +301,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
 
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-amber-800 font-medium">Extra Charge:</span>
-                        <span className="font-mono font-bold text-lg text-terracotta">
+                        <span className="font-mono font-bold text-lg text-terracota">
                           ₹{extraBreadCharge.toFixed(2)}
                         </span>
                       </div>
@@ -315,7 +315,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="border-border" data-testid="thali-cancel">{t("cancel")}</Button>
-          <Button onClick={handleAdd} disabled={!allFilled} className="bg-terracotta hover:bg-terracotta-hover text-white" data-testid="thali-confirm">
+          <Button onClick={handleAdd} disabled={!allFilled} className="bg-terracota hover:bg-terracota-hover text-white" data-testid="thali-confirm">
             {t("add_to_bill")}
           </Button>
         </DialogFooter>

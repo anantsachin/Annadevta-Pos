@@ -117,7 +117,7 @@ export default function PurchaseOrders() {
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("inv_module") || "Inventory Management"}</div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("inv_purchase_orders") || "Purchase Orders"}</h1>
         </div>
-        <Button onClick={() => setCreateDialog(true)} className="bg-terracotta hover:bg-terracotta-hover text-white">
+        <Button onClick={() => setCreateDialog(true)} className="bg-terracota hover:bg-terracota-hover text-white">
           <Plus className="w-4 h-4 mr-2" /> New Purchase Order
         </Button>
       </div>
@@ -181,7 +181,7 @@ export default function PurchaseOrders() {
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-terracotta" /> New Purchase Order
+              <ClipboardList className="w-5 h-5 text-terracota" /> New Purchase Order
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -223,7 +223,7 @@ export default function PurchaseOrders() {
               <Label>Notes</Label>
               <Input value={poNotes} onChange={e => setPoNotes(e.target.value)} className="mt-1" placeholder="Optional notes..." />
             </div>
-            <Button onClick={createPO} disabled={busy} className="w-full bg-terracotta hover:bg-terracotta-hover text-white">
+            <Button onClick={createPO} disabled={busy} className="w-full bg-terracota hover:bg-terracota-hover text-white">
               Create Purchase Order
             </Button>
           </div>
@@ -267,7 +267,7 @@ export default function PurchaseOrders() {
                   <tfoot>
                     <tr className="border-t-2 border-border bg-sand-subtle/30">
                       <td colSpan={3} className="p-2 font-bold text-right">Total</td>
-                      <td className="p-2 text-right font-mono font-bold text-terracotta">₹{detailDialog.total_amount?.toLocaleString("en-IN")}</td>
+                      <td className="p-2 text-right font-mono font-bold text-terracota">₹{detailDialog.total_amount?.toLocaleString("en-IN")}</td>
                     </tr>
                   </tfoot>
                 </table>

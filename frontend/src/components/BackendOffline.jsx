@@ -15,13 +15,13 @@ export default function BackendOffline({ onRetry }) {
       </p>
       <div className="bg-white border border-border rounded-xl p-4 w-full max-w-xs mb-8 space-y-3">
         <div className="flex items-start gap-3">
-          <Server className="w-4 h-4 text-terracotta mt-0.5 flex-shrink-0" />
+          <Server className="w-4 h-4 text-terracota mt-0.5 flex-shrink-0" />
           <p className="text-sm text-foreground">
             The backend server is running on your device's network.
           </p>
         </div>
         <div className="flex items-start gap-3">
-          <WifiOff className="w-4 h-4 text-terracotta mt-0.5 flex-shrink-0" />
+          <WifiOff className="w-4 h-4 text-terracota mt-0.5 flex-shrink-0" />
           <p className="text-sm text-foreground">
             Your Android device is connected to the same Wi-Fi as the server.
           </p>
@@ -29,7 +29,7 @@ export default function BackendOffline({ onRetry }) {
       </div>
       <button
         onClick={onRetry}
-        className="flex items-center gap-2 bg-terracotta text-white px-6 py-3 rounded-full font-semibold text-sm shadow-md active:scale-95 transition-all"
+        className="flex items-center gap-2 bg-terracota text-white px-6 py-3 rounded-full font-semibold text-sm shadow-md active:scale-95 transition-all"
       >
         <RefreshCw className="w-4 h-4" />
         Retry Connection

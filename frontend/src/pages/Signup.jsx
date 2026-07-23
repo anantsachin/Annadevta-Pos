@@ -55,7 +55,7 @@ export default function Signup() {
             <div className="text-[10px] uppercase tracking-[0.3em] mb-3 opacity-80">A billing counter for thali kitchens</div>
             <h1 className="font-display text-4xl lg:text-5xl font-extrabold leading-tight max-w-md">
               Start your journey.<br />
-              <span className="text-terracotta-light">Manage your kitchen.</span>
+              <span className="text-terracota-light">Manage your kitchen.</span>
             </h1>
             <p className="mt-4 text-sm opacity-80 max-w-sm">
               Sign up today and get access to powerful billing, inventory, and payroll management tailored for thali restaurants.
@@ -86,13 +86,13 @@ export default function Signup() {
                 onChange={(e) => setPassword(e.target.value)} required className="mt-1" />
             </div>
             <Button type="submit" disabled={busy} data-testid="signup-submit"
-              className="w-full bg-terracotta hover:bg-terracotta-hover text-white mt-2">
+              className="w-full bg-terracota hover:bg-terracota-hover text-white mt-2">
               {busy && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               Sign Up
             </Button>
           </form>
           <div className="mt-6 text-center text-sm text-muted-foreground border-t border-border pt-4">
-            Already have an account? <Link to="/login" className="text-terracotta hover:underline font-medium">Sign in</Link>
+            Already have an account? <Link to="/login" className="text-terracota hover:underline font-medium">Sign in</Link>
           </div>
         </Card>
       </div>

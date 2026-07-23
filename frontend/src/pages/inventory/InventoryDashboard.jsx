@@ -20,10 +20,10 @@ const QuickLink = ({ to, icon: Icon, label, count, color }) => (
       <Icon className="w-5 h-5" />
     </div>
     <div className="flex-1 min-w-0">
-      <div className="text-sm font-semibold text-foreground group-hover:text-terracotta transition-colors">{label}</div>
+      <div className="text-sm font-semibold text-foreground group-hover:text-terracota transition-colors">{label}</div>
       {count !== undefined && <div className="text-xs text-muted-foreground">{count} items</div>}
     </div>
-    <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-terracotta transition-colors" />
+    <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-terracota transition-colors" />
   </Link>
 );
 
@@ -38,7 +38,7 @@ export default function InventoryDashboard() {
   if (!data) return <div className="p-10 text-muted-foreground">Loading inventory dashboard…</div>;
 
   const kpiCards = [
-    { label: t("inv_total_value") || "Inventory Value", value: `₹${data.total_value.toLocaleString("en-IN")}`, icon: IndianRupee, color: "text-terracotta", bg: "bg-terracotta-light" },
+    { label: t("inv_total_value") || "Inventory Value", value: `₹${data.total_value.toLocaleString("en-IN")}`, icon: IndianRupee, color: "text-terracota", bg: "bg-terracota-light" },
     { label: "Today's Consumption", value: `${data.todays_consumption_kg || 0} kg`, icon: ShoppingBag, color: "text-blue-600", bg: "bg-blue-50" },
     { label: t("inv_low_stock") || "Low Stock", value: data.low_stock_count, icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
     { label: t("inv_out_of_stock") || "Out of Stock", value: data.out_of_stock_count, icon: XCircle, color: "text-red-600", bg: "bg-red-50" },
@@ -81,7 +81,7 @@ export default function InventoryDashboard() {
 
       {/* Quick Links */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-        <QuickLink to="/inventory/stock" icon={Box} label="Stock Management" color="bg-terracotta-light text-terracotta" />
+        <QuickLink to="/inventory/stock" icon={Box} label="Stock Management" color="bg-terracota-light text-terracota" />
         <QuickLink to="/inventory/suppliers" icon={Truck} label="Suppliers" color="bg-forest-light text-forest" />
         <QuickLink to="/inventory/purchase-orders" icon={ClipboardList} label="Purchase Orders" color="bg-blue-50 text-blue-600" />
         <QuickLink to="/inventory/reports" icon={FileBarChart} label="Reports" color="bg-amber-50 text-amber-600" />
@@ -93,7 +93,7 @@ export default function InventoryDashboard() {
         <Card className="p-6 border-border shadow-none lg:col-span-2">
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">Last 30 days</div>
           <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-terracotta" /> Top Moving Products
+            <TrendingUp className="w-4 h-4 text-terracota" /> Top Moving Products
           </h3>
           {data.top_movers.length === 0 ? (
             <div className="text-sm text-muted-foreground py-6 text-center">No inventory movement recorded yet</div>

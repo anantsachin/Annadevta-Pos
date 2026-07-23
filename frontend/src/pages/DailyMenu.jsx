@@ -111,7 +111,7 @@ export default function DailyMenu() {
         <div>
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{today}</div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight flex items-center gap-2">
-            <CalendarDays className="w-7 h-7 text-terracotta" /> {t("nav_daily_menu")}
+            <CalendarDays className="w-7 h-7 text-terracota" /> {t("nav_daily_menu")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {t("daily_menu_subtext")} <span className="text-foreground font-semibold">{activeCount}</span> {t("active_items")}.
@@ -119,7 +119,7 @@ export default function DailyMenu() {
         </div>
       </div>
 
-      <Card className="p-4 border-border shadow-none mb-6 bg-terracotta/5 border-terracotta/30">
+      <Card className="p-4 border-border shadow-none mb-6 bg-terracota/5 border-terracota/30">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="text-sm font-semibold">{t("save_as_template_title")}</div>
@@ -128,14 +128,14 @@ export default function DailyMenu() {
           <div className="flex gap-2">
             <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)}
               placeholder={t("template_name_placeholder")} className="w-56 bg-white" data-testid="template-name" />
-            <Button onClick={saveTemplate} className="bg-terracotta hover:bg-terracotta-hover text-white" data-testid="save-template-btn">
+            <Button onClick={saveTemplate} className="bg-terracota hover:bg-terracota-hover text-white" data-testid="save-template-btn">
               <Save className="w-4 h-4 mr-2" /> {t("save_template_btn")}
             </Button>
           </div>
         </div>
 
         {safeTemplates.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-terracotta/20">
+          <div className="mt-4 pt-4 border-t border-terracota/20">
             <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-2">{t("templates")}</div>
             <div className="flex flex-wrap gap-2" data-testid="templates-list">
               {safeTemplates.map((tpl) => (
@@ -177,7 +177,7 @@ export default function DailyMenu() {
               </div>
               <div className="flex items-center gap-3 text-xs">
                 <span className="text-muted-foreground font-mono">{safeArray(cat.items).filter(i => i.available).length}/{safeArray(cat.items).length} {t("active")}</span>
-                <button onClick={() => setAllInCategory(cat.items, true)} className="text-terracotta hover:underline" data-testid={`all-on-${cat.id}`}>{t("all_on")}</button>
+                <button onClick={() => setAllInCategory(cat.items, true)} className="text-terracota hover:underline" data-testid={`all-on-${cat.id}`}>{t("all_on")}</button>
                 <button onClick={() => setAllInCategory(cat.items, false)} className="text-muted-foreground hover:underline" data-testid={`all-off-${cat.id}`}>{t("all_off")}</button>
               </div>
             </div>
@@ -186,12 +186,12 @@ export default function DailyMenu() {
               {safeArray(cat.items).length === 0 && <div className="text-xs text-muted-foreground col-span-full p-4 text-center">{t("no_items_in_category")}</div>}
               {safeArray(cat.items).map(m => (
                 <label key={m.id}
-                  className={`flex items-center justify-between gap-3 p-3 rounded-md border transition-all cursor-pointer ${m.available ? "border-terracotta/40 bg-terracotta/5" : "border-border bg-white"
+                  className={`flex items-center justify-between gap-3 p-3 rounded-md border transition-all cursor-pointer ${m.available ? "border-terracota/40 bg-terracota/5" : "border-border bg-white"
                     }`}
                   data-testid={`daily-item-${m.id}`}>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold flex items-center gap-1.5 truncate">
-                      {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">{t("thali")}</span>}
+                      {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracota text-white px-1.5 py-0.5 rounded">{t("thali")}</span>}
                       {t(m.name)}
                     </div>
                     <div className="text-xs text-muted-foreground font-mono">₹{m.price}</div>

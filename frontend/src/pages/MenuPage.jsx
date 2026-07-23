@@ -128,7 +128,7 @@ export default function MenuPage() {
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("menu_database")}</div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("nav_menu")}</h1>
         </div>
-        <Button onClick={startNew} className="bg-terracotta hover:bg-terracotta-hover text-white" data-testid="add-item-btn">
+        <Button onClick={startNew} className="bg-terracota hover:bg-terracota-hover text-white" data-testid="add-item-btn">
           <Plus className="w-4 h-4 mr-2" /> {t("add_item")}
         </Button>
       </div>
@@ -137,7 +137,7 @@ export default function MenuPage() {
       <Card className="p-6 border-border shadow-sm mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta">{t("categories")}</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota">{t("categories")}</h2>
             <p className="text-xs text-muted-foreground mt-1">Organize your menu items into categories</p>
           </div>
           <div className="text-xs text-muted-foreground">
@@ -151,10 +151,10 @@ export default function MenuPage() {
             {safeArray(categories).map(c => (
               <div
                 key={c.id}
-                className="group relative flex items-center justify-between px-4 py-3 rounded-lg bg-gradient-to-br from-sand-subtle to-white border border-border hover:border-terracotta/50 hover:shadow-sm transition-all"
+                className="group relative flex items-center justify-between px-4 py-3 rounded-lg bg-gradient-to-br from-sand-subtle to-white border border-border hover:border-terracota/50 hover:shadow-sm transition-all"
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <div className="w-2 h-2 rounded-full bg-terracotta flex-shrink-0"></div>
+                  <div className="w-2 h-2 rounded-full bg-terracota flex-shrink-0"></div>
                   <span className="text-sm font-semibold text-foreground truncate">{t(c.name)}</span>
                 </div>
                 <button
@@ -187,7 +187,7 @@ export default function MenuPage() {
           <Button
             onClick={addCategory}
             disabled={!catName.trim()}
-            className="bg-terracotta hover:bg-terracotta-hover text-white px-6"
+            className="bg-terracota hover:bg-terracota-hover text-white px-6"
             data-testid="add-cat-btn"
           >
             <Plus className="w-4 h-4 mr-2" /> Add
@@ -211,7 +211,7 @@ export default function MenuPage() {
               <tr key={m.id} className="border-t border-border hover:bg-sand-subtle/40">
                 <td className="px-4 py-3 font-medium">
                   <div className="flex items-center gap-2">
-                    {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded">{t("thali")}</span>}
+                    {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracota text-white px-1.5 py-0.5 rounded">{t("thali")}</span>}
                     {t(m.name)}
                   </div>
                   {m.is_thali && m.thali_groups?.length > 0 && (
@@ -280,7 +280,7 @@ export default function MenuPage() {
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <label className="flex items-center gap-2 text-sm">
                   <Switch checked={editing.is_thali} onCheckedChange={(v) => setEditing({ ...editing, is_thali: v })} data-testid="edit-thali" />
-                  <Sparkles className="w-4 h-4 text-terracotta" /> {t("this_is_thali")}
+                  <Sparkles className="w-4 h-4 text-terracota" /> {t("this_is_thali")}
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <Switch checked={editing.available} onCheckedChange={(v) => setEditing({ ...editing, available: v })} data-testid="edit-avail" />
@@ -346,7 +346,7 @@ export default function MenuPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditing(null)} className="border-border">{t("cancel")}</Button>
-              <Button onClick={save} className="bg-terracotta hover:bg-terracotta-hover text-white" data-testid="save-item-btn">{t("save")}</Button>
+              <Button onClick={save} className="bg-terracota hover:bg-terracota-hover text-white" data-testid="save-item-btn">{t("save")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

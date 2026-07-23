@@ -236,13 +236,13 @@ export default function Settings() {
   return (
     <div className="p-6 lg:p-10 max-w-6xl mx-auto">
       {/* Professional Page Header */}
-      <div className="mb-8 bg-gradient-to-r from-terracotta/10 via-amber-50 to-transparent border-l-4 border-terracotta rounded-lg p-6 shadow-sm">
+      <div className="mb-8 bg-gradient-to-r from-terracota/10 via-amber-50 to-transparent border-l-4 border-terracota rounded-lg p-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <Store className="w-8 h-8 text-terracotta" />
+              <Store className="w-8 h-8 text-terracota" />
               <div>
-                <div className="text-[11px] uppercase tracking-[0.3em] text-terracotta font-semibold">Configuration</div>
+                <div className="text-[11px] uppercase tracking-[0.3em] text-terracota font-semibold">Configuration</div>
                 <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground">
                   Restaurant & Receipt Settings
                 </h1>
@@ -252,7 +252,7 @@ export default function Settings() {
               Configure your profile, paper properties, and customize how customers see receipts.
             </p>
           </div>
-          <Button onClick={save} disabled={busy} className="bg-terracotta hover:bg-terracotta-hover text-white shadow-md md:self-start" data-testid="save-settings-btn">
+          <Button onClick={save} disabled={busy} className="bg-terracota hover:bg-terracota-hover text-white shadow-md md:self-start" data-testid="save-settings-btn">
             <Save className="w-4 h-4 mr-2" /> {busy ? "Saving..." : "Save settings"}
           </Button>
         </div>
@@ -264,7 +264,7 @@ export default function Settings() {
 
           {/* Section 1: Restaurant Profile */}
           <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
               <Store className="w-4 h-4" /> {t("restaurant_profile")}
             </h2>
             <div>
@@ -294,7 +294,7 @@ export default function Settings() {
                   setS({ ...s, language: val });
                   changeLanguage(val);
                 }}
-                className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracotta"
+                className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
                 data-testid="set-language"
               >
                 <option value="en">English</option>
@@ -303,9 +303,9 @@ export default function Settings() {
               </select>
             </div>
 
-            {/* Sidebar Branding */}
+            {/* Sidebar terracotaing */}
             <div className="pt-4 border-t border-border">
-              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Sidebar Branding</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Sidebar terracotaing</div>
               <div className="space-y-3">
                 <div>
                   <label className="text-xs uppercase tracking-wider text-muted-foreground">App Name</label>
@@ -335,7 +335,7 @@ export default function Settings() {
 
           {/* Section 2: Receipt Formatting */}
           <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
               <Sliders className="w-4 h-4" /> {t("receipt_format_styles")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -344,7 +344,7 @@ export default function Settings() {
                 <select
                   value={s.header_alignment}
                   onChange={(e) => setS({ ...s, header_alignment: e.target.value })}
-                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracotta"
+                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
                 >
                   <option value="center">Center Header</option>
                   <option value="left">Left Header</option>
@@ -355,7 +355,7 @@ export default function Settings() {
                 <select
                   value={s.header_template}
                   onChange={(e) => setS({ ...s, header_template: e.target.value })}
-                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracotta"
+                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
                 >
                   <option value="classic">Classic (Name, Address, Phone, GSTIN)</option>
                   <option value="compact">Compact (Name, Phone)</option>
@@ -370,7 +370,7 @@ export default function Settings() {
                 <select
                   value={s.paper_width}
                   onChange={(e) => setS({ ...s, paper_width: Number(e.target.value) })}
-                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracotta"
+                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
                 >
                   <option value="80">80mm (3-inch)</option>
                   <option value="58">58mm (2-inch)</option>
@@ -384,7 +384,7 @@ export default function Settings() {
                 <select
                   value={s.default_printer || ""}
                   onChange={(e) => setS({ ...s, default_printer: e.target.value || null })}
-                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracotta"
+                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
                   disabled={printers.length === 0}
                 >
                   <option value="">System Default</option>
@@ -403,7 +403,7 @@ export default function Settings() {
                 <select
                   value={s.font_size}
                   onChange={(e) => setS({ ...s, font_size: e.target.value })}
-                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracotta"
+                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
                 >
                   <option value="small">Small</option>
                   <option value="medium">Medium</option>
@@ -442,7 +442,7 @@ export default function Settings() {
 
           {/* Section 3: Receipt Number Format */}
           <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
               <Receipt className="w-4 h-4" /> {t("receipt_numbering")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -461,7 +461,7 @@ export default function Settings() {
 
           {/* Section 4: Toggles & Features */}
           <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
               <Receipt className="w-4 h-4" /> {t("template_features_rules")}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -470,7 +470,7 @@ export default function Settings() {
                   type="checkbox"
                   checked={s.show_gst}
                   onChange={(e) => setS({ ...s, show_gst: e.target.checked })}
-                  className="w-4 h-4 rounded text-terracotta border-border focus:ring-terracotta"
+                  className="w-4 h-4 rounded text-terracota border-border focus:ring-terracota"
                 />
                 <div>
                   <div className="text-xs font-bold text-foreground">{t("show_tax_breakdown")}</div>
@@ -483,7 +483,7 @@ export default function Settings() {
                   type="checkbox"
                   checked={s.show_payment}
                   onChange={(e) => setS({ ...s, show_payment: e.target.checked })}
-                  className="w-4 h-4 rounded text-terracotta border-border focus:ring-terracotta"
+                  className="w-4 h-4 rounded text-terracota border-border focus:ring-terracota"
                 />
                 <div>
                   <div className="text-xs font-bold text-foreground">{t("show_payment_method")}</div>
@@ -496,7 +496,7 @@ export default function Settings() {
                   type="checkbox"
                   checked={s.show_thali_selections}
                   onChange={(e) => setS({ ...s, show_thali_selections: e.target.checked })}
-                  className="w-4 h-4 rounded text-terracotta border-border focus:ring-terracotta"
+                  className="w-4 h-4 rounded text-terracota border-border focus:ring-terracota"
                 />
                 <div>
                   <div className="text-xs font-bold text-foreground">{t("show_thali_selections")}</div>
@@ -509,7 +509,7 @@ export default function Settings() {
                   type="checkbox"
                   checked={s.auto_print}
                   onChange={(e) => setS({ ...s, auto_print: e.target.checked })}
-                  className="w-4 h-4 rounded text-terracotta border-border focus:ring-terracotta"
+                  className="w-4 h-4 rounded text-terracota border-border focus:ring-terracota"
                 />
                 <div>
                   <div className="text-sm font-bold text-foreground">{t("auto_print_receipt")}</div>
@@ -522,7 +522,7 @@ export default function Settings() {
                   onClick={handleTestPrint}
                   disabled={testPrinting || !window.electronAPI}
                   variant="outline"
-                  className="w-full border-terracotta text-terracotta hover:bg-terracotta hover:text-white"
+                  className="w-full border-terracota text-terracota hover:bg-terracota hover:text-white"
                 >
                   <Printer className="w-4 h-4 mr-2" />
                   {testPrinting ? "Printing..." : "Test Print"}
@@ -533,7 +533,7 @@ export default function Settings() {
 
           {/* Section 5: Data Management */}
           <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
               <Database className="w-4 h-4" /> {t("data_management")}
             </h2>
 
@@ -584,9 +584,9 @@ export default function Settings() {
             </div>
           </Card>
 
-          {/* Section 6: About & Branding */}
+          {/* Section 6: About & terracotaing */}
           <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracotta flex items-center gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
               <Info className="w-4 h-4" /> System Information
             </h2>
 
