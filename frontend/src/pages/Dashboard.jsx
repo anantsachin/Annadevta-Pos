@@ -5,14 +5,16 @@ import { TrendingUp, ShoppingBag, IndianRupee, Banknote, Smartphone, CreditCard,
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, Cell } from "recharts";
 import { useLanguage } from "../context/LanguageContext";
 
-const PAY_COLORS = { cash: "#2D6A4F", upi: "#E06C4C", card: "#457B9D" };
+const PAY_COLORS = { cash: "#78A61A", upi: "#FF7A2F", card: "#4F8EF7" };
 const PAY_ICONS = { cash: Banknote, upi: Smartphone, card: CreditCard };
 
-const Stat = ({ label, value, sub, accent }) => (
-  <Card className="p-5 border-border shadow-none">
-    <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{label}</div>
+const Stat = ({ label, value, sub, accent, showCurrency = true}) => (
+  <Card className="rounded-[26px] border-[#F4E6D7] bg-white shadow-sm p-6">
+    <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">{label}</div>
     <div className={`font-display text-3xl font-extrabold tracking-tight mt-2 flex items-center ${accent || ""}`}>
-      <IndianRupee className="w-5 h-5 mr-0.5 text-muted-foreground" />
+    {showCurrency && (
+    <IndianRupee className="w-5 h-5 mr-0.5 text-muted-foreground" />
+)}
       {value}
     </div>
     {sub && <div className="text-xs text-muted-foreground mt-1">{sub}</div>}
@@ -48,16 +50,23 @@ export default function Dashboard() {
   const activePeriodLabel = periods.find(p => p.key === period)?.label || "";
 
   return (
-    <div className="p-6 lg:p-10 max-w-7xl">
-      <div className="mb-6 flex items-end justify-between flex-wrap gap-4">
+    <div className="h-full
+        bg-[#FFFDF9]
+        rounded-[32px]
+        border
+        border-[#F4E6D7]
+        shadow-lg
+        p-8
+        overflow-y-auto">
+      <div className="mb-8 flex items-end justify-between">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("business_pulse")}</div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("nav_dashboard")}</h1>
+          <div className="text-[15px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">{t("business_pulse")}</div>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-900">{t("nav_dashboard")}</h1>
         </div>
-        <div className="flex items-center gap-1 p-1 bg-white border border-border rounded-md" data-testid="period-tabs">
+        <div className="flex items-center gap-5 p-3 bg-white border border-[#F4E6D7] rounded-full" data-testid="period-tabs">
           {periods.map(p => (
             <button key={p.key} onClick={() => setPeriod(p.key)} data-testid={`period-${p.key}`}
-              className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${period === p.key ? "bg-foreground text-white" : "text-muted-foreground hover:text-foreground"
+              className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${period === p.key ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm" : "text-slate-500 hover:bg-white hover:text-foreground"
                 }`}>
               {p.label}
             </button>
@@ -65,15 +74,20 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" data-testid="kpi-cards">
-        <Stat label={t("revenue_card")} value={k.revenue.toLocaleString('en-IN')} accent="text-terracota" />
-        <Stat label={t("orders_card")} value={k.orders} sub={k.orders > 0 ? `${k.orders} ${t("bills")}` : t("no_bills_yet")} />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[10px] uppercase tracking-[0.1em] font-semibold mb-3" data-testid="kpi-cards">
+        <Stat label={t("revenue_card")} value={k.revenue.toLocaleString('en-IN')} accent="text-[#FF6B00]" />
+        <Stat label={t("orders_card")} value={k.orders}  showCurrency={false} />
         <Stat label={t("avg_bill_card")} value={k.avg.toLocaleString('en-IN')} sub={t("per_receipt")} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <Card className="p-6 border-border shadow-none lg:col-span-2">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">{t("last_7_days")}</div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+        <Card className="lg:col-span-2
+        rounded-[26px]
+        border-[#F4E6D7]
+        bg-white
+        shadow-sm
+        p-6">
+          <div className="text-[10px] uppercase tracking-[0.25em] font-semibold mb-1">{t("last_7_days")}</div>
           <h3 className="font-display text-lg font-semibold mb-4">{t("sales_trend")}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -82,13 +96,17 @@ export default function Dashboard() {
                   tickFormatter={(d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} />
                 <YAxis tick={{ fontSize: 11, fill: '#5C5C5C' }} />
                 <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #E6E4DE', fontSize: 12 }} />
-                <Line type="monotone" dataKey="revenue" stroke="#E06C4C" strokeWidth={2.5} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="revenue" stroke="#FF7A2F" strokeWidth={3.5} dot={{ r: 4, stroke:"#FF7A2F", strokeWidth:2, fill:"white" }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
-        <Card className="p-6 border-border shadow-none">
+        <Card className="rounded-[26px]
+        border-[#F4E6D7]
+        bg-white
+        shadow-sm
+        p-6">
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">{activePeriodLabel}</div>
           <h3 className="font-display text-lg font-semibold mb-4">{t("payment_mix")}</h3>
           {payTotal === 0 ? (

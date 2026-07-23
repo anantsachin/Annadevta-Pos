@@ -83,24 +83,41 @@ export default function Reports() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl">
-      <div className="mb-6 flex items-end justify-between flex-wrap gap-4">
+    <div className="h-full
+    bg-[#FFFDF9]
+    rounded-[32px]
+    border
+    border-[#F4E6D7]
+    shadow-lg
+    p-8
+    flex
+    flex-col
+    overflow-hidden
+  ">
+      <div className="mb-6 flex items-end justify-between">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Analytics</div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("nav_reports")}</h1>
+          <div className="text-[15px]
+          uppercase
+          tracking-[0.1em]
+          font-bold
+          bg-gradient-to-r
+          from-[#FF8A3D] to-[#FF6B00]
+          bg-clip-text
+          text-transparent">Analytics</div>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-900">{t("nav_reports")}</h1>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => download("csv")} variant="outline" className="border-border" data-testid="export-csv">
+          <Button onClick={() => download("csv")} variant="outline" className="text-white border-[#F4E6D7] bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:bg-[#FFF8F2] rounded-xl" data-testid="export-csv">
             <FileText className="w-4 h-4 mr-2" /> {t("export_csv")}
           </Button>
-          <Button onClick={() => download("xlsx")} className="bg-forest hover:bg-forest-hover text-white" data-testid="export-xlsx">
+          <Button onClick={() => download("xlsx")} className="bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105" data-testid="export-xlsx">
             <FileSpreadsheet className="w-4 h-4 mr-2" /> {t("export_excel")}
           </Button>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-3 mb-4">
-        <div className="flex items-center gap-1 p-1 bg-white border border-border rounded-md" data-testid="report-tabs">
+        <div className="flex items-center gap-7 p-2 bg-[#FFF8F2] border border-[#F4E6D7] rounded-full" data-testid="report-tabs">
           {REPORT_TABS.map(tTab => {
             let label = tTab.label;
             if (tTab.key === "sales") label = t("tab_sales");
@@ -108,7 +125,7 @@ export default function Reports() {
             if (tTab.key === "thalis") label = t("tab_thali");
             return (
               <button key={tTab.key} onClick={() => setTab(tTab.key)} data-testid={`report-${tTab.key}`}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${tab === tTab.key ? "bg-foreground text-white" : "text-muted-foreground hover:text-foreground"
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${tab === tTab.key ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white" : "text-muted-foreground hover:text-foreground"
                   }`}>
                 <tTab.icon className="w-3.5 h-3.5" /> {label}
               </button>
@@ -116,7 +133,7 @@ export default function Reports() {
           })}
         </div>
 
-        <div className="flex items-center gap-1 p-1 bg-white border border-border rounded-md" data-testid="period-tabs">
+        <div className="flex items-center gap-7 p-2 bg-[#FFF8F2] border border-[#F4E6D7] rounded-full" data-testid="period-tabs">
           {PERIODS.map(p => {
             let label = p.label;
             if (p.key === "today") label = t("today");
@@ -125,7 +142,7 @@ export default function Reports() {
             if (p.key === "custom") label = t("custom_range");
             return (
               <button key={p.key} onClick={() => setPeriodKey(p.key)} data-testid={`rperiod-${p.key}`}
-                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${periodKey === p.key ? "bg-terracota text-white" : "text-muted-foreground hover:text-foreground"
+                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all ${periodKey === p.key ? "bg-gradient-to-r from-[#78A61A] to-[#5F9210] text-white" : "text-muted-foreground hover:text-foreground"
                   }`}>
                 {label}
               </button>
@@ -142,10 +159,11 @@ export default function Reports() {
         )}
       </div>
 
-      <Card className="border-border shadow-none overflow-hidden">
+      <Card className="flex-1 flex flex-col min-h-0 rounded-[26px] border-[#F4E6D7] bg-white shadow-sm overflow-hidden">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {tab === "sales" && (
           <table className="w-full text-sm">
-            <thead className="bg-sand-subtle text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            <thead className="bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white text-[13px] uppercase tracking-[0.1em]">
               <tr>
                 <th className="text-left px-4 py-3">{t("receipt_no_col")}</th>
                 <th className="text-left px-4 py-3">{t("date_col")}</th>
@@ -163,7 +181,7 @@ export default function Reports() {
                 if (o.payment_mode === "card") paymentModeLabel = t("card");
                 return (
                   <tr key={o.id} className="border-t border-border">
-                    <td className="px-4 py-3 font-mono font-semibold">#{o.receipt_no}</td>
+                    <td className="px-4 py-3 font-mono font-semibold">{o.receipt_no}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(o.paid_at).toLocaleString('en-IN')}</td>
                     <td className="px-4 py-3 uppercase text-xs font-mono">{paymentModeLabel}</td>
                     <td className="px-4 py-3 text-right font-mono">₹{o.subtotal}</td>
@@ -175,13 +193,14 @@ export default function Reports() {
               {rows.length === 0 && <tr><td colSpan="6" className="text-center text-muted-foreground py-10">{t("no_sales_in_period")}</td></tr>}
             </tbody>
           </table>
+        
         )}
 
         {tab === "products" && (
           <table className="w-full text-sm">
-            <thead className="bg-sand-subtle text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            <thead className="sticky top-0 z-10 text-white border-[#F4E6D7] bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:bg-[#FFF8F2] text-[11px] uppercase font-semibold tracking-[0.18em] text-slate-500">
               <tr>
-                <th className="text-left px-4 py-3">#</th>
+                <th className="text-left px-4 py-3">Sr.</th>
                 <th className="text-left px-4 py-3">{t("item")}</th>
                 <th className="text-right px-4 py-3">{t("qty_sold")}</th>
                 <th className="text-right px-4 py-3">{t("revenue")}</th>
@@ -189,7 +208,7 @@ export default function Reports() {
             </thead>
             <tbody data-testid="products-table">
               {rows.map((it, i) => (
-                <tr key={it.name} className="border-t border-border">
+                <tr key={it.name} className="border-t border-[#F4E6D7] hover:bg-[#FFF8F2]">
                   <td className="px-4 py-3 font-mono text-muted-foreground">{i + 1}</td>
                   <td className="px-4 py-3 font-medium">{t(it.name)}</td>
                   <td className="px-4 py-3 text-right font-mono">{it.qty}</td>
@@ -200,13 +219,12 @@ export default function Reports() {
             </tbody>
           </table>
         )}
-
         {tab === "thalis" && (
           <div>
             <table className="w-full text-sm">
-              <thead className="bg-sand-subtle text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              <thead className="sticky top-0 z-10 text-white border-[#F4E6D7] bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:bg-[#FFF8F2] text-[11px] uppercase font-semibold tracking-[0.18em] text-slate-500">
                 <tr>
-                  <th className="text-left px-4 py-3">#</th>
+                  <th className="text-left px-4 py-3">Sr.</th>
                   <th className="text-left px-4 py-3">{t("thali")}</th>
                   <th className="text-right px-4 py-3">{t("qty_sold")}</th>
                   <th className="text-right px-4 py-3">{t("revenue")}</th>
@@ -238,6 +256,7 @@ export default function Reports() {
             )}
           </div>
         )}
+        </div>
       </Card>
     </div>
   );

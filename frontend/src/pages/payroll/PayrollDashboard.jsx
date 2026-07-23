@@ -36,7 +36,18 @@ export default function PayrollDashboard() {
   ];
 
   return (
-    <div className="p-6 lg:p-10 max-w-7xl mx-auto bg-slate-50 min-h-screen">
+    <div className="h-full
+    bg-[#FFFDF9]
+    rounded-[32px]
+    border
+    border-[#F4E6D7]
+    shadow-lg
+    p-8
+    flex
+    flex-col
+    overflow-hidden
+  ">
+    {/* <div className="p-6 lg:p-10 max-w-7xl mx-auto bg-slate-50 min-h-screen"> */}
       <div className="mb-8 flex items-center justify-between">
         <div>
           <div className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-1">Workforce Management</div>
@@ -157,6 +168,7 @@ export default function PayrollDashboard() {
           </div>
         </div>
       )}
-    </div>
+    {/* </div> */}
+  </div>
   );
 }

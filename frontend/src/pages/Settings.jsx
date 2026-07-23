@@ -234,6 +234,17 @@ export default function Settings() {
   };
 
   return (
+    <div className="h-full
+    bg-[#FFFDF9]
+    rounded-[32px]
+    border
+    border-[#F4E6D7]
+    shadow-lg
+    p-8
+    flex
+    flex-col
+    overflow-hidden
+  ">
     <div className="p-6 lg:p-10 max-w-6xl mx-auto">
       {/* Professional Page Header */}
       <div className="mb-8 bg-gradient-to-r from-terracota/10 via-amber-50 to-transparent border-l-4 border-terracota rounded-lg p-6 shadow-sm">
@@ -640,6 +651,7 @@ export default function Settings() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

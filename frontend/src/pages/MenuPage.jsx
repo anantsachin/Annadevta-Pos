@@ -122,36 +122,36 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl">
-      <div className="mb-6 flex items-end justify-between flex-wrap gap-4">
+    <div className="h-full bg-[#FFFDF9] rounded-[32px] border border-[#F4E6D7] shadow-lg p-8 flex flex-col overflow-hidden">
+      <div className="mb-2 flex items-end justify-between">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("menu_database")}</div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("nav_menu")}</h1>
+          <div className="text-[15px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">{t("menu_database")}</div>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-900">{t("nav_menu")}</h1>
         </div>
-        <Button onClick={startNew} className="bg-terracota hover:bg-terracota-hover text-white" data-testid="add-item-btn">
-          <Plus className="w-4 h-4 mr-2" /> {t("add_item")}
+        <Button onClick={startNew} className="bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:brightness-105 text-white" data-testid="add-item-btn">
+          <Plus className="w-3 h-4 mr-2" /> {t("add_item")}
         </Button>
       </div>
 
       {/* Professional Categories Section */}
-      <Card className="p-6 border-border shadow-sm mb-6">
+      <Card className="mb-6 rounded-[26px] border-[#F4E6D7] bg-white shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota">{t("categories")}</h2>
-            <p className="text-xs text-muted-foreground mt-1">Organize your menu items into categories</p>
+            <h2 className="text-[17px] font-extrabold uppercase tracking-wider text-terracota">{t("categories")}</h2>
+            {/* <p className="text-[15px] text-muted-foreground mt-1">Organize your menu items into categories</p> */}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-s text-muted-foreground">
             {categories.length} {categories.length === 1 ? 'category' : 'categories'}
           </div>
         </div>
 
         {/* Categories Grid */}
         {categories.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-1 mb-1">
             {safeArray(categories).map(c => (
               <div
                 key={c.id}
-                className="group relative flex items-center justify-between px-4 py-3 rounded-lg bg-gradient-to-br from-sand-subtle to-white border border-border hover:border-terracota/50 hover:shadow-sm transition-all"
+                className="group relative flex items-center justify-between px-3 py-3 rounded-2xl bg-gradient-to-br from-[#FFF8F2] to-white border border-[#F4E6D7] hover:border-[#FF8A3D] hover:shadow-sm transition-all"
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <div className="w-2 h-2 rounded-full bg-terracota flex-shrink-0"></div>
@@ -169,25 +169,27 @@ export default function MenuPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 mb-4 border-2 border-dashed border-border rounded-lg">
+          <div className="text-center py-8 mb-1 border-2 border-dashed border-border rounded-lg">
             <div className="text-muted-foreground text-sm">No categories yet. Add your first category below.</div>
           </div>
         )}
 
         {/* Add Category Input */}
-        <div className="flex gap-2 pt-4 border-t border-border">
+        <div className="flex
+        gap-2
+        pt-2">
           <Input
             value={catName}
             onChange={(e) => setCatName(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && addCategory()}
             placeholder={t("category_name_placeholder") || "e.g., Sabji, Dal, Rice"}
-            className="flex-1"
+            className="flex-1 rounded-xl border-[#F4E6D7] bg-[#FFFDF9]"
             data-testid="cat-name"
           />
           <Button
             onClick={addCategory}
             disabled={!catName.trim()}
-            className="bg-terracota hover:bg-terracota-hover text-white px-6"
+            className="bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:bg-terracota-hover text-white px-6"
             data-testid="add-cat-btn"
           >
             <Plus className="w-4 h-4 mr-2" /> Add
@@ -195,9 +197,20 @@ export default function MenuPage() {
         </div>
       </Card>
 
-      <Card className="border-border shadow-none overflow-hidden">
+      <Card className="flex-1 overflow-hidden rounded-[26px] border-[#F4E6D7] bg-white shadow-sm flex flex-col min-h-0">
+      <div className="flex-1 overflow-y-auto min-h-0">
+
         <table className="w-full text-sm">
-          <thead className="bg-sand-subtle text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          <thead className="sticky
+          top-0 z-10
+          bg-gradient-to-r
+          from-[#FF8A3D]
+          to-[#FF6B00]
+          text-[11px]
+          text-white
+          uppercase
+          tracking-[0.18em]
+          text-slate-500">
             <tr>
               <th className="text-left px-4 py-3">{t("item")}</th>
               <th className="text-left px-4 py-3">{t("category_name")}</th>
@@ -208,10 +221,10 @@ export default function MenuPage() {
           </thead>
           <tbody data-testid="menu-table">
             {safeArray(menu).map(m => (
-              <tr key={m.id} className="border-t border-border hover:bg-sand-subtle/40">
+              <tr key={m.id} className="border-t border-border hover:bg-[#FFF8F2]">
                 <td className="px-4 py-3 font-medium">
                   <div className="flex items-center gap-2">
-                    {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracota text-white px-1.5 py-0.5 rounded">{t("thali")}</span>}
+                    {m.is_thali && <span className="text-[11px] uppercase tracking-[0.18em] font-bold bg-[#FFF1E5] text-[#FF6B00] border border-[#FFD8B5] px-1.5 py-0.5 rounded">{t("thali")}</span>}
                     {t(m.name)}
                   </div>
                   {m.is_thali && m.thali_groups?.length > 0 && (
@@ -235,6 +248,7 @@ export default function MenuPage() {
             {menu.length === 0 && <tr><td colSpan="5" className="text-center text-muted-foreground py-8">{t("no_items_yet")}</td></tr>}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {editing && (
@@ -330,7 +344,7 @@ export default function MenuPage() {
                       <button onClick={() => {
                         const next = editing.thali_groups.filter((_, i) => i !== idx);
                         setEditing({ ...editing, thali_groups: next });
-                      }} className="col-span-1 text-destructive hover:bg-destructive/10 p-1.5 rounded-md justify-self-center"><Trash2 className="w-3.5 h-3.5" /></button>
+                      }} className="col-span-1 text-destructive hover:bg-[#FFF4EB] p-1.5 rounded-md justify-self-center"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   ))}
                   {(editing.thali_groups || []).length === 0 && (
@@ -346,7 +360,7 @@ export default function MenuPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditing(null)} className="border-border">{t("cancel")}</Button>
-              <Button onClick={save} className="bg-terracota hover:bg-terracota-hover text-white" data-testid="save-item-btn">{t("save")}</Button>
+              <Button onClick={save} className="bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:bg-[#FFF4EB] text-white" data-testid="save-item-btn">{t("save")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

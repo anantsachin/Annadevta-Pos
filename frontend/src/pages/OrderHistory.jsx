@@ -44,24 +44,35 @@ export default function OrderHistory() {
   const reprint = (o) => printReceipt({ order: o, settings });
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl">
+    <div className="
+      h-full
+      bg-[#FFFDF9]
+      rounded-[32px]
+      border
+      border-[#F4E6D7]
+      shadow-lg
+      p-8
+      flex
+      flex-col
+      overflow-hidden
+    ">
       <div className="mb-6">
-        <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">History</div>
+        <div className="text-[15px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">History</div>
         <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("order_history")}</h1>
       </div>
 
       <Card className="p-4 border-border shadow-none mb-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
           <div>
-            <label className="text-xs uppercase tracking-wider text-muted-foreground">From</label>
+            <label className="text-xs uppercase tracking-wider font-semibold">From</label>
             <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} data-testid="filter-from" />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("to")}</label>
+            <label className="text-xs uppercase tracking-wider font-semibold">{t("to")}</label>
             <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} data-testid="filter-to" />
           </div>
           <div className="md:col-span-2">
-            <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("search_receipt_placeholder")}</label>
+            <label className="text-xs uppercase tracking-wider font-semibold">{t("search_receipt_placeholder")}</label>
             <div className="flex gap-2">
               <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. 42" data-testid="filter-q" />
               <Button onClick={fetchOrders} variant="outline" className="border-border" data-testid="filter-go"><Search className="w-4 h-4" /></Button>
@@ -70,11 +81,27 @@ export default function OrderHistory() {
         </div>
       </Card>
 
-      <Card className="border-border shadow-none overflow-hidden">
+      <Card className="flex-1
+      border-[#F4E6D7]
+      bg-white
+      rounded-[26px]
+      shadow-sm
+      overflow-hidden
+      flex
+      flex-col
+      min-h-0">
+        <div className="flex-1 overflow-y-auto min-h-0">
         <table className="w-full text-sm">
-          <thead className="bg-sand-subtle text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          <thead className="sticky
+          top-0
+          z-10
+          bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00]
+          text-white
+          text-[13px] uppercase
+          tracking-[0.2em]
+          font-semibold">
             <tr>
-              <th className="text-left px-4 py-3">{t("receipt_no_col")}</th>
+              <th className="text-left px-4 py-3 ">{t("receipt_no_col")}</th>
               <th className="text-left px-4 py-3">{t("date")} / {t("time")}</th>
               <th className="text-left px-4 py-3">{t("items_col")}</th>
               <th className="text-left px-4 py-3">{t("payment_col")}</th>
@@ -90,7 +117,7 @@ export default function OrderHistory() {
               if (o.payment_mode === "card") pm = t("card");
               const orderItems = Array.isArray(o.items) ? o.items : [];
               return (
-                <tr key={o.id} className="border-t border-border hover:bg-sand-subtle/40" data-testid={`order-row-${o.id}`}>
+                <tr key={o.id} className="border-t border-border hover:bg-[#FFF8F2]" data-testid={`order-row-${o.id}`}>
                   <td className="px-4 py-3 font-mono font-semibold">#{o.receipt_no}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(o.paid_at).toLocaleString('en-IN')}</td>
                   <td className="px-4 py-3 text-xs">{orderItems.map(i => `${t(i.name)} ×${i.qty}`).join(", ")}</td>
@@ -106,6 +133,7 @@ export default function OrderHistory() {
             {orders.length === 0 && <tr><td colSpan="6" className="text-center text-muted-foreground py-12">{t("no_bills_yet")}</td></tr>}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {view && (

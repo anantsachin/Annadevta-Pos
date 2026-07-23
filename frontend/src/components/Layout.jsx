@@ -165,12 +165,8 @@ export default function Layout() {
             data-testid={n.testid}
             className={({ isActive }) =>
               `flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-medium transition-all ${
-                isActive && n.hero
-                  ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-md"
-                  : isActive
-                  ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-md"
-                  : n.hero
-                  ? "bg-terracota/5 text-terracota hover:bg-terracota/10"
+                isActive
+                   ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-md"
                   : "text-slate-700 hover:bg-[#FFF3E7]"
               }`
             }
@@ -256,7 +252,7 @@ export default function Layout() {
           <div className={`w-full px-4 py-2 flex items-center justify-between text-xs font-semibold z-20 ${!isOnline
               ? "bg-red-500 text-white"
               : syncStatus === "syncing"
-                ? "bg-amber-400 text-amber-900"
+                ? "bg-yellow-400 text-amber-900"
                 : syncStatus === "synced"
                   ? "bg-green-500 text-white"
                   : syncStatus === "error"
@@ -283,7 +279,7 @@ export default function Layout() {
             )}
           </div>
         )}
-        <div className="h-[calc(100vh-32px)] overflow-hidden">
+        <div className="h-[calc(100vh-32px)] overflow-hidden bg-transparent">
     <Outlet />
 </div>
       

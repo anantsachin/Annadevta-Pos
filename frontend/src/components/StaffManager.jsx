@@ -75,16 +75,29 @@ export default function StaffManager() {
   };
 
   return (
-    <Card className="p-6 mt-8 border-border">
-      <div className="flex justify-between items-center mb-6">
+    <Card className="flex-1
+    flex
+    flex-col
+    min-h-0
+    rounded-[26px]
+    border-[#F4E6D7]
+    bg-white
+    shadow-sm
+    p-6">
+      <div className="flex justify-between items-center mb-5">
         <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-terracota" />
+          <Users className="w-5 h-5 text-[#FF6B00]" />
           <h2 className="text-xl font-bold font-display">Team Directory</h2>
         </div>
         
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="bg-terracota hover:bg-terracota-hover text-white">
+            <Button size="sm" className="bg-gradient-to-r
+            from-[#FF8A3D]
+            to-[#FF6B00]
+            hover:brightness-105
+            text-white
+            rounded-xl">
               <Plus className="w-4 h-4 mr-2" /> Add Employee
             </Button>
           </DialogTrigger>
@@ -106,7 +119,12 @@ export default function StaffManager() {
                 <Input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required placeholder="At least 8 characters" />
               </div>
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={busy} className="bg-terracota text-white">
+                <Button type="submit" disabled={busy} className="bg-gradient-to-r
+            from-[#FF8A3D]
+            to-[#FF6B00]
+            hover:brightness-105
+            text-white
+            rounded-xl">
                   {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Create Account
                 </Button>
@@ -119,13 +137,20 @@ export default function StaffManager() {
       {loading ? (
         <div className="py-4 text-center text-muted-foreground"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
       ) : staff.length === 0 ? (
-        <div className="py-8 text-center text-sm text-muted-foreground bg-sand-subtle rounded-md">
+        <div className="py-8 text-center text-sm text-muted-foreground bg-[#FFF8F2]
+        rounded-xl
+        border border-[#F4E6D7]">
           No employees found. Add your first employee above.
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="flex-1 overflow-auto min-h-0">
           <table className="w-full text-sm text-left">
-            <thead className="bg-sand border-y border-border">
+            <thead className="sticky
+top-0
+z-10
+bg-[#FBF7F2]
+border-y
+border-[#F4E6D7]">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Role</th>

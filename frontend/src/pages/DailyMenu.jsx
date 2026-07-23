@@ -106,12 +106,21 @@ export default function DailyMenu() {
   const activeCount = safeMenu.filter(m => m.available).length;
 
   return (
-    <div className="h-full overflow-y-auto p-6 lg:p-10 max-w-6xl">
-      <div className="mb-6 flex items-end justify-between flex-wrap gap-4">
+    <div className="h-full
+    bg-[#FFFDF9]
+    rounded-[32px]
+    border
+    border-[#F4E6D7]
+    shadow-lg
+    p-8
+    flex
+    flex-col
+    overflow-hidden">
+      <div className="mb-8">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{today}</div>
+          <div className="text-[15px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">{today}</div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight flex items-center gap-2">
-            <CalendarDays className="w-7 h-7 text-terracota" /> {t("nav_daily_menu")}
+            <CalendarDays className="w-7 h-7 text-[#FF6B00]" /> {t("nav_daily_menu")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {t("daily_menu_subtext")} <span className="text-foreground font-semibold">{activeCount}</span> {t("active_items")}.
@@ -119,7 +128,12 @@ export default function DailyMenu() {
         </div>
       </div>
 
-      <Card className="p-4 border-border shadow-none mb-6 bg-terracota/5 border-terracota/30">
+      <Card className="mb-4
+      rounded-[26px]
+      bg-white
+      border-[#F4E6D7]
+      shadow-sm
+      p-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="text-sm font-semibold">{t("save_as_template_title")}</div>
@@ -127,8 +141,8 @@ export default function DailyMenu() {
           </div>
           <div className="flex gap-2">
             <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)}
-              placeholder={t("template_name_placeholder")} className="w-56 bg-white" data-testid="template-name" />
-            <Button onClick={saveTemplate} className="bg-terracota hover:bg-terracota-hover text-white" data-testid="save-template-btn">
+              placeholder={t("template_name_placeholder")} className="w-64 bg-[#FFFDF9] border-[#F4E6D7] rounded-xl" data-testid="template-name" />
+            <Button onClick={saveTemplate} className="bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:brightness-105 text-white" data-testid="save-template-btn">
               <Save className="w-4 h-4 mr-2" /> {t("save_template_btn")}
             </Button>
           </div>
@@ -151,11 +165,15 @@ export default function DailyMenu() {
         )}
       </Card>
 
-      <div className="space-y-4">
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2 min-h-0">
         {safeArray(grouped).map((cat) => (
-          <Card key={cat.id} className="border-border shadow-none" data-testid={`cat-section-${cat.id}`}>
+          <Card key={cat.id} className="rounded-[24px]
+          border-[#F4E6D7]
+          bg-white
+          shadow-sm
+          overflow-hidden" data-testid={`cat-section-${cat.id}`}>
             <div
-              className="px-5 py-3 border-b border-border flex items-center justify-between cursor-pointer"
+              className="px-6 py-4 border-b border-[#F4E6D7] bg-white flex items-center justify-between cursor-pointer"
               onClick={() => {
                 setOpenCategories((prev) =>
                   prev.includes(cat.id)
@@ -167,7 +185,7 @@ export default function DailyMenu() {
               
 
 
-              <div className="flex items-center gap-2 font-display font-bold text-lg"> 
+              <div className="flex items-center gap-2 font-display font-bold text-lg "> 
                 <span>
                 {openCategories.includes(cat.id) ? "▼" : "▶"}
                 </span>
@@ -176,9 +194,9 @@ export default function DailyMenu() {
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs">
-                <span className="text-muted-foreground font-mono">{safeArray(cat.items).filter(i => i.available).length}/{safeArray(cat.items).length} {t("active")}</span>
-                <button onClick={() => setAllInCategory(cat.items, true)} className="text-terracota hover:underline" data-testid={`all-on-${cat.id}`}>{t("all_on")}</button>
-                <button onClick={() => setAllInCategory(cat.items, false)} className="text-muted-foreground hover:underline" data-testid={`all-off-${cat.id}`}>{t("all_off")}</button>
+                <span className="text-muted-foreground font-semibold">{safeArray(cat.items).filter(i => i.available).length}/{safeArray(cat.items).length} {t("active")}</span>
+                <button onClick={() => setAllInCategory(cat.items, true)} className="text-terracota font-semibold hover:underline" data-testid={`all-on-${cat.id}`}>{t("all_on")}</button>
+                <button onClick={() => setAllInCategory(cat.items, false)} className="text-muted-foreground font-semibold  hover:underline" data-testid={`all-off-${cat.id}`}>{t("all_off")}</button>
               </div>
             </div>
             {openCategories.includes(cat.id) && (
@@ -186,15 +204,15 @@ export default function DailyMenu() {
               {safeArray(cat.items).length === 0 && <div className="text-xs text-muted-foreground col-span-full p-4 text-center">{t("no_items_in_category")}</div>}
               {safeArray(cat.items).map(m => (
                 <label key={m.id}
-                  className={`flex items-center justify-between gap-3 p-3 rounded-md border transition-all cursor-pointer ${m.available ? "border-terracota/40 bg-terracota/5" : "border-border bg-white"
+                  className={`flex items-center justify-between gap-3 p-3 rounded-xl border transition-all cursor-pointer ${m.available ? "border-[#FFD8B5] bg-[#FFF7EF]" : "border-[#F4E6D7] bg-white"
                     }`}
                   data-testid={`daily-item-${m.id}`}>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold flex items-center gap-1.5 truncate">
-                      {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracota text-white px-1.5 py-0.5 rounded">{t("thali")}</span>}
+                    <div className="text-s font-semibold flex items-center gap-1.5 truncate">
+                      {/* {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracota text-white px-1.5 py-0.5 rounded">{t("thali")}</span>} */}
                       {t(m.name)}
                     </div>
-                    <div className="text-xs text-muted-foreground font-mono">₹{m.price}</div>
+                    <div className="text-s text-muted-foreground font-semibold">₹{m.price}</div>
                   </div>
                   <Switch checked={m.available} onCheckedChange={() => toggle(m)} data-testid={`daily-toggle-${m.id}`} />
                 </label>

@@ -52,7 +52,27 @@ export default function AIChatWidget() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 p-4 bg-terracota hover:bg-terracota-hover text-white rounded-full shadow-xl transition-transform transform ${isOpen ? 'scale-0' : 'scale-100'} z-50`}
+        className={`
+          fixed
+          bottom-6
+          right-6
+          w-10
+          h-10
+          flex
+          items-center
+          justify-center
+          rounded-full
+          bg-gradient-to-br
+          from-[#FF8A3D]
+          to-[#FF6B00]
+          text-white
+          shadow-[0_12px_28px_rgba(255,107,0,0.28)]
+          hover:scale-105
+          transition-all
+          duration-300
+          ${isOpen ? "scale-0" : "scale-100"}
+          z-50
+        `}
       >
         <Sparkles className="w-6 h-6" />
       </button>
@@ -61,7 +81,9 @@ export default function AIChatWidget() {
       <div className={`fixed bottom-6 right-6 w-80 sm:w-96 bg-white border border-border shadow-2xl rounded-2xl flex flex-col overflow-hidden transition-all duration-300 transform origin-bottom-right z-50 ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`} style={{ height: "500px", maxHeight: "80vh" }}>
         
         {/* Header */}
-        <div className="bg-terracota text-white p-4 flex items-center justify-between shadow-sm">
+        <div className="bg-gradient-to-br
+          from-[#FF8A3D]
+          to-[#FF6B00] text-white p-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
               <Bot className="w-5 h-5" />
@@ -114,7 +136,9 @@ export default function AIChatWidget() {
           <button
             type="submit"
             disabled={!input.trim() || loading}
-            className="p-2 bg-terracota text-white rounded-full hover:bg-terracota-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 bg-gradient-to-br
+          from-[#FF8A3D]
+          to-[#FF6B00] text-white rounded-full hover:bg-terracota-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Send className="w-4 h-4" />
           </button>

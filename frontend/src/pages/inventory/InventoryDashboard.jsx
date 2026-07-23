@@ -45,6 +45,17 @@ export default function InventoryDashboard() {
   ];
 
   return (
+    <div className="h-full
+    bg-[#FFFDF9]
+    rounded-[32px]
+    border
+    border-[#F4E6D7]
+    shadow-lg
+    p-8
+    flex
+    flex-col
+    overflow-hidden
+  ">
     <div className="p-6 lg:p-10 max-w-7xl">
       {/* Header */}
       <div className="mb-6">
@@ -183,6 +194,7 @@ export default function InventoryDashboard() {
           </div>
         )}
       </Card>
+    </div>
     </div>
   );
 }
