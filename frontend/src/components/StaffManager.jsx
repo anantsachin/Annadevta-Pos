@@ -101,22 +101,26 @@ export default function StaffManager() {
               <Plus className="w-4 h-4 mr-2" /> Add Employee
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="
+            rounded-[24px]
+            border-[#F4E6D7]
+            bg-[#FFFDF9]
+            ">
             <DialogHeader>
               <DialogTitle>Add New Employee</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleAdd} className="space-y-4 mt-4">
               <div>
                 <Label>Full Name</Label>
-                <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} required placeholder="e.g. Rahul Kumar" />
+                <Input className="border-[#F4E6D7] bg-white rounded-xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required placeholder="e.g. Rahul Kumar" />
               </div>
               <div>
                 <Label>Login Email</Label>
-                <Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required placeholder="cashier@example.com" />
+                <Input className="border-[#F4E6D7] bg-white rounded-xl" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required placeholder="cashier@example.com" />
               </div>
               <div>
                 <Label>Password</Label>
-                <Input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required placeholder="At least 8 characters" />
+                <Input className="border-[#F4E6D7] bg-white rounded-xl" type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required placeholder="At least 8 characters" />
               </div>
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={busy} className="bg-gradient-to-r
@@ -143,14 +147,10 @@ export default function StaffManager() {
           No employees found. Add your first employee above.
         </div>
       ) : (
+        <Card className="flex-1 flex flex-col min-h-0 rounded-[26px] border-[#F4E6D7] bg-white shadow-sm overflow-hidden">
         <div className="flex-1 overflow-auto min-h-0">
           <table className="w-full text-sm text-left">
-            <thead className="sticky
-top-0
-z-10
-bg-[#FBF7F2]
-border-y
-border-[#F4E6D7]">
+            <thead className="bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white text-[13px] uppercase tracking-[0.1em]">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Role</th>
@@ -161,10 +161,10 @@ border-[#F4E6D7]">
             </thead>
             <tbody>
               {staff.map((u) => (
-                <tr key={u.id} className="border-b border-border last:border-0 hover:bg-sand/30 cursor-pointer" onClick={() => setSelectedStaff(u)}>
+                <tr key={u.id} className="border-b border-[#F4E6D7] last:border-0 hover:bg-[#FFF8F2] cursor-pointer" onClick={() => setSelectedStaff(u)}>
                   <td className="px-4 py-3 font-medium">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-terracota/10 text-terracota flex items-center justify-center font-bold text-xs uppercase overflow-hidden border border-border">
+                      <div className="w-8 h-8 rounded-full bg-[#FFF1E5] text-[#FF6B00] flex items-center justify-center font-bold text-xs uppercase overflow-hidden border border-[#F4E6D7]">
                         {u.photo ? (
                           <img src={u.photo} alt={u.name} className="w-full h-full object-cover" />
                         ) : (
@@ -178,19 +178,19 @@ border-[#F4E6D7]">
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-forest/10 text-forest capitalize">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-xl text-xs font-medium bg-[#EEF8D9] text-[#78A61A] capitalize">
                       {u.role}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{u.department || "-"}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${u.status === "Active" ? "bg-forest/10 text-forest" : "bg-red-100 text-red-800"}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-xl text-xs font-medium ${u.status === "Active" ? "bg-[#EEF8D9] text-[#78A61A]" : "bg-red-100 text-red-800"}`}>
                       {u.status || "Active"}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1.5">
-                      <Button variant="ghost" size="icon" onClick={() => setSelectedStaff(u)} className="h-8 w-8 text-slate-600 hover:bg-slate-100" title="Edit Profile Details">
+                      <Button variant="ghost" size="icon" onClick={() => setSelectedStaff(u)} className="h-8 w-8 text-slate-600 hover:bg-[#FFF4EB]" title="Edit Profile Details">
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(u.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10" title="Delete Account">
@@ -203,6 +203,7 @@ border-[#F4E6D7]">
             </tbody>
           </table>
         </div>
+      </Card>
       )}
 
       {selectedStaff && (

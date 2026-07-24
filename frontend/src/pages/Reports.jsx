@@ -110,7 +110,7 @@ export default function Reports() {
           <Button onClick={() => download("csv")} variant="outline" className="text-white border-[#F4E6D7] bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:bg-[#FFF8F2] rounded-xl" data-testid="export-csv">
             <FileText className="w-4 h-4 mr-2" /> {t("export_csv")}
           </Button>
-          <Button onClick={() => download("xlsx")} className="bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105" data-testid="export-xlsx">
+          <Button onClick={() => download("xlsx")} className="bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105 rounded-xl" data-testid="export-xlsx">
             <FileSpreadsheet className="w-4 h-4 mr-2" /> {t("export_excel")}
           </Button>
         </div>

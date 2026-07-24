@@ -51,12 +51,15 @@ export default function InventoryDashboard() {
     border
     border-[#F4E6D7]
     shadow-lg
-    p-8
+    px-8
+    pt-8
+    pb-6
     flex
     flex-col
     overflow-hidden
   ">
-    <div className="p-6 lg:p-10 max-w-7xl">
+    <div className="flex-1 overflow-y-auto">
+  <div className="max-w-7xl mx-auto px-8 py-6">
       {/* Header */}
       <div className="mb-6">
         <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("inv_module") || "Inventory Management"}</div>
@@ -194,6 +197,7 @@ export default function InventoryDashboard() {
           </div>
         )}
       </Card>
+    </div>
     </div>
     </div>
   );

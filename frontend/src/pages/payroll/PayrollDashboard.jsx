@@ -50,10 +50,17 @@ export default function PayrollDashboard() {
     {/* <div className="p-6 lg:p-10 max-w-7xl mx-auto bg-slate-50 min-h-screen"> */}
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <div className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-1">Workforce Management</div>
+          <div className="text-[15px]
+          uppercase
+          tracking-[0.1em]
+          font-bold
+          bg-gradient-to-r
+          from-[#FF8A3D] to-[#FF6B00]
+          bg-clip-text
+          text-transparent">Workforce Management</div>
           <h1 className="font-display text-3xl font-extrabold text-slate-900 tracking-tight">HR Dashboard</h1>
         </div>
-        <Link to="/payroll/process" className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-colors flex items-center gap-2">
+        <Link to="/payroll/process" className="bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105 rounded-xl text-white px-5 py-2.5  text-sm font-semibold shadow-sm transition-colors flex items-center gap-2">
           <Wallet className="w-4 h-4" /> Run Payroll
         </Link>
       </div>

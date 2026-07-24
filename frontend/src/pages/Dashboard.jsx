@@ -87,7 +87,7 @@ export default function Dashboard() {
         bg-white
         shadow-sm
         p-6">
-          <div className="text-[10px] uppercase tracking-[0.25em] font-semibold mb-1">{t("last_7_days")}</div>
+          <div className="text-[13px] uppercase tracking-[0.1em] text-muted-foreground mb-1">{t("last_7_days")}</div>
           <h3 className="font-display text-lg font-semibold mb-4">{t("sales_trend")}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -102,12 +102,12 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <Card className="rounded-[26px]
+        <Card className="rounded-[30px]
         border-[#F4E6D7]
         bg-white
         shadow-sm
         p-6">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">{activePeriodLabel}</div>
+          <div className="text-[13px] uppercase tracking-[0.1em] text-muted-foreground mb-1">{activePeriodLabel}</div>
           <h3 className="font-display text-lg font-semibold mb-4">{t("payment_mix")}</h3>
           {payTotal === 0 ? (
             <div className="text-sm text-muted-foreground py-6 text-center">{t("no_payments_yet")}</div>
@@ -153,20 +153,20 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-6 border-border shadow-none">
           <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-4 h-4 text-terracota" />
-            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("top_thalis")} · {activePeriodLabel.toLowerCase()}</div>
+            <Sparkles className="w-4 h-4 text-[#FF6B00]" />
+            <div className="text-[13px] uppercase tracking-[0.1em] text-muted-foreground"> {activePeriodLabel.toLowerCase()}</div>
           </div>
-          <h3 className="font-display text-lg font-semibold mb-4">{t("top_thalis")}</h3>
+          <h3 className="font-display text-lg text-[25px] font-semibold mb-4">{t("top_thalis")}</h3>
           <ul className="space-y-2" data-testid="top-thalis">
             {topThalis.length === 0 ? <li className="text-sm text-muted-foreground">{t("no_thalis_sold")}</li> : topThalis.map((it, i) => (
               <li key={it.name} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-md bg-terracota-light text-terracota flex items-center justify-center text-xs font-bold font-mono">{i + 1}</span>
+                  <span className="w-6 h-6 rounded-md bg-terracota-light text-[#FF6B00] flex items-center justify-center text-xs font-bold font-mono">{i + 1}</span>
                   <span className="font-medium text-sm">{t(it.name)}</span>
                 </div>
                 <div className="text-right">
                   <div className="font-mono text-sm font-semibold">{it.qty}</div>
-                  <div className="font-mono text-[10px] text-muted-foreground">₹{it.revenue}</div>
+                  <div className="font-mono text-[13px] text-muted-foreground">₹{it.revenue}</div>
                 </div>
               </li>
             ))}
@@ -175,8 +175,9 @@ export default function Dashboard() {
 
         <Card className="p-6 border-border shadow-none">
           <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="w-4 h-4 text-secondary" />
-            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("top_products")} · {activePeriodLabel.toLowerCase()}</div>
+          
+          <TrendingUp className="w-4 h-4 text-[#FF6B00]" />
+            <div className="text-[13px] uppercase tracking-[0.1em] text-muted-foreground">  {activePeriodLabel.toLowerCase()}</div>
           </div>
           <h3 className="font-display text-lg font-semibold mb-4">{t("top_products")}</h3>
           <ul className="space-y-2" data-testid="top-items">

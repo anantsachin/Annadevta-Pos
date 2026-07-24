@@ -240,30 +240,36 @@ export default function Settings() {
     border
     border-[#F4E6D7]
     shadow-lg
-    p-8
+    px-8
+    pt-8
+    pb-6
     flex
     flex-col
     overflow-hidden
   ">
-    <div className="p-6 lg:p-10 max-w-6xl mx-auto">
+    <div className="flex-1 overflow-y-auto">
+    <div className="max-w-7xl mx-auto px-8 py-6">
       {/* Professional Page Header */}
-      <div className="mb-8 bg-gradient-to-r from-terracota/10 via-amber-50 to-transparent border-l-4 border-terracota rounded-lg p-6 shadow-sm">
+      <div className="mb-6 flex items-start justify-between flex-wrap gap-6">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Store className="w-8 h-8 text-terracota" />
+          <div>
+            <div className="text-[15px] uppercase tracking-[0.12em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">
+            Configuration
+            </div>
+            <div className="flex items-center gap-3 mt-1">
+              <Store className="w-8 h-8 text-[#FF7A2F]" />
               <div>
-                <div className="text-[11px] uppercase tracking-[0.3em] text-terracota font-semibold">Configuration</div>
-                <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground">
+                
+                <h1 className="font-display text-4xl font-extrabold tracking-tight">
                   Restaurant & Receipt Settings
                 </h1>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+            <p className="text-slate-500 mt-3 max-w-3xl">
               Configure your profile, paper properties, and customize how customers see receipts.
             </p>
           </div>
-          <Button onClick={save} disabled={busy} className="bg-terracota hover:bg-terracota-hover text-white shadow-md md:self-start" data-testid="save-settings-btn">
+          <Button onClick={save} disabled={busy} className="rounded-2xl h-12 px-7 bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:opacity-95 text-white shadow-lg" data-testid="save-settings-btn">
             <Save className="w-4 h-4 mr-2" /> {busy ? "Saving..." : "Save settings"}
           </Button>
         </div>
@@ -569,7 +575,7 @@ export default function Settings() {
               <Button
                 onClick={createBackup}
                 disabled={backupBusy}
-                className="bg-forest hover:bg-forest/90 text-white"
+                className="rounded-[32px] bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105"
                 data-testid="backup-now-btn"
               >
                 <Download className="w-4 h-4 mr-2" />
@@ -580,7 +586,7 @@ export default function Settings() {
                 onClick={restoreBackup}
                 disabled={restoreBusy}
                 variant="outline"
-                className="border-border hover:bg-sand-subtle"
+                className="rounded-[32px] bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:bg-[#FFF8F2] text-white"
                 data-testid="restore-backup-btn"
               >
                 <Upload className="w-4 h-4 mr-2" />
@@ -651,6 +657,7 @@ export default function Settings() {
           </div>
         </div>
       </div>
+    </div>
     </div>
     </div>
   );
