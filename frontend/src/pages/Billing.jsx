@@ -1,8 +1,23 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import api from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Search, Banknote, CreditCard, Smartphone, Printer, ChefHat, ShoppingCart, X, WifiOff, Salad, Soup } from "lucide-react";
+import {
+  Search,
+  Banknote,
+  CreditCard,
+  Smartphone,
+  Printer,
+  ChefHat,
+  ShoppingCart,
+  X,
+  Soup,
+  UtensilsCrossed,
+  Package,
+  Sparkles,
+  Flame,
+  Leaf
+} from "lucide-react";
 import { toast } from "sonner";
 import { printReceipt } from "../lib/receipt";
 import ThaliBuilder from "../components/ThaliBuilder";
@@ -15,125 +30,388 @@ import ReceiptPreview from "../components/ReceiptPreview";
 import { offlineStorage } from "../lib/offlineStorage";
 import { syncQueue } from "../lib/syncQueue";
 import { useOnlineStatus } from "../lib/offlineManager";
+import { getCurrentToken, incrementToken } from "../lib/tokenManager";
 
-export default function Billing() 
-{
+// Horizontal category tabs requested
+const CATEGORY_TABS = [
+  "ALL ITEMS",
+  "SNACKS",
+  "THALI",
+  "SABJI",
+  "DAL",
+  "RICE",
+  "BREAD",
+  "DRINKS",
+];
+
+
+
+export default function Billing() {
   const [categories, setCategories] = useState([]);
   const [menu, setMenu] = useState([]);
   const [settings, setSettings] = useState(null);
-  const [activeCat, setActiveCat] = useState("all");
+  const [activeCat, setActiveCat] = useState("ALL ITEMS");
   const [search, setSearch] = useState("");
   const [thaliFor, setThaliFor] = useState(null);
   const [activeTab, setActiveTab] = useState("cart"); // "cart" or "receipt"
+  const [menuMode, setMenuMode] = useState("parcel"); // "dining" or "parcel" (Parcel selected by default)
   const [showCartMobile, setShowCartMobile] = useState(false);
   const [customerName, setCustomerName] = useState("");
+  const [cart, setCart] = useState([]);
+  const [discount, setDiscount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [currentToken, setCurrentToken] = useState(getCurrentToken());
+
+  // Compute Dining Menu and Parcel Menu lists from SINGLE SOURCE OF TRUTH
+  const { diningItems, parcelItems } = useMemo(() => {
+    const apiMenuList = Array.isArray(menu) ? menu : [];
+
+    const checkIsThali = (item, catName) => {
+      if (item.is_thali) return true;
+      const c = (catName || item.category_name || item.category || "").toUpperCase();
+      return c === "THALI";
+    };
+
+    const getEffectiveMenuType = (item, isThali) => {
+      const type = item.menuType || item.menu_type;
+      if (type && ["dining", "parcel", "both"].includes(type.toLowerCase())) {
+        return type.toLowerCase();
+      }
+      return isThali ? "both" : "parcel";
+    };
+
+    // Single source map keying by item name (case-insensitive) to prevent duplicates
+    const itemsMap = new Map();
+
+
+
+    if (apiMenuList.length > 0) {
+      apiMenuList.forEach((m) => {
+        const catObj = Array.isArray(categories) ? categories.find(c => c.id === m.category_id) : null;
+        const catName = catObj ? catObj.name.toUpperCase() : (m.category ? m.category.toUpperCase() : "GENERAL");
+        const isThali = checkIsThali(m, catName);
+        const menuType = getEffectiveMenuType(m, isThali);
+        const key = m.name ? m.name.toLowerCase().trim() : m.id;
+
+        itemsMap.set(key, {
+          ...m,
+          category_name: catName,
+          category: catName,
+          is_thali: isThali,
+          menuType,
+          menu_type: menuType,
+          available: m.available !== false,
+        });
+      });
+    }
+
+    // SINGLE SOURCE ARRAY OF ALL UNIQUE ITEMS
+    const singleSourceItems = Array.from(itemsMap.values());
+
+    // Filter Dining Menu items from the SAME single source array:
+    // (menuType === "dining" || menuType === "both") && category === "THALI"
+    const dList = singleSourceItems.filter((item) => {
+      const isThali = checkIsThali(item, item.category_name);
+      const type = item.menuType;
+      return (type === "dining" || type === "both") && isThali;
+    });
+
+    // Filter Parcel Menu items from the SAME single source array:
+    // (menuType === "parcel" || menuType === "both")
+    const pList = singleSourceItems.filter((item) => {
+      const type = item.menuType;
+      return type === "parcel" || type === "both";
+    });
+
+    return { diningItems: dList, parcelItems: pList };
+  }, [menu, categories]);
+
+  const menuItems = useMemo(() => {
+    const map = new Map();
+    diningItems.forEach((i) => map.set(i.id, i));
+    parcelItems.forEach((i) => map.set(i.id, i));
+    return Array.from(map.values());
+  }, [diningItems, parcelItems]);
+
+  const hasLoadedCart = useRef(false);
+  const tokenAssignedRef = useRef(false);
+
+  // Reset tokenAssignedRef when cart becomes empty
+  useEffect(() => {
+    if (cart.length === 0) {
+      tokenAssignedRef.current = false;
+    }
+  }, [cart.length]);
+
+  // 1. Remove default cart items on load
+  useEffect(() => {
+    setCart([]);
+  }, []);
+
+  // 5. Storage control
+  useEffect(() => {
+    if (menuItems.length > 0 && !hasLoadedCart.current) {
+      try {
+        const storageCart = JSON.parse(localStorage.getItem("cart")) || [];
+        const validCart = storageCart.filter((item) =>
+          menuItems.some((m) => m.id === item.id)
+        );
+        setCart(validCart);
+        hasLoadedCart.current = true;
+      } catch (e) {
+        console.warn("Storage control loading exception:", e);
+      }
+    }
+  }, [menuItems]);
+
+  // Persist cart to localStorage when it changes, but only after initial load from storage
+  useEffect(() => {
+    if (hasLoadedCart.current) {
+      try {
+        localStorage.setItem("cart", JSON.stringify(cart));
+      } catch (e) {
+        console.warn("Failed to save cart to storage:", e);
+      }
+    }
+  }, [cart]);
 
   const { user } = useAuth();
   const { language, changeLanguage, t } = useLanguage();
-  const { cart, discount, setDiscount, addLine, updateQty, removeLine, clear, totals } = useCart();
   const isOnline = useOnlineStatus();
 
-  const refresh = useCallback(async () => {
-    // ---------- Load cache immediately ----------
-  const cachedCats = offlineStorage.loadCategories();
-  const cachedMenu = offlineStorage.loadMenu();
-  const cachedSettings = offlineStorage.loadSettings();
+  const addToCart = useCallback((item) => {
+    console.log("Adding item:", item);
 
-  if (cachedCats.length) setCategories(cachedCats);
-  if (cachedMenu.length) setMenu(cachedMenu);
-  if (cachedSettings) setSettings(cachedSettings);
-
-  // ---------- Fetch latest silently ----------
-  try {
-
-    const [c, m, s] = await Promise.all([
-      api.get("/categories"),
-      api.get("/menu"),
-      api.get("/settings"),
-    ]);
-
-    setCategories(c.data);
-    setMenu(m.data);
-    setSettings(s.data);
-
-    offlineStorage.saveCategories(c.data);
-    offlineStorage.saveMenu(m.data);
-    offlineStorage.saveSettings(s.data);
-
-    if (
-      s.data &&
-      s.data.language &&
-      !localStorage.getItem("pos_language")
-    ) {
-      changeLanguage(s.data.language);
+    if (cart.length === 0 && !tokenAssignedRef.current) {
+      tokenAssignedRef.current = true;
+      const nextTok = incrementToken();
+      setCurrentToken(nextTok);
     }
 
-  } catch (e) {
-
-    console.log("Using cached POS data.");
-
-  }
-
-}, [changeLanguage]);
-
-  useEffect(() => { refresh(); }, [refresh]);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const menuList = Array.isArray(menu) ? menu : [];
-    return menuList.filter((m) =>
-      (activeCat === "all" || m.category_id === activeCat) &&
-      (!q || m.name.toLowerCase().includes(q)) &&
-      m.available
-    );
-  }, [menu, activeCat, search]);
-
-  const handleItemClick = useCallback((item) => {
-    if (item.is_thali) {
-      setThaliFor(item);
-      return;
+    let parsedPrice = item.price;
+    if (typeof parsedPrice === "string") {
+      parsedPrice = parseFloat(parsedPrice.replace(/[^\d.]/g, "")) || 0;
     }
-    addLine({
-      menu_item_id: item.id,
-      name: item.name,
-      price: item.price,
-      qty: 1,
-      tax_rate: settings?.gst_rate ?? 5.0,
-      is_thali: false,
-      current_stock: item.current_stock,
+
+    setCart((prev) => {
+      const existing = prev.find(i => i.id === item.id);
+      if (existing) {
+        return prev.map(i =>
+          i.id === item.id
+            ? { ...i, quantity: i.quantity + 1, qty: i.qty + 1 }
+            : i
+        );
+      }
+      return [...prev, {
+        id: item.id,
+        _key: item.id,
+        name: item.name,
+        price: parsedPrice,
+        category: item.category_name || item.category || "GENERAL",
+        is_thali: item.is_thali || false,
+        quantity: 1,
+        qty: 1
+      }];
     });
-  }, [addLine, settings]);
+
+    toast.success(`Added ${item.name}`, {
+      duration: 1500,
+      icon: item.is_thali ? "🍽️" : "📦",
+    });
+  }, [cart.length]);
+
+  const addLine = useCallback((line) => {
+    const itemId = line.menu_item_id || line.id;
+
+    if (cart.length === 0 && !tokenAssignedRef.current) {
+      tokenAssignedRef.current = true;
+      const nextTok = incrementToken();
+      setCurrentToken(nextTok);
+    }
+
+    setCart((prev) => {
+      const existing = prev.find((i) => i.id === itemId);
+      if (existing) {
+        return prev.map((i) =>
+          i.id === itemId
+            ? {
+                ...i,
+                quantity: i.quantity + line.qty,
+                qty: i.qty + line.qty,
+                extra_bread: (i.extra_bread || 0) + (line.extra_bread || 0),
+                extra_bread_charge: (i.extra_bread_charge || 0) + (line.extra_bread_charge || 0),
+              }
+            : i
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: itemId,
+          _key: itemId,
+          name: line.name,
+          price: line.price,
+          category: "THALI",
+          is_thali: true,
+          quantity: line.qty,
+          qty: line.qty,
+          thali_selections: line.thali_selections,
+          thali_extras: line.thali_extras,
+          bread_consumed: line.bread_consumed,
+          extra_bread: line.extra_bread,
+          extra_bread_charge: line.extra_bread_charge,
+          current_stock: line.current_stock,
+        },
+      ];
+    });
+  }, [cart.length]);
+
+  const updateQty = useCallback((id, delta) => {
+    setCart((prev) =>
+      prev.map((i) =>
+        i.id === id
+          ? { ...i, quantity: Math.max(1, i.quantity + delta), qty: Math.max(1, i.qty + delta) }
+          : i
+      )
+    );
+  }, []);
+
+  const removeLine = useCallback((id) => {
+    setCart((prev) => prev.filter((i) => i.id !== id));
+  }, []);
+
+  const clear = useCallback(() => {
+    setCart([]);
+    setDiscount(0);
+  }, []);
+
+  const subtotal = useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }, [cart]);
+
+  const gst = useMemo(() => {
+    return subtotal * 0.05;
+  }, [subtotal]);
+
+  const total = useMemo(() => {
+    return Math.max(0, subtotal + gst - discount);
+  }, [subtotal, gst, discount]);
+
+  const refresh = useCallback(async () => {
+    // Clear temporary local storage items
+    try {
+      localStorage.removeItem("pos_offline_menu");
+      localStorage.removeItem("menuItems");
+      localStorage.removeItem("temp_menu_items");
+    } catch (e) {
+      console.warn("Local storage cleanup exception:", e);
+    }
+
+    try {
+      const [c, m, s] = await Promise.all([
+        api.get("/categories"),
+        api.get("/menu"),
+        api.get("/settings"),
+      ]);
+
+      setCategories(c.data);
+      setMenu(m.data);
+      setSettings(s.data);
+
+      offlineStorage.saveCategories(c.data);
+      offlineStorage.saveMenu(m.data);
+      offlineStorage.saveSettings(s.data);
+
+      if (
+        s.data &&
+        s.data.language &&
+        !localStorage.getItem("pos_language")
+      ) {
+        changeLanguage(s.data.language);
+      }
+    } catch (e) {
+      console.log("Loaded clean default POS data.");
+    }
+  }, [changeLanguage]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+
+
+  // Filter list by category tab & search query
+  const filterList = useCallback((list) => {
+    const q = search.trim().toLowerCase();
+    const targetCat = activeCat.trim().toUpperCase();
+
+    return list.filter((item) => {
+      const matchCat =
+        targetCat === "ALL ITEMS" ||
+        targetCat === "ALL" ||
+        (item.category_name && item.category_name.toUpperCase() === targetCat) ||
+        (item.category && item.category.toUpperCase() === targetCat) ||
+        (targetCat === "THALI" && item.is_thali);
+
+      const matchSearch =
+        !q ||
+        item.name.toLowerCase().includes(q) ||
+        (item.category_name && item.category_name.toLowerCase().includes(q));
+
+      return matchCat && matchSearch && item.available !== false;
+    });
+  }, [search, activeCat]);
+
+  const filteredDining = useMemo(() => filterList(diningItems), [filterList, diningItems]);
+  const filteredParcel = useMemo(() => filterList(parcelItems), [filterList, parcelItems]);
+
+  const showGlobalMenus = useMemo(() => {
+    const norm = activeCat.trim().toUpperCase();
+    return norm === "ALL ITEMS" || norm === "ALL" || norm === "THALI";
+  }, [activeCat]);
 
   const checkout = useCallback(async (mode) => {
     if (!cart.length) {
       toast.error(t("no_items_in_cart"));
       return;
     }
+    const currentToken = getCurrentToken();
     const payload = {
-      items: cart.map(({ _key, ...rest }) => rest),
-      discount: totals.discount,
+      items: cart.map((item) => ({
+        menu_item_id: item.id,
+        name: item.name,
+        price: item.price,
+        qty: item.quantity,
+        tax_rate: 5.0,
+        is_thali: item.is_thali || item.category === "THALI",
+      })),
+      discount: discount,
       payment_mode: mode,
+      customer_name: customerName.trim() || undefined,
+      token_no: currentToken,
     };
 
     if (!isOnline) {
-      // Offline: save to sync queue and show local receipt
       const queued = syncQueue.enqueue(payload);
       const offlineOrder = {
         receipt_no: queued.id,
         items: payload.items,
-        subtotal: totals.subtotal,
-        tax: totals.tax,
-        discount: totals.discount,
-        total: totals.total,
+        subtotal: subtotal,
+        tax: gst,
+        discount: discount,
+        total: total,
         payment_mode: mode,
+        customer_name: customerName,
         created_at: new Date().toISOString(),
         _offline: true,
+        token_no: currentToken,
       };
-      toast.warning(`📵 Offline — order saved locally. Will sync when online.`);
+      toast.warning(`Offline order saved locally. Will sync when online.`);
       if (settings?.auto_print !== false) {
         printReceipt({ order: offlineOrder, settings });
       }
       clear();
+      setCustomerName("");
       setShowCartMobile(false);
       return;
     }
@@ -145,75 +423,226 @@ export default function Billing()
         printReceipt({ order: data, settings });
       }
       clear();
+      setCustomerName("");
       setShowCartMobile(false);
-      refresh(); // Reload menu with updated stock
+      refresh();
     } catch (e) {
-      // Network error mid-checkout — queue the order
       if (!e.response) {
-        const queued = syncQueue.enqueue(payload);
-        toast.warning(`📵 Server unreachable — order queued for sync.`);
+        syncQueue.enqueue(payload);
+        toast.warning(`Server unreachable — order queued for sync.`);
         clear();
+        setCustomerName("");
         setShowCartMobile(false);
       } else {
         toast.error(e?.response?.data?.detail || t("checkout_failed"));
       }
     }
-  }, [cart, totals, isOnline, settings, clear, refresh, t]);
+  }, [cart, subtotal, gst, total, discount, isOnline, settings, clear, refresh, customerName, t]);
 
   return (
-    <div className="h-full grid grid-cols-12 gap-2  bg-transparent">
-      {/* Items grid */}
-      <div
-      className="
-        col-span-12
-        lg:col-span-9 flex flex-col h-full min-h-0
-        bg-[#FFFDF9] rounded-[32px] shadow-lg border border-[#F4E6D7] p-8"
-      >
-        <div className="flex flex-col gap-4  pb-3">
-          <div className="flex items-start justify-between gap-8">
-            <div className="space-y-2">
-              <div className="text-[15px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">{t("thali_billing_counter")}</div>
-              <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-900">{t("tap_to_bill")}</h1>
+    <div className="h-full grid grid-cols-12 gap-4 bg-[#FAF7F2] p-1 sm:p-2 overflow-hidden">
+      {/* Main Section: Food Menus */}
+      <div className="col-span-12 lg:col-span-9 flex flex-col h-full min-h-0 bg-[#FFFDF9] rounded-3xl shadow-sm border border-[#F2E8DC] p-4 sm:p-6 overflow-hidden">
+
+        {/* Header & Search */}
+        <div className="flex flex-col gap-4 pb-4 border-b border-[#F5EFE6]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-[#FF6B00]">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Thali billing counter </span>
+              </div>
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
+                Tab to bill
+              </h1>
             </div>
-            <div className="relative w-[500px]">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input data-testid="menu-search" placeholder={t("search_menu")}
-                value={search} onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-white border-[#F3E5D5]" />
+
+            {/* Search Input */}
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Input
+                data-testid="menu-search"
+                placeholder="Search food items..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 pr-9 bg-white border-[#EFE5DA] focus:border-[#FF6B00] rounded-xl text-slate-800 shadow-2xs"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Horizontal Categories Bar */}
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-            <button onClick={() => setActiveCat("all")} data-testid="cat-all"
-              className={`px-5 py-2.5 rounded-full text-[13px] font-semibold tracking-wide transition-all border ${activeCat === "all"
-                    ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white border-transparent shadow-md"
-                    : "bg-[#FFFCF8] border-[#F3E5D5] text-slate-600 hover:bg-[#FFF3E7] hover:text-slate-800"
-                }`}>
-              {t("all_items")}
-            </button>
-            {Array.isArray(categories) && categories.map((c) => (
-              <button key={c.id} onClick={() => setActiveCat(c.id)} data-testid={`cat-${c.id}`}
-                className={`px-5 py-2.5 rounded-full text-[13px] font-semibold tracking-wide transition-all border ${activeCat === c.id
-                    ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white border-transparent shadow-md"
-                    : "bg-[#FFFCF8] border-[#F3E5D5] text-slate-600 hover:bg-[#FFF3E7] hover:text-slate-800"
-                  }`}>
-                {c.name}
-              </button>
-            ))}
+          {/* Horizontal Category Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-1 scrollbar-none">
+            {CATEGORY_TABS.map((tab) => {
+              const isActive = activeCat.toUpperCase() === tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveCat(tab)}
+                  data-testid={`cat-${tab.toLowerCase().replace(/\s+/g, "-")}`}
+                  className={`
+                    px-5 py-2.5 rounded-full text-xs font-extrabold tracking-wider transition-all duration-200 whitespace-nowrap border shadow-2xs select-none
+                    ${isActive
+                      ? "bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-orange-500/20 scale-[1.02]"
+                      : "bg-white text-slate-600 border-[#EFE5DA] hover:bg-[#FFF5ED] hover:text-[#FF6B00] hover:border-orange-200"
+                    }
+                  `}
+                >
+                  {tab}
+                </button>
+              );
+            })}
           </div>
-        </div>
-        <div className="flex-1 min-h-0 overflow-y-auto pb-2">
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-5" data-testid="menu-grid">
-          {filtered.length === 0 ? (
-            <div className="col-span-full text-center py-16 text-muted-foreground border border-dashed border-border rounded-md bg-white/60">
-              {t("no_items_match")}
+
+          {/* Dining Menu & Parcel Menu Toggle Buttons (ONLY visible for ALL ITEMS or THALI) */}
+          {showGlobalMenus && (
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setMenuMode("dining")}
+                data-testid="toggle-dining-menu"
+                className={`px-5 py-2.5 rounded-xl text-xs font-extrabold tracking-wider transition-all duration-200 border flex items-center gap-2 select-none ${menuMode === "dining"
+                    ? "bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-orange-500/20"
+                    : "bg-white text-slate-700 border-[#EFE5DA] hover:bg-[#FFF5ED] hover:text-[#FF6B00]"
+                  }`}
+              >
+                <UtensilsCrossed className="w-4 h-4" />
+                Dining Menu
+              </button>
+
+              <button
+                onClick={() => setMenuMode("parcel")}
+                data-testid="toggle-parcel-menu"
+                className={`px-5 py-2.5 rounded-xl text-xs font-extrabold tracking-wider transition-all duration-200 border flex items-center gap-2 select-none ${menuMode === "parcel"
+                    ? "bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-orange-500/20"
+                    : "bg-white text-slate-700 border-[#EFE5DA] hover:bg-[#FFF5ED] hover:text-[#FF6B00]"
+                  }`}
+              >
+                <Package className="w-4 h-4" />
+                Parcel Menu
+              </button>
             </div>
-          ) : Array.isArray(filtered) && filtered.map((item) => (
-            <MenuTile key={item.id} item={item} onClick={() => handleItemClick(item)} />
-          ))}
+          )}
         </div>
-      </div>
+
+        {/* Scrollable Content: Dining Menu & Parcel Menu */}
+        <div className="flex-1 min-h-0 overflow-y-auto pt-5 pr-1 space-y-8 scroll-behavior-smooth">
+
+          {/* SECTION 1: DINING MENU (ONLY visible for ALL ITEMS or THALI) */}
+          {showGlobalMenus && menuMode === "dining" && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-orange-100 text-[#FF6B00]">
+                    <UtensilsCrossed className="w-4 h-4" />
+                  </div>
+                  <h2 className="font-display text-xl font-extrabold text-slate-900 tracking-tight">
+                    Dining Menu
+                  </h2>
+                </div>
+                <span className="text-xs font-bold text-orange-800 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full">
+                  {filteredDining.length} Items Available
+                </span>
+              </div>
+
+              {filteredDining.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 border border-dashed border-[#EFE5DA] rounded-2xl bg-white/60 text-sm">
+                  No Dining items match "{search || activeCat}"
+                </div>
+              ) : (
+                <div
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"
+                  data-testid="dining-menu-grid"
+                >
+                  {filteredDining.map((item) => (
+                    <MenuTile
+                      key={item.id}
+                      item={item}
+                      onClick={() => addToCart(item)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* SECTION 2: PARCEL MENU (ONLY visible for ALL ITEMS or THALI) */}
+          {showGlobalMenus && menuMode === "parcel" && (
+            <section className="space-y-4 pt-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-amber-100 text-amber-700">
+                    <Package className="w-4 h-4" />
+                  </div>
+                  <h2 className="font-display text-xl font-extrabold text-slate-900 tracking-tight">
+                    Parcel Menu
+                  </h2>
+                </div>
+                <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                  {filteredParcel.length} Items Available
+                </span>
+              </div>
+
+              {filteredParcel.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 border border-dashed border-[#EFE5DA] rounded-2xl bg-white/60 text-sm">
+                  No Parcel items match "{search || activeCat}"
+                </div>
+              ) : (
+                <div
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"
+                  data-testid="parcel-menu-grid"
+                >
+                  {filteredParcel.map((item) => (
+                    <MenuTile
+                      key={item.id}
+                      item={item}
+                      onClick={() => addToCart(item)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* SPECIFIC CATEGORY VIEW (FOR SNACKS, SABJI, DAL, RICE, BREAD, DRINKS) */}
+          {!showGlobalMenus && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-xl font-extrabold text-slate-900 tracking-tight uppercase">
+                  {activeCat}
+                </h2>
+                <span className="text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full">
+                  {filteredParcel.length} Items
+                </span>
+              </div>
+
+              {filteredParcel.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 border border-dashed border-[#EFE5DA] rounded-2xl bg-white/60 text-sm">
+                  No items match "{search || activeCat}"
+                </div>
+              ) : (
+                <div
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"
+                  data-testid="category-menu-grid"
+                >
+                  {filteredParcel.map((item) => (
+                    <MenuTile
+                      key={item.id}
+                      item={item}
+                      onClick={() => addToCart(item)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+        </div>
       </div>
 
       {/* Mobile Cart Backdrop */}
@@ -224,7 +653,7 @@ export default function Billing()
         />
       )}
 
-      {/* Cart Panel - Slide-in on mobile, Sidebar column on desktop */}
+      {/* Active Bill Sidebar Column */}
       <div className={`
         fixed inset-y-0 right-0 z-40
         w-full sm:w-[420px]
@@ -241,188 +670,179 @@ export default function Billing()
         flex flex-col
         ${showCartMobile ? "translate-x-0" : "translate-x-full"}`}
       >
-        <div className="relative overflow-hidden p-6 bg-gradient-to-br from-[#FF8A3D]  to-[#FF6B00]  text-white">
-        <div className="absolute top-4 right-2 w-12 h-12 rounded-full bg-white/15" />
-        <div className="absolute top-16 right-6 w-10 h-10 rounded-full bg-white/15" />
-        
-         
+        {/* Orange Header */}
+        <div className="relative overflow-hidden p-5 bg-gradient-to-br from-[#FF8A3D] to-[#FF6B00] text-white">
+          <div className="absolute top-4 right-2 w-12 h-12 rounded-full bg-white/15 pointer-events-none" />
+          <div className="absolute top-16 right-6 w-10 h-10 rounded-full bg-white/15 pointer-events-none" />
           <div>
-            <div className="text-[15px] font-semibold uppercase tracking-[0.1em] text-white/80">{t("current_bill")}</div>
-            <div className="font-display text-lg font-bold">{cart.length} {cart.length === 1 ? t("line") : t("lines")}</div>
+            <div className="text-xs font-extrabold uppercase tracking-widest text-white/90">
+              ACTIVE BILL
+            </div>
+            <div className="font-display text-lg font-extrabold mt-0.5">
+              {cart.length} {cart.length === 1 ? "Line in Order" : "Lines in Order"}
+            </div>
           </div>
-
-          <div className="mt-3"> 
-            <Input
-              placeholder="Customer Name"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className=" bg-white/12 border-white/20 text-white backdrop-blur-sm rounded-xl"
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            {cart.length > 0 && (
-              <button onClick={() => {
-                if (window.confirm(t("confirm_clear_cart"))) {
-                  clear();
-                }
-              }} data-testid="clear-cart"
-                className="text-m text-white/80 hover:text-destructive">{t("clear")}</button>
-            )}
-            <button
-              onClick={() => setShowCartMobile(false)}
-              className="lg:hidden p-1.5 rounded-md hover:bg-sand-subtle text-foreground transition-all"
-            >
-              <X className="w-5 h-5" />
-            </button>
+          <div className="mt-3">
+            <div className="bg-white/10 text-white/90 rounded-xl px-3 h-9 flex items-center text-xs select-none">
+              <span>Token No: <span className="font-extrabold text-white ml-1">#{currentToken}</span></span>
+            </div>
           </div>
         </div>
 
-        <div className="flex bg-[#FFFDF9] border-b border-[#F3E5D5] text-[15px]">
+        {/* Tabs: CART LIST & RECEIPT PREVIEW */}
+        <div className="flex border-b border-[#F4E6D7] bg-white">
           <button
             onClick={() => setActiveTab("cart")}
-            className={`flex-1 py-4 font-semibold uppercase  text-center border-b-2 transition-all ${activeTab === "cart"
-                ? "bg-white text-[#FF6B00] border-b-[3px] border-[#FF6B00]"
-                : "text-slate-500 hover:text-slate-700"
+            className={`flex-1 py-3 text-xs font-extrabold tracking-wider border-b-2 text-center transition-all select-none ${activeTab === "cart"
+                ? "border-[#FF6B00] text-[#FF6B00] bg-[#FFFBF7]"
+                : "border-transparent text-slate-400 hover:text-slate-600"
               }`}
           >
-            {t("cart_list")}
+            CART LIST
           </button>
           <button
             onClick={() => setActiveTab("receipt")}
-            className={`flex-1 py-4 font-semibold uppercase text-center border-b-2 transition-all ${activeTab === "receipt"
-                ? "bg-white text-[#FF6B00] border-b-[3px] border-[#FF6B00]"
-                : "text-slate-500 hover:text-slate-700"
+            className={`flex-1 py-3 text-xs font-extrabold tracking-wider border-b-2 text-center transition-all select-none ${activeTab === "receipt"
+                ? "border-[#FF6B00] text-[#FF6B00] bg-[#FFFBF7]"
+                : "border-transparent text-slate-400 hover:text-slate-600"
               }`}
           >
-            {t("receipt_preview")}
+            RECEIPT PREVIEW
           </button>
         </div>
 
+        {/* Tab Content */}
         {activeTab === "cart" ? (
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3" data-testid="cart-items">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6">
-
-              <div className="mb-8 flex h-40 w-40 items-center justify-center rounded-full bg-[#FFF5EB]">
-                <Soup className="h-20 w-20 text-[#FF6B00]" />
-              </div>
-          
-              <h3 className="text-xl font-bold text-slate-900">
-                Your cart is empty
-              </h3>
-          
-          
-          
-            </div>
-            ) : Array.isArray(cart) && cart.map((line) => (
-              <CartLine
-                key={line._key}
-                line={line}
-                onInc={() => updateQty(line._key, 1)}
-                onDec={() => updateQty(line._key, -1)}
-                onRemove={() => removeLine(line._key)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center bg-neutral-50" data-testid="receipt-preview-pane">
-            {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center text-sm text-muted-foreground p-6">
-                <ChefHat className="w-10 h-10 mb-3 text-muted-foreground/60" />
-                {t("cart_empty_preview")}
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 my-auto min-h-[220px]">
+                <div className="w-16 h-16 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center text-[#FF6B00] shadow-2xs">
+                  <ShoppingCart className="w-8 h-8 stroke-[1.75]" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-display text-base font-extrabold text-slate-800">
+                    Your Cart is Empty
+                  </h3>
+                  <p className="text-xs text-slate-500 max-w-[240px] leading-relaxed">
+                    Click '+' on any Dining or Parcel food card to add items to bill.
+                  </p>
+                </div>
               </div>
             ) : (
-              <ReceiptPreview
-                order={{
-                  items: cart,
-                  subtotal: totals.subtotal,
-                  tax: totals.tax,
-                  discount: totals.discount,
-                  total: totals.total,
-                  cashier_name: user?.name || "Owner",
-                }}
-                settings={settings}
-                editable={false}
-              />
+              cart.map((line) => (
+                <CartLine
+                  key={line.id}
+                  line={line}
+                  onInc={() => updateQty(line.id, 1)}
+                  onDec={() => updateQty(line.id, -1)}
+                  onRemove={() => removeLine(line.id)}
+                />
+              ))
             )}
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-4 bg-slate-50">
+            <ReceiptPreview
+              cart={cart}
+              totals={{ subtotal, tax: gst, total, discount }}
+              settings={settings}
+              customerName={customerName}
+              tokenNo={currentToken}
+            />
           </div>
         )}
 
-        <div className="border-t border-[#F2E4D6] bg-[#FFFDF9] p-5 space-y-4">
-          <div className="flex items-center justify-between text-sm mb-1">
-            <span className="text-muted-foreground">{t("subtotal")}</span>
-            <span className="font-mono" data-testid="subtotal">₹{totals.subtotal.toFixed(2)}</span>
+        {/* Pricing Summary & Checkout Buttons */}
+        <div className="p-4 border-t border-[#F5EFE6] bg-[#FFFDF9] space-y-3">
+          <div className="space-y-2 text-xs text-slate-600">
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-slate-600">Subtotal</span>
+              <span className="font-mono font-bold text-slate-800">₹{subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-500">
+              <span>GST (5%)</span>
+              <span className="font-mono">₹{gst.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-slate-600">Discount</span>
+              <div className="flex items-center gap-1">
+                <span className="font-mono text-slate-400 text-xs">₹</span>
+                <Input
+                  type="number"
+                  min="0"
+                  value={discount || ""}
+                  onChange={(e) => setDiscount(Number(e.target.value) || 0)}
+                  placeholder="0"
+                  className="w-20 h-7 text-right font-mono text-xs bg-white border-[#F4E6D7] rounded-lg focus:border-[#FF6B00]"
+                />
+              </div>
+            </div>
+            <div className="flex justify-between items-center text-base font-extrabold text-slate-900 pt-2.5 border-t border-dashed border-slate-200">
+              <span>Total</span>
+              <span className="font-mono text-xl font-black text-[#FF6B00]">₹{total.toFixed(2)}</span>
+            </div>
           </div>
-          <div className="flex items-center justify-between text-sm mb-1">
-            <span className="text-muted-foreground">{settings?.tax_label || "GST"}</span>
-            <span className="font-mono">₹{totals.tax.toFixed(2)}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-muted-foreground">{t("discount_rs")}</span>
-            <input data-testid="discount-input" type="number" value={discount}
-              onChange={(e) => {
-                const val = Number(e.target.value) || 0;
-                const maxDiscount = totals.subtotal + totals.tax;
-                if (val < 0) {
-                  toast.error(t("discount_cannot_be_negative"));
-                  setDiscount(0);
-                } else if (val > maxDiscount) {
-                  toast.error(`Discount cannot exceed ₹${maxDiscount.toFixed(2)}`);
-                  setDiscount(maxDiscount);
-                } else {
-                  setDiscount(e.target.value);
-                }
+
+          <div className="grid grid-cols-3 gap-2 pt-1">
+            <button
+              onClick={() => {
+                setPaymentMethod("cash");
+                checkout("cash");
               }}
-              className="w-24 text-right bg-[#FFFDF9] border border-[#F3E5D5] rounded-xl px-3 py-2 text-sm font-mono" />
-          </div>
-          <div className="flex items-center justify-between border-t border-dashed border-[#F3D9C5] pt-4 mb-4">
-            <span className="font-display font-bold">{t("total")}</span>
-            <span className= "font-mono text-xl font-black text-[#FF6B00]" data-testid="cart-total">
-              ₹{totals.total.toFixed(2)}
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <Button onClick={() => checkout("cash")} disabled={!cart.length} data-testid="pay-cash"
-              className="bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:brightness-105 text-white border-0">
-              <Banknote className="w-4 h-4 mr-1.5" />{t("cash")}
-            </Button>
-            <Button onClick={() => checkout("upi")} disabled={!cart.length} data-testid="pay-upi"
-              variant="outline"
-              className="border-[#F3E5D5] bg-white text-slate-800 hover:bg-[#FFF8F2]">
-              <Smartphone className="w-4 h-4 mr-1.5" />{t("upi")}
-            </Button>
-            <Button onClick={() => checkout("card")} disabled={!cart.length} data-testid="pay-card"
-              variant="outline" className="border-[#F3E5D5] bg-white text-slate-800 hover:bg-[#FFF8F2]">
-              <CreditCard className="w-4 h-4 mr-1.5" />{t("card")}
-            </Button>
-          </div>
-          <div className="mt-2 text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
-            <Printer className="w-3 h-3" /> {t("receipt_autoprints")}
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold rounded-full transition-all border select-none active:scale-95 ${paymentMethod === "cash"
+                  ? "bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-orange-500/20"
+                  : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-800"
+                }`}
+            >
+              <Banknote className="w-4 h-4" />
+              <span>CASH</span>
+            </button>
+            <button
+              onClick={() => {
+                setPaymentMethod("upi");
+                checkout("upi");
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold rounded-full transition-all border select-none active:scale-95 ${paymentMethod === "upi"
+                  ? "bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-orange-500/20"
+                  : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-800"
+                }`}
+            >
+              <Smartphone className="w-4 h-4" />
+              <span>UPI</span>
+            </button>
+            <button
+              onClick={() => {
+                setPaymentMethod("card");
+                checkout("card");
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold rounded-full transition-all border select-none active:scale-95 ${paymentMethod === "card"
+                  ? "bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-orange-500/20"
+                  : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-800"
+                }`}
+            >
+              <CreditCard className="w-4 h-4" />
+              <span>CARD</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Floating Cart Button for Mobile */}
-      <button
-        onClick={() => setShowCartMobile(true)}
-        className="lg:hidden fixed bottom-6 right-6 bg-terracota text-white p-4 rounded-full shadow-lg z-30 flex items-center gap-2 hover:bg-terracota/90 transition-all active:scale-95 duration-150"
-      >
-        <ShoppingCart className="w-6 h-6" />
-        {cart.length > 0 && (
-          <span className="bg-white text-terracota text-xs font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
-            {cart.length}
-          </span>
-        )}
-      </button>
-
-      <ThaliBuilder
-        open={!!thaliFor}
-        onClose={() => setThaliFor(null)}
-        thali={thaliFor}
-        menu={menu}
-        onAdd={addLine}
-      />
+      {/* Thali Builder Modal */}
+      {thaliFor && (
+        <ThaliBuilder
+          thaliItem={thaliFor}
+          menu={menu}
+          categories={categories}
+          onClose={() => setThaliFor(null)}
+          onAdd={handleAddThaliOrder}
+        />
+      )}
     </div>
   );
+
+  function handleAddThaliOrder(orderItemPayload) {
+    addLine(orderItemPayload);
+    toast.success(`Added ${orderItemPayload.name} to bill`, { icon: "🍽️" });
+    setThaliFor(null);
+  }
 }

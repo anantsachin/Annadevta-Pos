@@ -86,7 +86,13 @@ function AppRoutes() {
   );
 }
 
+import { initializeTokenSystem } from "./lib/tokenManager";
+
 function App() {
+  React.useEffect(() => {
+    initializeTokenSystem();
+  }, []);
+
   return (
     <LanguageProvider>
       <AuthProvider>

@@ -14,18 +14,60 @@ export default function OrderHistory() {
   const { t } = useLanguage();
   const [orders, setOrders] = useState([]);
   const [settings, setSettings] = useState(null);
-  const [from, setFrom] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() - 7);
-    return d.toISOString().slice(0, 10);
-  });
-  const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [activeFilter, setActiveFilter] = useState("all");
+
+  const getLocalDateString = (rawDate) => {
+    if (!rawDate) return "";
+    const d = new Date(rawDate);
+    if (isNaN(d.getTime())) return "";
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getFilterDateRange = (filterKey) => {
+    const now = new Date();
+    const todayStr = getLocalDateString(now);
+
+    if (filterKey === "all") {
+      return { fromStr: "", toStr: "" };
+    } else if (filterKey === "today") {
+      return { fromStr: todayStr, toStr: todayStr };
+    } else if (filterKey === "week") {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 6);
+      return { fromStr: getLocalDateString(d), toStr: todayStr };
+    } else if (filterKey === "month") {
+      const d = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { fromStr: getLocalDateString(d), toStr: todayStr };
+    }
+
+    return { fromStr: "", toStr: "" };
+  };
+
+  const [from, setFrom] = useState(() => getFilterDateRange("all").fromStr);
+  const [to, setTo] = useState(() => getFilterDateRange("all").toStr);
   const [q, setQ] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const [appliedSearchDate, setAppliedSearchDate] = useState("");
   const [view, setView] = useState(null);
+
+  const handleFilterChange = (filterKey) => {
+    setActiveFilter(filterKey);
+    const { fromStr, toStr } = getFilterDateRange(filterKey);
+    setFrom(fromStr);
+    setTo(toStr);
+    setSearchDate("");
+    setAppliedSearchDate("");
+  };
+
+  const handleSearchDate = () => {
+    setAppliedSearchDate(searchDate);
+  };
 
   const fetchOrders = useCallback(async () => {
     const params = {};
-    if (from) params.from_date = `${from}T00:00:00+00:00`;
-    if (to) params.to_date = `${to}T23:59:59+00:00`;
     if (q) params.q = q;
     try {
       const [{ data }, s] = await Promise.all([
@@ -37,9 +79,59 @@ export default function OrderHistory() {
       console.error("Failed to load orders", err);
       setOrders([]);
     }
-  }, [from, to, q]);
+  }, [q]);
 
-  useEffect(() => { fetchOrders(); }, [from, to, fetchOrders]);
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  const filteredOrders = React.useMemo(() => {
+    if (!Array.isArray(orders)) return [];
+    let list = orders;
+
+    // Filter by exact single Search Order Date if applied
+    if (appliedSearchDate) {
+      list = list.filter((o) => {
+        const rawDate = o.paid_at || o.created_at || o.date;
+        return getLocalDateString(rawDate) === appliedSearchDate;
+      });
+    }
+
+    // Filter by custom From / To date pickers if selected
+    if (from || to) {
+      list = list.filter((o) => {
+        const rawDate = o.paid_at || o.created_at || o.date;
+        if (!rawDate) return false;
+        const dStr = getLocalDateString(rawDate);
+        if (from && dStr < from) return false;
+        if (to && dStr > to) return false;
+        return true;
+      });
+    }
+
+    if (activeFilter === "all") return list;
+
+    const todayStr = getLocalDateString(new Date());
+
+    return list.filter((o) => {
+      const rawDate = o.paid_at || o.created_at || o.date;
+      if (!rawDate) return false;
+      const dStr = getLocalDateString(rawDate);
+
+      if (activeFilter === "today") {
+        return dStr === todayStr;
+      }
+      if (activeFilter === "week") {
+        const now = new Date();
+        const weekStartStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6));
+        return dStr >= weekStartStr && dStr <= todayStr;
+      }
+      if (activeFilter === "month") {
+        const now = new Date();
+        const monthStartStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth(), 1));
+        return dStr >= monthStartStr && dStr <= todayStr;
+      }
+      return true;
+    });
+  }, [orders, activeFilter, appliedSearchDate, from, to]);
 
   const reprint = (o) => printReceipt({ order: o, settings });
 
@@ -56,26 +148,86 @@ export default function OrderHistory() {
       flex-col
       overflow-hidden
     ">
-      <div className="mb-6">
-        <div className="text-[15px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">History</div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("order_history")}</h1>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="text-[15px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">History</div>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("order_history")}</h1>
+        </div>
+
+        <div className="flex items-center gap-2 p-1.5 bg-[#FFF8F2] border border-[#F4E6D7] rounded-full self-start sm:self-auto" data-testid="date-filter-buttons">
+          <button
+            type="button"
+            onClick={() => handleFilterChange("all")}
+            data-testid="filter-btn-all"
+            className={`px-4 py-1.5 text-xs font-bold tracking-wider rounded-full transition-all duration-200 ${
+              activeFilter === "all"
+                ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
+            }`}
+          >
+            ALL
+          </button>
+          <button
+            type="button"
+            onClick={() => handleFilterChange("today")}
+            data-testid="filter-btn-today"
+            className={`px-4 py-1.5 text-xs font-bold tracking-wider rounded-full transition-all duration-200 ${
+              activeFilter === "today"
+                ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
+            }`}
+          >
+            TODAY
+          </button>
+          <button
+            type="button"
+            onClick={() => handleFilterChange("week")}
+            data-testid="filter-btn-week"
+            className={`px-4 py-1.5 text-xs font-bold tracking-wider rounded-full transition-all duration-200 ${
+              activeFilter === "week"
+                ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
+            }`}
+          >
+            THIS WEEK
+          </button>
+          <button
+            type="button"
+            onClick={() => handleFilterChange("month")}
+            data-testid="filter-btn-month"
+            className={`px-4 py-1.5 text-xs font-bold tracking-wider rounded-full transition-all duration-200 ${
+              activeFilter === "month"
+                ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
+            }`}
+          >
+            THIS MONTH
+          </button>
+        </div>
       </div>
 
       <Card className="p-4 border-border shadow-none mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
-          <div>
-            <label className="text-xs uppercase tracking-wider font-semibold">From</label>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} data-testid="filter-from" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 items-end">
+          <div className="min-w-0">
+            <label className="text-xs uppercase tracking-wider font-semibold block mb-1">From</label>
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full text-xs" data-testid="filter-from" />
           </div>
-          <div>
-            <label className="text-xs uppercase tracking-wider font-semibold">{t("to")}</label>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} data-testid="filter-to" />
+          <div className="min-w-0">
+            <label className="text-xs uppercase tracking-wider font-semibold block mb-1">{t("to")}</label>
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full text-xs" data-testid="filter-to" />
           </div>
-          <div className="md:col-span-2">
-            <label className="text-xs uppercase tracking-wider font-semibold">{t("search_receipt_placeholder")}</label>
-            <div className="flex gap-2">
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. 42" data-testid="filter-q" />
-              <Button onClick={fetchOrders} variant="outline" className="border-border" data-testid="filter-go"><Search className="w-4 h-4" /></Button>
+          <div className="min-w-0">
+            <label className="text-xs uppercase tracking-wider font-semibold block mb-1 truncate">{t("search_receipt_placeholder")}</label>
+            <div className="flex gap-1.5">
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. 42" className="min-w-0 flex-1 text-xs" data-testid="filter-q" />
+              <Button onClick={fetchOrders} variant="outline" className="border-border shrink-0 px-3" data-testid="filter-go"><Search className="w-4 h-4" /></Button>
+            </div>
+          </div>
+          <div className="min-w-0">
+            <label className="text-xs uppercase tracking-wider font-semibold block mb-1 truncate">Search Order Date</label>
+            <div className="flex gap-1.5">
+              <Input type="date" value={searchDate} onChange={(e) => setSearchDate(e.target.value)} className="min-w-0 flex-1 text-xs" data-testid="filter-search-date" />
+              <Button onClick={handleSearchDate} variant="outline" className="border-border shrink-0 px-3" data-testid="filter-date-go"><Search className="w-4 h-4" /></Button>
             </div>
           </div>
         </div>
@@ -110,7 +262,7 @@ export default function OrderHistory() {
             </tr>
           </thead>
           <tbody data-testid="orders-table">
-            {Array.isArray(orders) && orders.map(o => {
+            {Array.isArray(filteredOrders) && filteredOrders.map(o => {
               let pm = o.payment_mode;
               if (o.payment_mode === "cash") pm = t("cash");
               if (o.payment_mode === "upi") pm = t("upi");
@@ -130,7 +282,7 @@ export default function OrderHistory() {
                 </tr>
               );
             })}
-            {orders.length === 0 && <tr><td colSpan="6" className="text-center text-muted-foreground py-12">{t("no_bills_yet")}</td></tr>}
+            {filteredOrders.length === 0 && <tr><td colSpan="6" className="text-center text-muted-foreground py-12">{t("no_bills_yet")}</td></tr>}
           </tbody>
         </table>
         </div>

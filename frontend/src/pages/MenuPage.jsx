@@ -61,6 +61,8 @@ export default function MenuPage() {
       is_thali: false,
       thali_groups: [],
       thali_extras: "",
+      portion_weight_kg: 0,
+      menuType: "both",
     });
   };
 
@@ -69,23 +71,41 @@ export default function MenuPage() {
       ...g,
       _key: g._key || `${g.category_id || 'k'}-${i}-${Math.random().toString(36).slice(2, 8)}`,
     }));
-    setEditing({ ...item, thali_groups: groups });
+    const catObj = categories.find(c => c.id === item.category_id);
+    const isThali = item.is_thali || (catObj?.name?.toLowerCase() === "thali");
+    const mType = item.menuType || item.menu_type || (isThali ? "both" : "parcel");
+    setEditing({ ...item, thali_groups: groups, menuType: mType });
   };
 
   const save = async () => {
     if (!editing.name || !editing.category_id) return toast.error(t("save_item_error"));
+    const mType = editing.menuType || (editing.is_thali ? "both" : "parcel");
+    const cleanName = editing.name.trim();
     const payload = {
-      name: editing.name,
+      name: cleanName,
       category_id: editing.category_id,
       price: Number(editing.price),
       available: editing.available,
       is_thali: editing.is_thali,
       thali_groups: editing.is_thali ? editing.thali_groups.filter(g => g.category_id) : [],
       thali_extras: editing.thali_extras || "",
+      portion_weight_kg: Number(editing.portion_weight_kg) || 0,
+      menuType: mType,
+      menu_type: mType,
     };
+
+    // Duplicate Prevention: check if item with same name already exists
+    const existing = menu.find(
+      (m) => m.name && m.name.trim().toLowerCase() === cleanName.toLowerCase()
+    );
+    const targetId = editing.id || (existing ? existing.id : null);
+
     try {
-      if (editing.id) await api.put(`/menu/${editing.id}`, payload);
-      else await api.post("/menu", payload);
+      if (targetId) {
+        await api.put(`/menu/${targetId}`, payload);
+      } else {
+        await api.post("/menu", payload);
+      }
       toast.success(t("settings_saved_success"));
       setEditing(null);
       refresh();
@@ -123,7 +143,7 @@ export default function MenuPage() {
 
   return (
     <div className="h-full bg-[#FFFDF9] rounded-[32px] border border-[#F4E6D7] shadow-lg p-8 flex flex-col overflow-hidden">
-      <div className="mb-2 flex items-end justify-between">
+      <div className="relative z-20 flex-shrink-0 mb-2 flex items-end justify-between">
         <div>
           <div className="text-[15px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">{t("menu_database")}</div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-900">{t("nav_menu")}</h1>
@@ -133,123 +153,120 @@ export default function MenuPage() {
         </Button>
       </div>
 
-      {/* Professional Categories Section */}
-      <Card className="mb-6 rounded-[26px] border-[#F4E6D7] bg-white shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-[17px] font-extrabold uppercase tracking-wider text-terracota">{t("categories")}</h2>
-            {/* <p className="text-[15px] text-muted-foreground mt-1">Organize your menu items into categories</p> */}
+      <div className="overflow-y-auto flex-1 min-h-0">
+        {/* Professional Categories Section */}
+        <Card className="mb-6 rounded-[26px] border-[#F4E6D7] bg-white shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-[17px] font-extrabold uppercase tracking-wider text-terracota">{t("categories")}</h2>
+              {/* <p className="text-[15px] text-muted-foreground mt-1">Organize your menu items into categories</p> */}
+            </div>
+            <div className="text-s text-muted-foreground">
+              {categories.length} {categories.length === 1 ? 'category' : 'categories'}
+            </div>
           </div>
-          <div className="text-s text-muted-foreground">
-            {categories.length} {categories.length === 1 ? 'category' : 'categories'}
-          </div>
-        </div>
 
-        {/* Categories Grid */}
-        {categories.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-1 mb-1">
-            {safeArray(categories).map(c => (
-              <div
-                key={c.id}
-                className="group relative flex items-center justify-between px-3 py-3 rounded-2xl bg-gradient-to-br from-[#FFF8F2] to-white border border-[#F4E6D7] hover:border-[#FF8A3D] hover:shadow-sm transition-all"
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <div className="w-2 h-2 rounded-full bg-terracota flex-shrink-0"></div>
-                  <span className="text-sm font-semibold text-foreground truncate">{t(c.name)}</span>
-                </div>
-                <button
-                  onClick={() => removeCat(c)}
-                  data-testid={`del-cat-${c.id}`}
-                  className="opacity-0 group-hover:opacity-100 ml-2 p-1.5 rounded-md text-muted-foreground hover:text-white hover:bg-destructive transition-all flex-shrink-0"
-                  title="Delete category"
+          {/* Categories Grid */}
+          {categories.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-1 mb-1">
+              {safeArray(categories).map(c => (
+                <div
+                  key={c.id}
+                  className="group relative flex items-center justify-between px-3 py-3 rounded-2xl bg-gradient-to-br from-[#FFF8F2] to-white border border-[#F4E6D7] hover:border-[#FF8A3D] hover:shadow-sm transition-all"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 mb-1 border-2 border-dashed border-border rounded-lg">
-            <div className="text-muted-foreground text-sm">No categories yet. Add your first category below.</div>
-          </div>
-        )}
-
-        {/* Add Category Input */}
-        <div className="flex
-        gap-2
-        pt-2">
-          <Input
-            value={catName}
-            onChange={(e) => setCatName(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && addCategory()}
-            placeholder={t("category_name_placeholder") || "e.g., Sabji, Dal, Rice"}
-            className="flex-1 rounded-xl border-[#F4E6D7] bg-[#FFFDF9]"
-            data-testid="cat-name"
-          />
-          <Button
-            onClick={addCategory}
-            disabled={!catName.trim()}
-            className="bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:bg-terracota-hover text-white px-6"
-            data-testid="add-cat-btn"
-          >
-            <Plus className="w-4 h-4 mr-2" /> Add
-          </Button>
-        </div>
-      </Card>
-
-      <Card className="flex-1 overflow-hidden rounded-[26px] border-[#F4E6D7] bg-white shadow-sm flex flex-col min-h-0">
-      <div className="flex-1 overflow-y-auto min-h-0">
-
-        <table className="w-full text-sm">
-          <thead className="sticky
-          top-0 z-10
-          bg-gradient-to-r
-          from-[#FF8A3D]
-          to-[#FF6B00]
-          text-[11px]
-          text-white
-          uppercase
-          tracking-[0.18em]
-          text-slate-500">
-            <tr>
-              <th className="text-left px-4 py-3">{t("item")}</th>
-              <th className="text-left px-4 py-3">{t("category_name")}</th>
-              <th className="text-right px-4 py-3">{t("price")}</th>
-              <th className="text-center px-4 py-3">{t("available")}</th>
-              <th className="text-right px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody data-testid="menu-table">
-            {safeArray(menu).map(m => (
-              <tr key={m.id} className="border-t border-border hover:bg-[#FFF8F2]">
-                <td className="px-4 py-3 font-medium">
-                  <div className="flex items-center gap-2">
-                    {m.is_thali && <span className="text-[11px] uppercase tracking-[0.18em] font-bold bg-[#FFF1E5] text-[#FF6B00] border border-[#FFD8B5] px-1.5 py-0.5 rounded">{t("thali")}</span>}
-                    {t(m.name)}
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="w-2 h-2 rounded-full bg-terracota flex-shrink-0"></div>
+                    <span className="text-sm font-semibold text-foreground truncate">{t(c.name)}</span>
                   </div>
-                  {m.is_thali && m.thali_groups?.length > 0 && (
-                    <div className="text-[11px] text-muted-foreground mt-1">
-                      {m.thali_groups.map(g => `${g.count} ${t(g.label)}`).join(' + ')}
-                      {m.thali_extras ? ` + ${translateExtras(m.thali_extras, t)}` : ''}
-                    </div>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">{t(categories.find(c => c.id === m.category_id)?.name) || "—"}</td>
-                <td className="px-4 py-3 text-right font-mono">₹{m.price}</td>
-                <td className="px-4 py-3 text-center">
-                  <Switch checked={m.available} onCheckedChange={() => toggle(m)} data-testid={`toggle-${m.id}`} />
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button onClick={() => startEdit(m)} data-testid={`edit-${m.id}`} className="text-foreground hover:bg-sand-subtle p-1.5 rounded-md mr-1"><Pencil className="w-4 h-4" /></button>
-                  <button onClick={() => remove(m)} data-testid={`del-${m.id}`} className="text-destructive hover:bg-destructive/10 p-1.5 rounded-md"><Trash2 className="w-4 h-4" /></button>
-                </td>
+                  <button
+                    onClick={() => removeCat(c)}
+                    data-testid={`del-cat-${c.id}`}
+                    className="opacity-0 group-hover:opacity-100 ml-2 p-1.5 rounded-md text-muted-foreground hover:text-white hover:bg-destructive transition-all flex-shrink-0"
+                    title="Delete category"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 mb-1 border-2 border-dashed border-border rounded-lg">
+              <div className="text-muted-foreground text-sm">No categories yet. Add your first category below.</div>
+            </div>
+          )}
+
+          {/* Add Category Input */}
+          <div className="flex
+          gap-2
+          pt-2">
+            <Input
+              value={catName}
+              onChange={(e) => setCatName(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && addCategory()}
+              placeholder={t("category_name_placeholder") || "e.g., Sabji, Dal, Rice"}
+              className="flex-1 rounded-xl border-[#F4E6D7] bg-[#FFFDF9]"
+              data-testid="cat-name"
+            />
+            <Button
+              onClick={addCategory}
+              disabled={!catName.trim()}
+              className="bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:bg-terracota-hover text-white px-6"
+              data-testid="add-cat-btn"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Add
+            </Button>
+          </div>
+        </Card>
+
+        <Card className="rounded-[26px] border-[#F4E6D7] bg-white shadow-sm">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-10 rounded-t-[26px] overflow-hidden bg-gradient-to-r
+            from-[#FF8A3D]
+            to-[#FF6B00]
+            text-[11px]
+            text-white
+            uppercase
+            tracking-[0.18em]
+            text-slate-500">
+              <tr>
+                <th className="text-left px-4 py-3 rounded-tl-[26px]">{t("item")}</th>
+                <th className="text-left px-4 py-3">{t("category_name")}</th>
+                <th className="text-right px-4 py-3">{t("price")}</th>
+                <th className="text-center px-4 py-3">{t("available")}</th>
+                <th className="text-right px-4 py-3 rounded-tr-[26px]"></th>
               </tr>
-            ))}
-            {menu.length === 0 && <tr><td colSpan="5" className="text-center text-muted-foreground py-8">{t("no_items_yet")}</td></tr>}
-          </tbody>
-        </table>
-        </div>
-      </Card>
+            </thead>
+            <tbody data-testid="menu-table">
+              {safeArray(menu).map(m => (
+                <tr key={m.id} className="border-t border-border hover:bg-[#FFF8F2]">
+                  <td className="px-4 py-3 font-medium">
+                    <div className="flex items-center gap-2">
+                      {m.is_thali && <span className="text-[11px] uppercase tracking-[0.18em] font-bold bg-[#FFF1E5] text-[#FF6B00] border border-[#FFD8B5] px-1.5 py-0.5 rounded">{t("thali")}</span>}
+                      {t(m.name)}
+                    </div>
+                    {m.is_thali && m.thali_groups?.length > 0 && (
+                      <div className="text-[11px] text-muted-foreground mt-1">
+                        {m.thali_groups.map(g => `${g.count} ${t(g.label)}`).join(' + ')}
+                        {m.thali_extras ? ` + ${translateExtras(m.thali_extras, t)}` : ''}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{t(categories.find(c => c.id === m.category_id)?.name) || "—"}</td>
+                  <td className="px-4 py-3 text-right font-mono">₹{m.price}</td>
+                  <td className="px-4 py-3 text-center">
+                    <Switch checked={m.available} onCheckedChange={() => toggle(m)} data-testid={`toggle-${m.id}`} />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button onClick={() => startEdit(m)} data-testid={`edit-${m.id}`} className="text-foreground hover:bg-sand-subtle p-1.5 rounded-md mr-1"><Pencil className="w-4 h-4" /></button>
+                    <button onClick={() => remove(m)} data-testid={`del-${m.id}`} className="text-destructive hover:bg-destructive/10 p-1.5 rounded-md"><Trash2 className="w-4 h-4" /></button>
+                  </td>
+                </tr>
+              ))}
+              {menu.length === 0 && <tr><td colSpan="5" className="text-center text-muted-foreground py-8">{t("no_items_yet")}</td></tr>}
+            </tbody>
+          </table>
+        </Card>
+      </div>
 
       {editing && (
         <Dialog open={true} onOpenChange={(o) => !o && setEditing(null)}>
@@ -267,7 +284,11 @@ export default function MenuPage() {
                   <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("category_name")}</label>
                   <select value={editing.category_id} onChange={(e) => setEditing({ ...editing, category_id: e.target.value })}
                     className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1" data-testid="edit-cat">
-                    {safeArray(categories).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {safeArray(categories).map(c => {
+                      const name = t(c.name);
+                      const displayName = (name === "Snakes" || name === "snakes" || c.name === "Snakes" || c.name === "snakes") ? "Snacks" : name;
+                      return <option key={c.id} value={c.id}>{displayName}</option>;
+                    })}
                   </select>
                 </div>
                 <div>
@@ -289,6 +310,49 @@ export default function MenuPage() {
                     setEditing({ ...editing, portion_weight_kg: val < 0 ? 0 : val });
                   }} />
                   <p className="text-[10px] text-muted-foreground mt-1">If set to 0, selling this item won't automatically deduct bulk inventory stock.</p>
+                </div>
+              </div>
+              <div className="border-t border-border pt-3 space-y-1 bg-[#FFF8F2] border border-[#F4E6D7] p-3 rounded-xl">
+                <label className="text-xs uppercase tracking-wider font-bold text-slate-700 block">
+                  Where do you want to add this item?
+                </label>
+                <div className="flex items-center gap-5 pt-1" data-testid="menu-type-selection">
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-800 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="menuType"
+                      value="dining"
+                      checked={editing.menuType === "dining"}
+                      onChange={(e) => setEditing({ ...editing, menuType: e.target.value })}
+                      className="w-4 h-4 accent-[#FF6B00]"
+                      data-testid="menu-type-dining"
+                    />
+                    Dining Menu
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-800 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="menuType"
+                      value="parcel"
+                      checked={editing.menuType === "parcel"}
+                      onChange={(e) => setEditing({ ...editing, menuType: e.target.value })}
+                      className="w-4 h-4 accent-[#FF6B00]"
+                      data-testid="menu-type-parcel"
+                    />
+                    Parcel Menu
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-800 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="menuType"
+                      value="both"
+                      checked={editing.menuType === "both"}
+                      onChange={(e) => setEditing({ ...editing, menuType: e.target.value })}
+                      className="w-4 h-4 accent-[#FF6B00]"
+                      data-testid="menu-type-both"
+                    />
+                    Both
+                  </label>
                 </div>
               </div>
               <div className="flex items-center justify-between border-t border-border pt-3">

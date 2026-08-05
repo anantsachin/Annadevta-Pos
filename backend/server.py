@@ -177,6 +177,8 @@ class MenuItemIn(BaseModel):
     thali_groups: List[ThaliGroup] = Field(default_factory=list)
     thali_extras: str = ""
     portion_weight_kg: float = 0.0
+    menuType: Optional[str] = None
+    menu_type: Optional[str] = None
 
 
 class TemplateIn(BaseModel):
@@ -205,6 +207,7 @@ class OrderIn(BaseModel):
     discount: float = 0.0
     payment_mode: Literal["cash", "card", "upi"] = "cash"
     notes: str = ""
+    token_no: Optional[int] = None
 
 
 # ------- Inventory Models -------
@@ -782,19 +785,36 @@ async def list_menu(_: dict = Depends(get_current_user)):
         await db.menu.update_many({}, {"$set": {"available": False}})
         await db.settings.update_one({"id": "restaurant"}, {"$set": {"last_reset_date": current_date}})
         
-    return await db.menu.find({}, {"_id": 0}).to_list(2000)
+    items = await db.menu.find({}, {"_id": 0}).to_list(2000)
+    for item in items:
+        if not item.get("menuType") and not item.get("menu_type"):
+            default_type = "both" if item.get("is_thali") else "parcel"
+            item["menuType"] = default_type
+            item["menu_type"] = default_type
+        elif not item.get("menuType"):
+            item["menuType"] = item.get("menu_type")
+        elif not item.get("menu_type"):
+            item["menu_type"] = item.get("menuType")
+    return items
 
 
 @api.post("/menu")
 async def create_menu(body: MenuItemIn, _: dict = Depends(require_roles("admin"))):
     obj = {"id": new_id(), **body.model_dump()}
+    m_type = body.menuType or body.menu_type or ("both" if body.is_thali else "parcel")
+    obj["menuType"] = m_type
+    obj["menu_type"] = m_type
     await db.menu.insert_one(obj.copy())
     return obj
 
 
 @api.put("/menu/{mid}")
 async def update_menu(mid: str, body: MenuItemIn, _: dict = Depends(require_roles("admin"))):
-    await db.menu.update_one({"id": mid}, {"$set": body.model_dump()})
+    data = body.model_dump()
+    m_type = body.menuType or body.menu_type or ("both" if body.is_thali else "parcel")
+    data["menuType"] = m_type
+    data["menu_type"] = m_type
+    await db.menu.update_one({"id": mid}, {"$set": data})
     return await db.menu.find_one({"id": mid}, {"_id": 0})
 
 
@@ -900,6 +920,7 @@ async def create_order(body: OrderIn, user: dict = Depends(get_current_user)):
         "paid_at": ts,
         "cashier_email": user.get("email"),
         "cashier_name": user.get("name"),
+        "token_no": body.token_no,
     }
     await db.orders.insert_one(order.copy())
 
@@ -1306,7 +1327,7 @@ async def _seed_menu(cat_lookup: dict):
     for t in _thali_seed_rows(cat_lookup):
         await db.menu.insert_one({
             "id": new_id(), "category_id": cat_lookup["Thali"], "available": False,
-            "is_thali": True, **t,
+            "is_thali": True, "menuType": "both", "menu_type": "both", **t,
         })
     for cat_name, rows in _alacarte_seed_rows().items():
         for n, p in rows:
@@ -1314,6 +1335,7 @@ async def _seed_menu(cat_lookup: dict):
                 "id": new_id(), "name": n, "category_id": cat_lookup[cat_name],
                 "price": p, "available": False, "is_thali": False,
                 "thali_groups": [], "thali_extras": "",
+                "menuType": "parcel", "menu_type": "parcel",
             })
 
 

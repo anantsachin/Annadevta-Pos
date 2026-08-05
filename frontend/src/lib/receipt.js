@@ -269,6 +269,11 @@ export function printReceipt({ order, settings }) {
     
     <div class="separator-double"></div>
     
+    ${order.token_no !== undefined && order.token_no !== null ? `
+    <div class="meta-row">
+      <span class="meta-label">Token No:</span>
+      <span class="meta-value">#${order.token_no}</span>
+    </div>` : ''}
     <div class="meta-row">
       <span class="meta-label">${t("bill_no")}:</span>
       <span class="meta-value">${receiptNoFormatted}</span>
@@ -337,6 +342,7 @@ export function printReceipt({ order, settings }) {
     </div>
     
     <div class="separator-dashed" style="margin-top: 12px;"></div>
+    
     <div class="center" style="margin-top: 8px; font-size: 0.75em; color: #666;">
       <div style="font-weight: 600;">Powered by Career Craftly</div>
       <div style="margin-top: 2px; font-size: 0.9em;">Crafting Digital Success, Intelligently</div>

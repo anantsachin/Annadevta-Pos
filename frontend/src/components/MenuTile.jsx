@@ -16,6 +16,7 @@ function MenuTileComponent({ item, onClick }) {
     <button
       onClick={onClick}
       data-testid={`menu-item-${item.id}`}
+      style={{ overflow: "hidden" }}
       className="
         group
         relative
@@ -47,7 +48,7 @@ function MenuTileComponent({ item, onClick }) {
           </span>
         ) : (
           <span className="rounded-full bg-[#F0F8DC] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#6B9A1F]">
-            ITEM
+            {(item.category_name || item.category || "ITEM").toUpperCase()}
           </span>
         )}
 

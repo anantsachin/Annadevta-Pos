@@ -1,8 +1,19 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // Cart state + memoized totals + line operations.
 export function useCart() {
-  const [cart, setCart] = useState([]);
+  const savedCart = [];
+  const [cart, setCart] = useState(savedCart);
+
+  useEffect(() => {
+    try {
+      localStorage.removeItem("cart");
+      sessionStorage.removeItem("cart");
+    } catch (e) {
+      console.warn("Cart storage cleanup exception:", e);
+    }
+    setCart([]);
+  }, []);
   const [discount, setDiscount] = useState(0);
 
   const addLine = useCallback((line) => {

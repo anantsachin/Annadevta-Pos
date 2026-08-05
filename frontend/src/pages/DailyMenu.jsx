@@ -32,6 +32,7 @@ export default function DailyMenu() {
       console.error("DailyMenu load failed:", e);
     }
   };
+
   useEffect(() => {
     const init = async () => {
       if (!sessionStorage.getItem("menu_session_reset")) {
@@ -51,13 +52,75 @@ export default function DailyMenu() {
   const safeCategories = safeArray(categories);
   const safeTemplates = safeArray(templates);
 
-  const grouped = useMemo(() => {
+  // Group items by category and add top-level Dining Menu & Parcel Menu categories
+  const categoryGrouped = useMemo(() => {
     const byCat = {};
-    for (const c of safeCategories) byCat[c.id] = { ...c, items: [] };
-    for (const m of safeMenu) {
-      if (byCat[m.category_id]) byCat[m.category_id].items.push(m);
+    for (const c of safeCategories) {
+      byCat[c.id] = { ...c, items: [] };
     }
-    return Object.values(byCat).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    for (const m of safeMenu) {
+      const catId = m.category_id;
+      if (byCat[catId]) {
+        byCat[catId].items.push(m);
+      } else {
+        const fallbackCatId = catId || "uncategorized";
+        if (!byCat[fallbackCatId]) {
+          const catObj = safeCategories.find((c) => c.id === fallbackCatId);
+          byCat[fallbackCatId] = {
+            id: fallbackCatId,
+            name: catObj ? catObj.name : (m.category || "General"),
+            items: [],
+          };
+        }
+        byCat[fallbackCatId].items.push(m);
+      }
+    }
+
+    const regularCategories = Object.values(byCat)
+      .filter((cat) => cat.items.length > 0)
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+    const checkIsThali = (item) => {
+      if (item.is_thali) return true;
+      const catObj = safeCategories.find((c) => c.id === item.category_id);
+      const c = (catObj ? catObj.name : (item.category_name || item.category || "")).toUpperCase();
+      return c === "THALI";
+    };
+
+    const getEffectiveMenuType = (item) => {
+      const type = (item.menuType || item.menu_type || "").toLowerCase();
+      if (["dining", "parcel", "both"].includes(type)) {
+        return type;
+      }
+      return checkIsThali(item) ? "dining" : "parcel";
+    };
+
+    // Dining Menu items (dining, both, or Thalis)
+    const diningItems = safeMenu.filter((m) => {
+      const type = getEffectiveMenuType(m);
+      return type === "dining" || type === "both";
+    });
+
+    // Parcel Menu items (parcel, both, or general items)
+    const parcelItems = safeMenu.filter((m) => {
+      const type = getEffectiveMenuType(m);
+      return type === "parcel" || type === "both";
+    });
+
+    const menuTypeCategories = [
+      {
+        id: "dining_menu_cat",
+        name: "Dining Menu",
+        items: diningItems,
+      },
+      {
+        id: "parcel_menu_cat",
+        name: "Parcel Menu",
+        items: parcelItems,
+      },
+    ];
+
+    return [...menuTypeCategories, ...regularCategories];
   }, [safeMenu, safeCategories]);
 
   const toggle = async (m) => {
@@ -106,16 +169,7 @@ export default function DailyMenu() {
   const activeCount = safeMenu.filter(m => m.available).length;
 
   return (
-    <div className="h-full
-    bg-[#FFFDF9]
-    rounded-[32px]
-    border
-    border-[#F4E6D7]
-    shadow-lg
-    p-8
-    flex
-    flex-col
-    overflow-hidden">
+    <div className="h-full bg-[#FFFDF9] rounded-[32px] border border-[#F4E6D7] shadow-lg p-8 flex flex-col overflow-hidden">
       <div className="mb-8">
         <div>
           <div className="text-[15px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">{today}</div>
@@ -128,12 +182,7 @@ export default function DailyMenu() {
         </div>
       </div>
 
-      <Card className="mb-4
-      rounded-[26px]
-      bg-white
-      border-[#F4E6D7]
-      shadow-sm
-      p-4">
+      <Card className="mb-4 rounded-[26px] bg-white border-[#F4E6D7] shadow-sm p-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="text-sm font-semibold">{t("save_as_template_title")}</div>
@@ -165,67 +214,56 @@ export default function DailyMenu() {
         )}
       </Card>
 
+      {/* List of Categories */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 min-h-0">
-        {safeArray(grouped).map((cat) => (
-          <Card key={cat.id} className="rounded-[24px]
-          border-[#F4E6D7]
-          bg-white
-          shadow-sm
-          overflow-hidden" data-testid={`cat-section-${cat.id}`}>
-            <div
-              className="px-6 py-4 border-b border-[#F4E6D7] bg-white flex items-center justify-between cursor-pointer"
-              onClick={() => {
-                setOpenCategories((prev) =>
-                  prev.includes(cat.id)
-                    ? prev.filter((id) => id !== cat.id)
-                    : [...prev, cat.id]
-                );
-              }}
-            >
-              
-
-
-              <div className="flex items-center gap-2 font-display font-bold text-lg "> 
-                <span>
-                {openCategories.includes(cat.id) ? "▼" : "▶"}
-                </span>
-                <span>
-                {t(cat.name)}
-                </span>
+        {categoryGrouped.length === 0 ? (
+          <Card className="rounded-[24px] border-[#F4E6D7] bg-white p-6 text-center text-sm text-muted-foreground">
+            No menu items available.
+          </Card>
+        ) : (
+          categoryGrouped.map((cat) => (
+            <Card key={cat.id} className="rounded-[24px] border-[#F4E6D7] bg-white shadow-sm overflow-hidden" data-testid={`cat-section-${cat.id}`}>
+              <div
+                className="px-6 py-4 border-b border-[#F4E6D7] bg-white flex items-center justify-between cursor-pointer"
+                onClick={() => {
+                  setOpenCategories((prev) =>
+                    prev.includes(cat.id)
+                      ? prev.filter((id) => id !== cat.id)
+                      : [...prev, cat.id]
+                  );
+                }}
+              >
+                <div className="flex items-center gap-2 font-display font-bold text-lg">
+                  <span>{openCategories.includes(cat.id) ? "▼" : "▶"}</span>
+                  <span>{t(cat.name)}</span>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-muted-foreground font-semibold">{safeArray(cat.items).filter(i => i.available).length}/{safeArray(cat.items).length} {t("active")}</span>
+                  <button onClick={(e) => { e.stopPropagation(); setAllInCategory(cat.items, true); }} className="text-[#FF8A3D] font-semibold hover:underline" data-testid={`all-on-${cat.id}`}>{t("all_on")}</button>
+                  <button onClick={(e) => { e.stopPropagation(); setAllInCategory(cat.items, false); }} className="text-muted-foreground font-semibold hover:underline" data-testid={`all-off-${cat.id}`}>{t("all_off")}</button>
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="text-muted-foreground font-semibold">{safeArray(cat.items).filter(i => i.available).length}/{safeArray(cat.items).length} {t("active")}</span>
-                <button onClick={() => setAllInCategory(cat.items, true)} className="text-terracota font-semibold hover:underline" data-testid={`all-on-${cat.id}`}>{t("all_on")}</button>
-                <button onClick={() => setAllInCategory(cat.items, false)} className="text-muted-foreground font-semibold  hover:underline" data-testid={`all-off-${cat.id}`}>{t("all_off")}</button>
-              </div>
-            </div>
-            {openCategories.includes(cat.id) && (
-            <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {safeArray(cat.items).length === 0 && <div className="text-xs text-muted-foreground col-span-full p-4 text-center">{t("no_items_in_category")}</div>}
-              {safeArray(cat.items).map(m => (
-                <label key={m.id}
-                  className={`flex items-center justify-between gap-3 p-3 rounded-xl border transition-all cursor-pointer ${m.available ? "border-[#FFD8B5] bg-[#FFF7EF]" : "border-[#F4E6D7] bg-white"
-                    }`}
-                  data-testid={`daily-item-${m.id}`}>
-                  <div className="min-w-0">
-                    <div className="text-s font-semibold flex items-center gap-1.5 truncate">
-                      {/* {m.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracota text-white px-1.5 py-0.5 rounded">{t("thali")}</span>} */}
-                      {t(m.name)}
-                    </div>
-                    <div className="text-s text-muted-foreground font-semibold">₹{m.price}</div>
-                  </div>
-                  <Switch checked={m.available} onCheckedChange={() => toggle(m)} data-testid={`daily-toggle-${m.id}`} />
-                </label>
-              ))}
-              </div>
-  
-            )}
-  
+              {openCategories.includes(cat.id) && (
+                <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {safeArray(cat.items).map(m => (
+                    <label key={m.id}
+                      className={`flex items-center justify-between gap-3 p-3 rounded-xl border transition-all cursor-pointer ${m.available ? "border-[#FFD8B5] bg-[#FFF7EF]" : "border-[#F4E6D7] bg-white"}`}
+                      data-testid={`daily-item-${m.id}`}>
+                      <div className="min-w-0">
+                        <div className="text-s font-semibold flex items-center gap-1.5 truncate">
+                          {t(m.name)}
+                        </div>
+                        <div className="text-s text-muted-foreground font-semibold">₹{m.price}</div>
+                      </div>
+                      <Switch checked={m.available} onCheckedChange={() => toggle(m)} data-testid={`daily-toggle-${m.id}`} />
+                    </label>
+                  ))}
+                </div>
+              )}
             </Card>
-  
-          ))}
-  
-        </div>
+          ))
+        )}
       </div>
-    );
-  }
+    </div>
+  );
+}

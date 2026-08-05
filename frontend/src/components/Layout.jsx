@@ -133,82 +133,81 @@ export default function Layout() {
       <aside className="fixed left-0 top-0 h-screen w-[260px] p-4">
         {/* Header with Customizable terracotaing */}
         <div className="relative h-full bg-[#FFFDF9] rounded-[30px] border border-[#F4E6D7] shadow-lg overflow-hidden flex flex-col">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">      </div>
-        
-        {/* Logo */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">      </div>
+
+          {/* Logo */}
           <div className="relative px-6 pt-7 pb-5">
-          <div className="flex justify-center">
-          <img
-             src={`${process.env.PUBLIC_URL}/sidebar_logo.png`}
-              alt="AnnDevta Logo"
-              className="w-full max-w-[170px] object-contain"
-          />
-          </div>
-
-          <button
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden absolute top-5 right-5"
-          >
-          <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-2">
-          <div className="space-y-2">
-            {Array.isArray(visibleNav) &&
-              visibleNav.map((n) => (
-          <NavLink
-            key={n.to}
-            to={n.to}
-            end={n.end}
-            data-testid={n.testid}
-            className={({ isActive }) =>
-              `flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-medium transition-all ${
-                isActive
-                   ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-md"
-                  : "text-slate-700 hover:bg-[#FFF3E7]"
-              }`
-            }
-          >
-            <div className="flex items-center gap-3">
-              <n.icon className="w-5 h-5" />
-              <span>{t(n.key)}</span>
+            <div className="flex justify-center">
+              <img
+                src={`${process.env.PUBLIC_URL}/sidebar_logo.png`}
+                alt="AnnDevta Logo"
+                className="w-full max-w-[170px] object-contain"
+              />
             </div>
 
-            {n.key === "nav_inventory" && alertCount > 0 && (
-              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                {alertCount}
-              </span>
-            )}
-          </NavLink>
-          ))}
-        </div>
-        </nav>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="lg:hidden absolute top-5 right-5"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-        {/* Bottom */}
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto px-4 py-2">
+            <div className="space-y-2">
+              {Array.isArray(visibleNav) &&
+                visibleNav.map((n) => (
+                  <NavLink
+                    key={n.to}
+                    to={n.to}
+                    end={n.end}
+                    data-testid={n.testid}
+                    className={({ isActive }) =>
+                      `flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-medium transition-all ${isActive
+                        ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-md"
+                        : "text-slate-700 hover:bg-[#FFF3E7]"
+                      }`
+                    }
+                  >
+                    <div className="flex items-center gap-3">
+                      <n.icon className="w-5 h-5" />
+                      <span>{t(n.key)}</span>
+                    </div>
+
+                    {n.key === "nav_inventory" && alertCount > 0 && (
+                      <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        {alertCount}
+                      </span>
+                    )}
+                  </NavLink>
+                ))}
+            </div>
+          </nav>
+
+          {/* Bottom */}
           <div className="pt-3">
 
-          <div className="p-5 bg-transparent">
-          <div className="mb-2 rounded-xl bg-white border border-[#F4E6D7] shadow-sm px-3 py-2 flex items-center gap-1">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-terracota to-brand-600 flex items-center justify-center text-white font-bold">
-          {user?.name?.charAt(0).toUpperCase()}
-          </div>
+            <div className="p-5 bg-transparent">
+              <div className="mb-2 rounded-xl bg-white border border-[#F4E6D7] shadow-sm px-3 py-2 flex items-center gap-1">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-terracota to-brand-600 flex items-center justify-center text-white font-bold">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </div>
 
-          <div>
-          <div className="text-[15px] font-semibold">
-            {user?.name}
-          </div>
+                <div>
+                  <div className="text-[15px] font-semibold">
+                    {user?.name}
+                  </div>
 
-          <div className="text-xs text-muted-foreground">
-            {user?.role === "admin" ? "Administrator" : "Cashier"}
-          </div>
-        </div>
-      </div>
+                  <div className="text-xs text-muted-foreground">
+                    {user?.role === "admin" ? "Administrator" : "Cashier"}
+                  </div>
+                </div>
+              </div>
 
-      <button
-        onClick={handleLogout}
-        className="w-full flex items-center justify-center
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center
         gap-0
         px-4
         py-3
@@ -219,30 +218,30 @@ export default function Layout() {
         shadow-sm
         hover:bg-[#FFF8F2]
         transition-all"
-      >
-        <LogOut className="w-4 h-4" />
-        {t("sign_out")}
-      </button>
-    </div>
+              >
+                <LogOut className="w-4 h-4" />
+                {t("sign_out")}
+              </button>
+            </div>
 
-    <div className="p-3 bg-gradient-to-br m-4 mt-0 rounded-xl from-blue-50 to-blue-100 border-t border-blue-200">
-      <div className="flex flex-col items-center">
-        <img
-          src={`${process.env.PUBLIC_URL}/tranferentlogo.png`}
-          alt="Career Craftly"
-          className="h-5"
-        />
-        <div className="text-[15px] text-center mt-2">
-          <div className="font-bold text-blue-900">Career Craftly</div>
-          <div className="text-blue-700">Digital Solutions</div>
+            <div className="p-3 bg-gradient-to-br m-4 mt-0 rounded-xl from-blue-50 to-blue-100 border-t border-blue-200">
+              <div className="flex flex-col items-center">
+                <img
+                  src={`${process.env.PUBLIC_URL}/tranferentlogo.png`}
+                  alt="Career Craftly"
+                  className="h-5"
+                />
+                <div className="text-[15px] text-center mt-2">
+                  <div className="font-bold text-blue-900">Career Craftly</div>
+                  <div className="text-blue-700">Digital Solutions</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
         </div>
-      </div>
-    </div>
-
-  </div>
-
-</div>
-</aside>
+      </aside>
 
 
       {/* Main Content - Offset by sidebar width on desktop */}
@@ -250,14 +249,14 @@ export default function Layout() {
         {/* Sync / Offline Status Bar */}
         {(!isOnline || pendingCount > 0 || syncStatus === "syncing" || syncStatus === "synced" || syncStatus === "error") && (
           <div className={`w-full px-4 py-2 flex items-center justify-between text-xs font-semibold z-20 ${!isOnline
-              ? "bg-red-500 text-white"
-              : syncStatus === "syncing"
-                ? "bg-yellow-400 text-amber-900"
-                : syncStatus === "synced"
-                  ? "bg-green-500 text-white"
-                  : syncStatus === "error"
-                    ? "bg-red-500 text-white"
-                    : "bg-amber-100 text-amber-800"
+            ? "bg-red-500 text-white"
+            : syncStatus === "syncing"
+              ? "bg-yellow-400 text-amber-900"
+              : syncStatus === "synced"
+                ? "bg-green-500 text-white"
+                : syncStatus === "error"
+                  ? "bg-red-500 text-white"
+                  : "bg-amber-100 text-amber-800"
             }`}>
             <div className="flex items-center gap-2">
               {!isOnline ? (
@@ -279,10 +278,10 @@ export default function Layout() {
             )}
           </div>
         )}
-        <div className="h-[calc(100vh-32px)] overflow-hidden bg-transparent">
-    <Outlet />
-</div>
-      
+        <div className="h-[calc(100vh-32px)] overflow-y-auto bg-transparent">
+          <Outlet />
+        </div>
+
       </main>
 
       <PasswordChangeDialog
