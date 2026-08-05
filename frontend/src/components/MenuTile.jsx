@@ -65,10 +65,32 @@ function MenuTileComponent({ item, onClick }) {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 mt-5 flex-1 flex flex-col">
+      <div className="relative z-10 mt-4 flex-1 flex flex-col min-h-0">
 
-      <h3 className="line-clamp-2 text-[24px] font-bold leading-tight text-slate-900">
-      {t(item.name)}
+      <h3
+        className={`
+          font-bold text-slate-900 tracking-tight
+          ${
+            (item.name || "").length > 25
+              ? "text-[14px]"
+              : (item.name || "").length > 15
+              ? "text-[16px]"
+              : "text-[18px]"
+          }
+        `}
+        style={{
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflowWrap: "break-word",
+          wordBreak: "break-word",
+          whiteSpace: "normal",
+          lineHeight: "1.2",
+          maxHeight: "40px",
+          overflow: "hidden"
+        }}
+      >
+        {t(item.name)}
       </h3>
 
       <div className="mt-auto border-t border-dashed border-orange-100 pt-4">

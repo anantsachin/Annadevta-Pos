@@ -95,13 +95,13 @@ export default function DailyMenu() {
       return checkIsThali(item) ? "dining" : "parcel";
     };
 
-    // Dining Menu items (dining, both, or Thalis)
+    // Dining Menu items (dining or both)
     const diningItems = safeMenu.filter((m) => {
       const type = getEffectiveMenuType(m);
       return type === "dining" || type === "both";
     });
 
-    // Parcel Menu items (parcel, both, or general items)
+    // Parcel Menu items (parcel or both)
     const parcelItems = safeMenu.filter((m) => {
       const type = getEffectiveMenuType(m);
       return type === "parcel" || type === "both";

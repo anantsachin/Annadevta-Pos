@@ -54,7 +54,7 @@ export default function Billing() {
   const [search, setSearch] = useState("");
   const [thaliFor, setThaliFor] = useState(null);
   const [activeTab, setActiveTab] = useState("cart"); // "cart" or "receipt"
-  const [menuMode, setMenuMode] = useState("parcel"); // "dining" or "parcel" (Parcel selected by default)
+  const [menuMode, setMenuMode] = useState(null); // No auto-selected menu mode by default
   const [showCartMobile, setShowCartMobile] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [cart, setCart] = useState([]);
@@ -109,17 +109,16 @@ export default function Billing() {
     const singleSourceItems = Array.from(itemsMap.values());
 
     // Filter Dining Menu items from the SAME single source array:
-    // (menuType === "dining" || menuType === "both") && category === "THALI"
+    // Sirf items/thalis with menuType "dining" || "both"
     const dList = singleSourceItems.filter((item) => {
-      const isThali = checkIsThali(item, item.category_name);
-      const type = item.menuType;
-      return (type === "dining" || type === "both") && isThali;
+      const type = (item.type || item.menuType || item.menu_type || "").toLowerCase();
+      return type === "dining" || type === "both";
     });
 
     // Filter Parcel Menu items from the SAME single source array:
-    // (menuType === "parcel" || menuType === "both")
+    // Sirf items/thalis with menuType "parcel" || "both"
     const pList = singleSourceItems.filter((item) => {
-      const type = item.menuType;
+      const type = (item.type || item.menuType || item.menu_type || "").toLowerCase();
       return type === "parcel" || type === "both";
     });
 
@@ -182,6 +181,22 @@ export default function Billing() {
   const addToCart = useCallback((item) => {
     console.log("Adding item:", item);
 
+    const isThali = Boolean(
+      item.is_thali ||
+      item.category === "THALI" ||
+      item.category_name === "THALI" ||
+      (item.name && item.name.toLowerCase().includes("thali"))
+    );
+
+    // Enforce strict menu type matching for all items (including Thalis)
+    const itemType = (item.type || item.menuType || item.menu_type || "").toLowerCase();
+    if (menuMode && itemType) {
+      if (itemType !== "both" && itemType !== menuMode) {
+        console.warn(`Mismatch: Item type '${itemType}' does not match selected menu mode '${menuMode}'`);
+        return;
+      }
+    }
+
     if (cart.length === 0 && !tokenAssignedRef.current) {
       tokenAssignedRef.current = true;
       const nextTok = incrementToken();
@@ -193,12 +208,16 @@ export default function Billing() {
       parsedPrice = parseFloat(parsedPrice.replace(/[^\d.]/g, "")) || 0;
     }
 
+    const itemCategory = isThali ? "THALI" : (item.category_name || item.category || "GENERAL");
+
+    const targetMode = menuMode || (itemType && itemType !== "both" ? itemType : "parcel");
+
     setCart((prev) => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) {
         return prev.map(i =>
           i.id === item.id
-            ? { ...i, quantity: i.quantity + 1, qty: i.qty + 1 }
+            ? { ...i, quantity: i.quantity + 1, qty: i.qty + 1, menuType: targetMode, category: itemCategory }
             : i
         );
       }
@@ -207,8 +226,9 @@ export default function Billing() {
         _key: item.id,
         name: item.name,
         price: parsedPrice,
-        category: item.category_name || item.category || "GENERAL",
-        is_thali: item.is_thali || false,
+        category: itemCategory,
+        is_thali: isThali,
+        menuType: targetMode,
         quantity: 1,
         qty: 1
       }];
@@ -216,9 +236,9 @@ export default function Billing() {
 
     toast.success(`Added ${item.name}`, {
       duration: 1500,
-      icon: item.is_thali ? "🍽️" : "📦",
+      icon: isThali ? "🍽️" : "📦",
     });
-  }, [cart.length]);
+  }, [cart.length, menuMode]);
 
   const addLine = useCallback((line) => {
     const itemId = line.menu_item_id || line.id;
@@ -346,12 +366,24 @@ export default function Billing() {
     const targetCat = activeCat.trim().toUpperCase();
 
     return list.filter((item) => {
-      const matchCat =
-        targetCat === "ALL ITEMS" ||
-        targetCat === "ALL" ||
-        (item.category_name && item.category_name.toUpperCase() === targetCat) ||
-        (item.category && item.category.toUpperCase() === targetCat) ||
-        (targetCat === "THALI" && item.is_thali);
+      const isThaliItem = Boolean(
+        item.is_thali ||
+        (item.category_name && item.category_name.toUpperCase() === "THALI") ||
+        (item.category && item.category.toUpperCase() === "THALI") ||
+        (item.name && item.name.toLowerCase().includes("thali"))
+      );
+
+      let matchCat = false;
+      if (targetCat === "ALL ITEMS" || targetCat === "ALL") {
+        matchCat = true;
+      } else if (targetCat === "THALI") {
+        matchCat = isThaliItem;
+      } else {
+        matchCat = !isThaliItem && (
+          (item.category_name && item.category_name.toUpperCase() === targetCat) ||
+          (item.category && item.category.toUpperCase() === targetCat)
+        );
+      }
 
       const matchSearch =
         !q ||
@@ -364,6 +396,11 @@ export default function Billing() {
 
   const filteredDining = useMemo(() => filterList(diningItems), [filterList, diningItems]);
   const filteredParcel = useMemo(() => filterList(parcelItems), [filterList, parcelItems]);
+  const allFilteredItems = useMemo(() => filterList(Array.isArray(menu) ? menu : []), [filterList, menu]);
+  const activeFilteredCategoryItems = useMemo(
+    () => (menuMode === "dining" ? filteredDining : menuMode === "parcel" ? filteredParcel : allFilteredItems),
+    [menuMode, filteredDining, filteredParcel, allFilteredItems]
+  );
 
   const showGlobalMenus = useMemo(() => {
     const norm = activeCat.trim().toUpperCase();
@@ -485,7 +522,12 @@ export default function Billing() {
               return (
                 <button
                   key={tab}
-                  onClick={() => setActiveCat(tab)}
+                  onClick={() => {
+                    setActiveCat(tab);
+                    if (tab === "ALL ITEMS") {
+                      setMenuMode(null);
+                    }
+                  }}
                   data-testid={`cat-${tab.toLowerCase().replace(/\s+/g, "-")}`}
                   className={`
                     px-5 py-2.5 rounded-full text-xs font-extrabold tracking-wider transition-all duration-200 whitespace-nowrap border shadow-2xs select-none
@@ -533,6 +575,44 @@ export default function Billing() {
 
         {/* Scrollable Content: Dining Menu & Parcel Menu */}
         <div className="flex-1 min-h-0 overflow-y-auto pt-5 pr-1 space-y-8 scroll-behavior-smooth">
+
+          {/* ALL ITEMS SECTION (WHEN NEITHER DINING NOR PARCEL MODE TOGGLE IS ACTIVE) */}
+          {showGlobalMenus && !menuMode && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-orange-100 text-[#FF6B00]">
+                    <UtensilsCrossed className="w-4 h-4" />
+                  </div>
+                  <h2 className="font-display text-xl font-extrabold text-slate-900 tracking-tight">
+                    All Items
+                  </h2>
+                </div>
+                <span className="text-xs font-bold text-orange-800 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full">
+                  {allFilteredItems.length} Items Available
+                </span>
+              </div>
+
+              {allFilteredItems.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 border border-dashed border-[#EFE5DA] rounded-2xl bg-white/60 text-sm">
+                  No items match "{search || activeCat}"
+                </div>
+              ) : (
+                <div
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"
+                  data-testid="all-items-grid"
+                >
+                  {allFilteredItems.map((item) => (
+                    <MenuTile
+                      key={item.id}
+                      item={item}
+                      onClick={() => addToCart(item)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* SECTION 1: DINING MENU (ONLY visible for ALL ITEMS or THALI) */}
           {showGlobalMenus && menuMode === "dining" && (
@@ -618,11 +698,11 @@ export default function Billing() {
                   {activeCat}
                 </h2>
                 <span className="text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full">
-                  {filteredParcel.length} Items
+                  {activeFilteredCategoryItems.length} Items
                 </span>
               </div>
 
-              {filteredParcel.length === 0 ? (
+              {activeFilteredCategoryItems.length === 0 ? (
                 <div className="text-center py-10 text-slate-400 border border-dashed border-[#EFE5DA] rounded-2xl bg-white/60 text-sm">
                   No items match "{search || activeCat}"
                 </div>
@@ -631,7 +711,7 @@ export default function Billing() {
                   className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"
                   data-testid="category-menu-grid"
                 >
-                  {filteredParcel.map((item) => (
+                  {activeFilteredCategoryItems.map((item) => (
                     <MenuTile
                       key={item.id}
                       item={item}
