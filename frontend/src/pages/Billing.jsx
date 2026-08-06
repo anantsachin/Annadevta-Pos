@@ -35,7 +35,6 @@ import { getCurrentToken, incrementToken } from "../lib/tokenManager";
 // Horizontal category tabs requested
 const CATEGORY_TABS = [
   "ALL ITEMS",
-  "SNACKS",
   "THALI",
   "SABJI",
   "DAL",
@@ -690,7 +689,7 @@ export default function Billing() {
             </section>
           )}
 
-          {/* SPECIFIC CATEGORY VIEW (FOR SNACKS, SABJI, DAL, RICE, BREAD, DRINKS) */}
+          {/* SPECIFIC CATEGORY VIEW (FOR SABJI, DAL, RICE, BREAD, DRINKS) */}
           {!showGlobalMenus && (
             <section className="space-y-4">
               <div className="flex items-center justify-between">

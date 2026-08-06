@@ -1,4 +1,4 @@
-// Customer receipt printer (80mm / 58mm thermal compatible)
+// Customer receipt printer (80mm / 300px thermal POS compatible)
 import en from "../translations/en.json";
 import gu from "../translations/gu.json";
 import bilingual from "../translations/bilingual.json";
@@ -60,6 +60,281 @@ function getGroupedThaliItems(selections, extras, t) {
   return result;
 }
 
+function buildReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, dateStr, timeStr, safe }) {
+  const gstRate = settings?.gst_rate ?? 5.0;
+  const taxLabel = settings?.tax_label || 'GST';
+
+  // Center aligned header
+  let headerHTML = '';
+  if (settings?.header_template === 'compact') {
+    headerHTML = `
+      <div style="font-weight: bold; font-size: 14px; text-transform: uppercase; margin-bottom: 2px;">${safe(settings?.name || 'ANNDEVTA THALI HOUSE')}</div>
+      ${settings?.phone ? `<div style="font-size: 11px; margin: 1px 0;">PH: ${safe(settings.phone)}</div>` : ''}
+    `;
+  } else if (settings?.header_template === 'modern') {
+    headerHTML = `
+      <div style="margin-bottom: 4px;">
+        <span style="border: 1px solid #000; padding: 1px 5px; font-weight: bold; font-size: 11px; background-color: #000; color: #fff; border-radius: 2px;">ΨΦ</span>
+      </div>
+      <div style="font-weight: bold; font-size: 14px; text-transform: uppercase; margin-bottom: 2px;">${safe(settings?.name || 'ANNDEVTA THALI HOUSE')}</div>
+      ${settings?.address ? `<div style="font-size: 11px; margin: 1px 0;">${safe(settings.address)}</div>` : ''}
+    `;
+  } else { // classic (default)
+    headerHTML = `
+      <div style="font-weight: bold; font-size: 14px; text-transform: uppercase; margin-bottom: 2px;">${safe(settings?.name || 'ANNDEVTA THALI HOUSE')}</div>
+      ${settings?.address ? `<div style="font-size: 11px; margin: 1px 0;">${safe(settings.address)}</div>` : ''}
+      ${settings?.phone ? `<div style="font-size: 11px; margin: 1px 0;">PH: ${safe(settings.phone)}</div>` : ''}
+      ${settings?.gstin ? `<div style="font-size: 11px; margin: 1px 0;">GSTIN: ${safe(settings.gstin)}</div>` : ''}
+    `;
+  }
+
+  const itemsHTML = (order.items || []).map((i) => {
+    const lineTotal = (i.price * i.qty).toFixed(2);
+    const subline = [];
+    if (i.is_thali || i.thali_selections || i.thali_extras) {
+      const selectionsList = getGroupedThaliItems(i.thali_selections, i.thali_extras, t);
+      for (const sel of selectionsList) {
+        subline.push(`• ${safe(sel)}`);
+      }
+    }
+
+    return `
+      <div style="margin-bottom: 6px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold;">
+          <span>${safe(t(i.name))}</span>
+          <span>Rs.${lineTotal}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #333;">
+          <span>${i.qty} x Rs.${Number(i.price).toFixed(2)}</span>
+        </div>
+        ${subline.length > 0 ? `
+        <div style="font-size: 10px; color: #555; padding-left: 10px; margin-top: 2px; line-height: 1.3;">
+          ${subline.join('<br/>')}
+        </div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  const pm = order.payment_mode || 'cash';
+  const pmTranslated = pm === 'cash' ? t('cash') : pm === 'upi' ? t('upi') : pm === 'card' ? t('card') : pm;
+
+  const cashierName = order.cashier_name;
+  const cashierTranslated = cashierName === 'Owner' ? t('owner') : cashierName === 'Cashier' ? t('cashier') : cashierName;
+
+  let footerMessage = settings?.footer_msg;
+  if (!footerMessage || footerMessage === "Thank you! Please visit again." || footerMessage === "Thank you for dining with us!") {
+    footerMessage = `${t("thank_you")}! ${t("visit_again")}`;
+  }
+
+  return `
+  <div class="receipt-container">
+    <!-- Header Section -->
+    <div style="text-align: center;">
+      ${headerHTML}
+    </div>
+    
+    <!-- Thin Divider -->
+    <div class="separator-solid"></div>
+    
+    <!-- Bill Info Section -->
+    <div class="bill-info">
+      ${tokenNo !== undefined && tokenNo !== null ? `
+      <div class="info-row">
+        <span>Token No:</span>
+        <span style="font-weight: bold;">#${tokenNo}</span>
+      </div>` : ''}
+      <div class="info-row">
+        <span>${t("bill_no")}:</span>
+        <span>${receiptNoFormatted}</span>
+      </div>
+      <div class="info-row">
+        <span>${t("date")}:</span>
+        <span>${dateStr}</span>
+      </div>
+      <div class="info-row">
+        <span>${t("time")}:</span>
+        <span>${timeStr}</span>
+      </div>
+      ${order.cashier_name ? `
+      <div class="info-row">
+        <span>${t("cashier")}:</span>
+        <span>${safe(cashierTranslated)}</span>
+      </div>` : ''}
+      ${order.customer_name ? `
+      <div class="info-row">
+        <span>${t("customer")}:</span>
+        <span>${safe(order.customer_name)}</span>
+      </div>` : ''}
+    </div>
+    
+    <!-- Items Title Header -->
+    <div class="separator-dashed"></div>
+    <div style="text-align: center; font-weight: bold; letter-spacing: 1px; font-size: 11px;">ITEMS</div>
+    <div class="separator-dashed"></div>
+    
+    <!-- Items Section -->
+    <div>
+      ${itemsHTML}
+    </div>
+    
+    <!-- Pricing Section -->
+    <div class="separator-dashed"></div>
+    
+    <div class="summary-row">
+      <span>${t("subtotal")}</span>
+      <span>Rs.${Number(order.subtotal || 0).toFixed(2)}</span>
+    </div>
+    
+    ${settings?.show_gst !== false ? `
+    <div class="summary-row">
+      <span>${safe(taxLabel)} (${gstRate}%)</span>
+      <span>Rs.${Number(order.tax || 0).toFixed(2)}</span>
+    </div>` : ''}
+    
+    ${order.discount > 0 ? `
+    <div class="summary-row" style="color: #d32f2f;">
+      <span>${t("discount")}</span>
+      <span>-Rs.${Number(order.discount).toFixed(2)}</span>
+    </div>` : ''}
+    
+    <div class="separator-dashed"></div>
+    <div class="summary-row total-row">
+      <span>${t("total_uppercase")}</span>
+      <span>Rs.${Number(order.total || 0).toFixed(2)}</span>
+    </div>
+    <div class="separator-dashed"></div>
+    
+    <!-- Payment Info -->
+    ${settings?.show_payment !== false ? `
+    <div class="info-row" style="font-weight: bold;">
+      <span>${t("payment")}:</span>
+      <span>${safe(pmTranslated.toUpperCase())}</span>
+    </div>
+    <div class="separator-dashed"></div>
+    ` : ''}
+    
+    <!-- Footer Section -->
+    <div style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 6px; font-size: 11px;">
+      ${safe(footerMessage.toUpperCase())}
+    </div>
+    
+    <div style="text-align: center; font-size: 10px; color: #444; margin-top: 4px;">
+      ${dateStr} ${timeStr}
+    </div>
+    
+    <div class="separator-dashed" style="margin-top: 8px;"></div>
+    
+    <div style="text-align: center; font-size: 9px; color: #666; margin-top: 6px;">
+      <div style="font-weight: 600;">Powered by Career Craftly</div>
+      <div style="margin-top: 1px; font-size: 9px;">Crafting Digital Success, Intelligently</div>
+    </div>
+    <div class="separator-solid" style="margin-top: 8px;"></div>
+  </div>
+  `;
+}
+
+function buildSecondReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, dateStr, timeStr, safe }) {
+  const gstRate = settings?.gst_rate ?? 5.0;
+  const taxLabel = settings?.tax_label || 'GST';
+  const nameUpper = safe((settings?.name || 'ANNDEVTA THALI HOUSE').toUpperCase());
+
+  const itemsHTML = (order.items || []).map((i) => {
+    const lineTotal = (i.price * i.qty).toFixed(2);
+    const subline = [];
+    if (i.is_thali || i.thali_selections || i.thali_extras) {
+      const selectionsList = getGroupedThaliItems(i.thali_selections, i.thali_extras, t);
+      for (const sel of selectionsList) {
+        subline.push(`• ${safe(sel)}`);
+      }
+    }
+
+    return `
+      <div style="margin-bottom: 6px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold;">
+          <span>${safe(t(i.name))}</span>
+          <span>Rs.${lineTotal}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #333;">
+          <span>${i.qty} x Rs.${Number(i.price).toFixed(2)}</span>
+        </div>
+        ${subline.length > 0 ? `
+        <div style="font-size: 10px; color: #555; padding-left: 10px; margin-top: 2px; line-height: 1.3;">
+          ${subline.join('<br/>')}
+        </div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  return `
+  <div class="second-token-container">
+    <div style="text-align: center;">
+      <div style="font-weight: bold; font-size: 14px; text-transform: uppercase; margin-bottom: 2px;">${nameUpper}</div>
+      ${settings?.address ? `<div style="font-size: 11px; margin: 1px 0;">${safe(settings.address)}</div>` : ''}
+      ${settings?.phone ? `<div style="font-size: 11px; margin: 1px 0;">PH: ${safe(settings.phone)}</div>` : ''}
+      ${settings?.gstin ? `<div style="font-size: 11px; margin: 1px 0;">GSTIN: ${safe(settings.gstin)}</div>` : ''}
+    </div>
+    
+    <div class="separator-solid"></div>
+    
+    <div class="bill-info">
+      ${tokenNo !== undefined && tokenNo !== null ? `
+      <div class="info-row">
+        <span>Token No:</span>
+        <span style="font-weight: bold;">#${tokenNo}</span>
+      </div>` : ''}
+      <div class="info-row">
+        <span>${t("bill_no")}:</span>
+        <span>${receiptNoFormatted}</span>
+      </div>
+      <div class="info-row">
+        <span>${t("date")}:</span>
+        <span>${dateStr}</span>
+      </div>
+      <div class="info-row">
+        <span>${t("time")}:</span>
+        <span>${timeStr}</span>
+      </div>
+    </div>
+    
+    <div class="separator-dashed"></div>
+    <div style="text-align: center; font-weight: bold; letter-spacing: 1px; font-size: 11px;">ITEMS</div>
+    <div class="separator-dashed"></div>
+    
+    <div>
+      ${itemsHTML}
+    </div>
+    
+    <div class="separator-dashed"></div>
+    
+    <div class="summary-row">
+      <span>Subtotal</span>
+      <span>Rs.${Number(order.subtotal || 0).toFixed(2)}</span>
+    </div>
+    
+    ${settings?.show_gst !== false ? `
+    <div class="summary-row">
+      <span>GST (${gstRate}%)</span>
+      <span>Rs.${Number(order.tax || 0).toFixed(2)}</span>
+    </div>` : ''}
+    
+    ${order.discount > 0 ? `
+    <div class="summary-row" style="color: #d32f2f;">
+      <span>Discount</span>
+      <span>-Rs.${Number(order.discount).toFixed(2)}</span>
+    </div>` : ''}
+    
+    <div class="separator-dashed"></div>
+    
+    <div class="summary-row total-row">
+      <span>TOTAL</span>
+      <span>Rs.${Number(order.total || 0).toFixed(2)}</span>
+    </div>
+    
+    <div class="separator-dashed"></div>
+  </div>
+  `;
+}
+
 export function printReceipt({ order, settings }) {
   if (!order) return;
   const lang = localStorage.getItem("pos_language") || settings?.language || "en";
@@ -85,84 +360,31 @@ export function printReceipt({ order, settings }) {
   const paddingCount = Number(settings?.receipt_padding) || 6;
   const receiptNoFormatted = `${prefix}${String(order.receipt_no ?? '').padStart(paddingCount, '0')}`;
 
-  const gstRate = settings?.gst_rate ?? 5.0;
-  const taxLabel = settings?.tax_label || 'GST';
-
-  // Format properties dynamically based on receipt settings
   const is58 = Number(settings?.paper_width) === 58;
   const paperWidth = is58 ? "58mm" : "80mm";
-  const containerWidth = is58 ? "48mm" : "72mm";
-  const containerPadding = is58 ? "2mm" : "4mm";
+  const receiptWidth = "300px";
 
-  const fontSize =
-    settings?.font_size === "small" ? "10px" :
-      settings?.font_size === "large" ? "14px" : "12px";
+  const firstReceiptHTML = buildReceiptBlock({
+    order,
+    settings,
+    t,
+    tokenNo: order.token_no,
+    receiptNoFormatted,
+    dateStr,
+    timeStr,
+    safe
+  });
 
-  const headerAlign = settings?.header_alignment === "left" ? "left" : "center";
-
-  // Build header HTML dynamically based on template selection
-  let headerHTML = '';
-  if (settings?.header_template === 'compact') {
-    headerHTML = `
-      <div class="header-title">${safe(settings?.name || 'Anndevta Thali House')}</div>
-      ${settings?.phone ? `<div class="header-detail">PH: ${safe(settings.phone)}</div>` : ''}
-    `;
-  } else if (settings?.header_template === 'modern') {
-    headerHTML = `
-      <div class="center" style="margin-bottom: 6px;">
-        <span style="border: 1px solid #000; padding: 2px 6px; font-weight: bold; font-size: 13px; background-color: #000; color: #fff; border-radius: 2px;">ΨΦ</span>
-      </div>
-      <div class="header-title">${safe(settings?.name || 'Anndevta Thali House')}</div>
-      ${settings?.address ? `<div class="header-detail">${safe(settings.address)}</div>` : ''}
-    `;
-  } else { // classic (default)
-    headerHTML = `
-      <div class="header-title">${safe(settings?.name || 'Anndevta Thali House')}</div>
-      ${settings?.address ? `<div class="header-detail">${safe(settings.address)}</div>` : ''}
-      ${settings?.phone ? `<div class="header-detail">PH: ${safe(settings.phone)}</div>` : ''}
-      ${settings?.gstin ? `<div class="header-detail">GSTIN: ${safe(settings.gstin)}</div>` : ''}
-    `;
-  }
-
-  const lineRows = order.items.map((i) => {
-    const lineTotal = (i.price * i.qty).toFixed(2);
-
-    // Extract customizations/selections
-    const subline = [];
-    if (i.is_thali || i.thali_selections || i.thali_extras) {
-      const selectionsList = getGroupedThaliItems(i.thali_selections, i.thali_extras, t);
-      for (const sel of selectionsList) {
-        subline.push(`• ${safe(sel)}`);
-      }
-    }
-
-    return `
-      <tr>
-        <td colspan="2" style="text-align: left; font-weight: bold; padding-top: 4px;">${safe(t(i.name))}</td>
-      </tr>
-      <tr>
-        <td style="text-align: left; padding-bottom: 4px;">${i.qty} x Rs.${Number(i.price).toFixed(2)}</td>
-        <td style="text-align: right; padding-bottom: 4px; font-weight: bold;">Rs.${lineTotal}</td>
-      </tr>
-      ${subline.length > 0 ? `
-      <tr>
-        <td colspan="2" style="font-size: 10px; color: #444; padding-left: 12px; padding-bottom: 4px; line-height: 1.2;">
-          ${subline.join('<br/>')}
-        </td>
-      </tr>` : ''}
-    `;
-  }).join('');
-
-  const pm = order.payment_mode || 'cash';
-  const pmTranslated = pm === 'cash' ? t('cash') : pm === 'upi' ? t('upi') : pm === 'card' ? t('card') : pm;
-
-  const cashierName = order.cashier_name;
-  const cashierTranslated = cashierName === 'Owner' ? t('owner') : cashierName === 'Cashier' ? t('cashier') : cashierName;
-
-  let footerMessage = settings?.footer_msg;
-  if (!footerMessage || footerMessage === "Thank you! Please visit again." || footerMessage === "Thank you for dining with us!") {
-    footerMessage = `${t("thank_you")}! ${t("visit_again")}`;
-  }
+  const secondReceiptHTML = buildSecondReceiptBlock({
+    order,
+    settings,
+    t,
+    tokenNo: order.token_no,
+    receiptNoFormatted,
+    dateStr,
+    timeStr,
+    safe
+  });
 
   const html = `<!doctype html>
 <html><head><title>Receipt #${receiptNoFormatted}</title>
@@ -171,183 +393,73 @@ export function printReceipt({ order, settings }) {
     size: ${paperWidth} auto;
     margin: 0;
   }
+  * {
+    box-sizing: border-box;
+  }
   body {
     font-family: 'Courier New', Courier, monospace;
-    font-size: ${fontSize};
-    line-height: 1.4;
+    font-size: 12px;
+    line-height: 1.5;
     color: #000;
     background-color: #fff;
     margin: 0;
     padding: 0;
     width: 100%;
     -webkit-print-color-adjust: exact;
+    page-break-inside: avoid;
   }
-  .receipt-container {
-    width: ${containerWidth};
+  .receipt-container, .second-token-container {
+    width: ${receiptWidth};
+    max-width: 100%;
     margin: 0 auto;
-    padding: ${containerPadding};
+    padding: 10px;
     box-sizing: border-box;
+    page-break-inside: avoid;
+    background: #fff;
   }
   @media print {
     body {
       width: 100%;
     }
-    .receipt-container {
+    .receipt-container, .second-token-container {
       width: 100%;
       max-width: 100%;
-      padding: ${containerPadding};
+      padding: 10px;
     }
   }
-  .center {
-    text-align: center;
-  }
-  .bold {
-    font-weight: bold;
-  }
-  .header-title {
-    font-size: 1.25em;
-    font-weight: bold;
-    margin: 0 0 4px 0;
-    text-transform: uppercase;
-    line-height: 1.2;
-  }
-  .header-detail {
-    font-size: 0.9em;
-    margin: 2px 0;
-    line-height: 1.3;
-  }
-  .separator-double {
-    border-top: 3px double #000;
+  .separator-solid {
+    border-top: 1px solid #000;
     margin: 8px 0;
   }
   .separator-dashed {
     border-top: 1px dashed #000;
-    margin: 8px 0;
+    margin: 6px 0;
   }
-  .meta-row {
+  .bill-info {
+    margin: 4px 0;
+  }
+  .info-row {
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
+    align-items: center;
     margin: 2px 0;
-  }
-  .meta-label {
-    width: 13ch;
-    display: inline-block;
-    white-space: pre;
-  }
-  .meta-value {
-    flex-grow: 1;
-  }
-  .items-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 8px 0;
   }
   .summary-row {
     display: flex;
     justify-content: space-between;
-    margin: 4px 0;
+    align-items: center;
+    margin: 3px 0;
   }
   .total-row {
-    font-size: 1.15em;
+    font-size: 14px;
     font-weight: bold;
-    padding: 6px 0;
-  }
-  .payment-method {
-    margin: 12px 0 6px 0;
-    font-weight: bold;
-  }
-  .date-time {
-    margin-top: 8px;
-    font-size: 0.95em;
+    padding: 2px 0;
   }
 </style></head>
 <body>
-  <div class="receipt-container">
-    <div style="text-align: ${headerAlign};">
-      ${headerHTML}
-    </div>
-    
-    <div class="separator-double"></div>
-    
-    ${order.token_no !== undefined && order.token_no !== null ? `
-    <div class="meta-row">
-      <span class="meta-label">Token No:</span>
-      <span class="meta-value">#${order.token_no}</span>
-    </div>` : ''}
-    <div class="meta-row">
-      <span class="meta-label">${t("bill_no")}:</span>
-      <span class="meta-value">${receiptNoFormatted}</span>
-    </div>
-    <div class="meta-row">
-      <span class="meta-label">${t("date")}:</span>
-      <span class="meta-value">${dateStr}</span>
-    </div>
-    <div class="meta-row">
-      <span class="meta-label">${t("time")}:</span>
-      <span class="meta-value">${timeStr}</span>
-    </div>
-    ${order.cashier_name ? `
-    <div class="meta-row">
-      <span class="meta-label">${t("cashier")}:</span>
-      <span class="meta-value">${safe(cashierTranslated)}</span>
-    </div>` : ''}
-    
-    <div class="separator-dashed"></div>
-    
-    <table class="items-table">
-      <tbody>
-        ${lineRows}
-      </tbody>
-    </table>
-    
-    <div class="separator-dashed"></div>
-    
-    <div class="summary-row">
-      <span>${t("subtotal")}</span>
-      <span>Rs.${Number(order.subtotal).toFixed(2)}</span>
-    </div>
-    
-    ${settings?.show_gst !== false ? `
-    <div class="summary-row">
-      <span>${safe(taxLabel)} (${gstRate}%)</span>
-      <span>Rs.${Number(order.tax).toFixed(2)}</span>
-    </div>` : ''}
-    
-    ${order.discount > 0 ? `
-    <div class="summary-row">
-      <span>${t("discount")}</span>
-      <span>-Rs.${Number(order.discount).toFixed(2)}</span>
-    </div>` : ''}
-    
-    <div class="separator-dashed"></div>
-    <div class="summary-row total-row">
-      <span>${t("total_uppercase")}</span>
-      <span>Rs.${Number(order.total).toFixed(2)}</span>
-    </div>
-    <div class="separator-dashed"></div>
-    
-    ${settings?.show_payment !== false ? `
-    <div class="payment-method">
-      ${t("payment")}: ${safe(pmTranslated.toUpperCase())}
-    </div>
-    <div class="separator-dashed"></div>
-    ` : ''}
-    
-    <div class="center bold uppercase" style="margin-top: 10px;">
-      ${safe(footerMessage.toUpperCase())}
-    </div>
-    
-    <div class="center date-time" style="margin-top: 8px; font-size: 0.9em; color: #444;">
-      ${dateStr} ${timeStr}
-    </div>
-    
-    <div class="separator-dashed" style="margin-top: 12px;"></div>
-    
-    <div class="center" style="margin-top: 8px; font-size: 0.75em; color: #666;">
-      <div style="font-weight: 600;">Powered by Career Craftly</div>
-      <div style="margin-top: 2px; font-size: 0.9em;">Crafting Digital Success, Intelligently</div>
-    </div>
-  </div>
+  ${firstReceiptHTML}
+  <div style="margin-top: 2em; margin-bottom: 2em; border-top: 1px dashed #666; width: 100%;"></div>
+  ${secondReceiptHTML}
   <script>
     window.onload = () => {
       window.print();
@@ -356,11 +468,9 @@ export function printReceipt({ order, settings }) {
   </script>
 </body></html>`;
 
-  // Check if running in Electron
   const isElectron = window.electronAPI && window.electronAPI.printer;
 
   if (isElectron) {
-    // Use Electron direct printing (no dialog)
     const printerName = settings?.default_printer || null;
     const paperWidth = Number(settings?.paper_width) || 80;
 
@@ -368,7 +478,6 @@ export function printReceipt({ order, settings }) {
       .then(success => {
         if (!success) {
           console.error('Direct print failed');
-          // Fallback to browser print if Electron print fails
           fallbackBrowserPrint(html);
         }
       })
@@ -379,7 +488,6 @@ export function printReceipt({ order, settings }) {
 
     return true;
   } else {
-    // Fallback to browser print for development/web mode
     return fallbackBrowserPrint(html);
   }
 }
@@ -404,7 +512,6 @@ function fallbackBrowserPrint(html) {
     console.error('Iframe print error', e);
   }
 
-  // Clean up the iframe after a delay to ensure print dialog has time to spawn
   setTimeout(() => {
     if (document.body.contains(printFrame)) {
       document.body.removeChild(printFrame);
@@ -413,6 +520,3 @@ function fallbackBrowserPrint(html) {
 
   return true;
 }
-
-
-
