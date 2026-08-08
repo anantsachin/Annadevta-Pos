@@ -198,8 +198,16 @@ class OrderItem(BaseModel):
     qty: int
     tax_rate: float = 5.0
     is_thali: bool = False
-    thali_selections: Optional[Dict[str, List[str]]] = None
-    thali_extras: str = ""
+    thali_selections: Optional[Any] = None
+    thali_extras: Optional[str] = ""
+    sub_items: Optional[Any] = None
+    addons: Optional[Any] = None
+    included_items: Optional[Any] = None
+    extra_bread: Optional[int] = 0
+    extra_bread_charge: Optional[float] = 0.0
+
+    class Config:
+        extra = "allow"
 
 
 class OrderIn(BaseModel):

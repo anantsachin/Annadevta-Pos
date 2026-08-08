@@ -5,12 +5,15 @@ import bilingual from "../translations/bilingual.json";
 
 const translations = { en, gu, bilingual };
 
-function getGroupedThaliItems(selections, extras, t) {
+function getItemSubItems(item, t, menuList = []) {
+  if (!item) return [];
+
   const itemMap = new Map();
 
   const parseItem = (str) => {
     if (!str) return null;
-    const trimmed = str.trim();
+    const trimmed = String(str).trim();
+    if (!trimmed) return null;
     const match = trimmed.match(/^(.+?)\s*(?:\((\d+)\))?$/);
     if (!match) return null;
     const name = match[1].trim();
@@ -18,49 +21,151 @@ function getGroupedThaliItems(selections, extras, t) {
     return { name, qty };
   };
 
-  // 1. Process selections
-  if (selections) {
-    let selectionsArray = [];
-    if (Array.isArray(selections)) {
-      selectionsArray = selections;
-    } else if (typeof selections === 'object') {
-      selectionsArray = Object.entries(selections)
-        .map(([k, v]) => (v && v.length ? v : null))
-        .filter(Boolean)
-        .flat();
-    }
+  const processSingle = (val) => {
+    if (!val) return;
+    if (typeof val === 'string') {
+      const trimmed = val.trim();
+      if (!trimmed) return;
 
-    for (const itemStr of selectionsArray) {
-      const parsed = parseItem(itemStr);
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+          const parsedJSON = JSON.parse(trimmed);
+          if (parsedJSON) {
+            processSingle(parsedJSON);
+            return;
+          }
+        } catch (e) {
+          // Fallback to comma split
+        }
+      }
+
+      const parts = trimmed.split(',');
+      for (const part of parts) {
+        const parsed = parseItem(part);
+        if (parsed && parsed.name) {
+          const currentQty = itemMap.get(parsed.name) || 0;
+          itemMap.set(parsed.name, currentQty + parsed.qty);
+        }
+      }
+    } else if (typeof val === 'object' && val !== null) {
+      if (Array.isArray(val)) {
+        val.forEach(processSingle);
+      } else if (val.by_category && typeof val.by_category === 'object') {
+        processSingle(val.by_category);
+      } else if (val.name || val.item_name || val.label || val.title) {
+        const name = val.name || val.item_name || val.label || val.title;
+        const qty = Number(val.qty || val.quantity || val.count || 1);
+        if (typeof name === 'string') {
+          const parsed = parseItem(name);
+          if (parsed && parsed.name) {
+            const currentQty = itemMap.get(parsed.name) || 0;
+            itemMap.set(parsed.name, currentQty + (parsed.qty * qty));
+          }
+        }
+      } else {
+        Object.values(val).forEach((v) => {
+          if (Array.isArray(v) || typeof v === 'string' || (typeof v === 'object' && v !== null)) {
+            processSingle(v);
+          }
+        });
+      }
+    }
+  };
+
+  const processGroup = (group) => {
+    if (!group || typeof group !== 'object') return;
+    let name = group.label || group.name || group.category_name;
+    if (!name || (typeof name === 'string' && name.match(/^[0-9a-fA-F-]{16,}$/))) {
+      name = group.category_id;
+    }
+    const count = Number(group.count || group.qty || group.quantity || 1);
+    if (name && typeof name === 'string' && !name.match(/^[0-9a-fA-F-]{16,}$/)) {
+      const parsed = parseItem(name);
       if (parsed && parsed.name) {
         const currentQty = itemMap.get(parsed.name) || 0;
-        itemMap.set(parsed.name, currentQty + parsed.qty);
+        itemMap.set(parsed.name, currentQty + (parsed.qty * count));
+      }
+    }
+  };
+
+  const sources = [
+    item.thali_selections,
+    item.selections,
+    item.sub_items,
+    item.subItems,
+    item.addons,
+    item.add_ons,
+    item.addOns,
+    item.included_items,
+    item.includedItems,
+    item.thali_extras,
+    item.extras,
+  ];
+
+  for (const src of sources) {
+    if (src) processSingle(src);
+  }
+
+  if (itemMap.size === 0 && Array.isArray(item.thali_groups) && item.thali_groups.length > 0) {
+    item.thali_groups.forEach(processGroup);
+  }
+
+  if (itemMap.size === 0 && item.menu_item && typeof item.menu_item === 'object') {
+    const fallbackSources = [
+      item.menu_item.thali_extras,
+      item.menu_item.thali_selections,
+      item.menu_item.sub_items,
+      item.menu_item.addons,
+      item.menu_item.included_items,
+    ];
+    for (const src of fallbackSources) {
+      if (src) processSingle(src);
+    }
+    if (itemMap.size === 0 && Array.isArray(item.menu_item.thali_groups)) {
+      item.menu_item.thali_groups.forEach(processGroup);
+    }
+  }
+
+  if (itemMap.size === 0 && Array.isArray(menuList) && menuList.length > 0) {
+    const mId = item.menu_item_id || item.id;
+    const foundMenu = menuList.find(m => m.id === mId || (m.name && m.name.toLowerCase() === (item.name || '').toLowerCase()));
+    if (foundMenu) {
+      const fallbackSources = [
+        foundMenu.thali_extras,
+        foundMenu.thali_selections,
+        foundMenu.sub_items,
+        foundMenu.addons,
+        foundMenu.included_items,
+      ];
+      for (const src of fallbackSources) {
+        if (src) processSingle(src);
+      }
+      if (itemMap.size === 0 && Array.isArray(foundMenu.thali_groups)) {
+        foundMenu.thali_groups.forEach(processGroup);
       }
     }
   }
 
-  // 2. Process extras
-  if (extras && typeof extras === 'string') {
-    const parts = extras.split(',');
-    for (const part of parts) {
-      const parsed = parseItem(part);
-      if (parsed && parsed.name) {
-        const currentQty = itemMap.get(parsed.name) || 0;
-        itemMap.set(parsed.name, currentQty + parsed.qty);
-      }
-    }
+  if (item.extra_bread && Number(item.extra_bread) > 0) {
+    const breadName = "Extra Roti";
+    const breadQty = Number(item.extra_bread);
+    const currentQty = itemMap.get(breadName) || 0;
+    itemMap.set(breadName, currentQty + breadQty);
   }
 
-  // 3. Format into list: "Name (Qty)"
   const result = [];
   for (const [name, qty] of itemMap.entries()) {
-    const displayName = t ? t(name) : name;
+    const displayName = (t && typeof t === 'function') ? t(name) : name;
     result.push(`${displayName} (${qty})`);
   }
   return result;
 }
 
-function buildReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, dateStr, timeStr, safe }) {
+function getGroupedThaliItems(selections, extras, t) {
+  return getItemSubItems({ thali_selections: selections, thali_extras: extras }, t);
+}
+
+function buildReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, dateStr, timeStr, safe, menu }) {
   const gstRate = settings?.gst_rate ?? 5.0;
   const taxLabel = settings?.tax_label || 'GST';
 
@@ -90,13 +195,8 @@ function buildReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, da
 
   const itemsHTML = (order.items || []).map((i) => {
     const lineTotal = (i.price * i.qty).toFixed(2);
-    const subline = [];
-    if (i.is_thali || i.thali_selections || i.thali_extras) {
-      const selectionsList = getGroupedThaliItems(i.thali_selections, i.thali_extras, t);
-      for (const sel of selectionsList) {
-        subline.push(`• ${safe(sel)}`);
-      }
-    }
+    const subItems = getItemSubItems(i, t, menu);
+    const subline = subItems.map((sel) => `• ${safe(sel)}`);
 
     return `
       <div style="margin-bottom: 6px;">
@@ -233,20 +333,15 @@ function buildReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, da
   `;
 }
 
-function buildSecondReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, dateStr, timeStr, safe }) {
+function buildSecondReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, dateStr, timeStr, safe, menu }) {
   const gstRate = settings?.gst_rate ?? 5.0;
   const taxLabel = settings?.tax_label || 'GST';
   const nameUpper = safe((settings?.name || 'ANNDEVTA THALI HOUSE').toUpperCase());
 
   const itemsHTML = (order.items || []).map((i) => {
     const lineTotal = (i.price * i.qty).toFixed(2);
-    const subline = [];
-    if (i.is_thali || i.thali_selections || i.thali_extras) {
-      const selectionsList = getGroupedThaliItems(i.thali_selections, i.thali_extras, t);
-      for (const sel of selectionsList) {
-        subline.push(`• ${safe(sel)}`);
-      }
-    }
+    const subItems = getItemSubItems(i, t, menu);
+    const subline = subItems.map((sel) => `• ${safe(sel)}`);
 
     return `
       <div style="margin-bottom: 6px;">
@@ -335,7 +430,7 @@ function buildSecondReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatt
   `;
 }
 
-export function printReceipt({ order, settings }) {
+export function printReceipt({ order, settings, menu }) {
   if (!order) return;
   const lang = localStorage.getItem("pos_language") || settings?.language || "en";
   const t = (key) => {
@@ -372,7 +467,8 @@ export function printReceipt({ order, settings }) {
     receiptNoFormatted,
     dateStr,
     timeStr,
-    safe
+    safe,
+    menu
   });
 
   const secondReceiptHTML = buildSecondReceiptBlock({
@@ -383,7 +479,8 @@ export function printReceipt({ order, settings }) {
     receiptNoFormatted,
     dateStr,
     timeStr,
-    safe
+    safe,
+    menu
   });
 
   const html = `<!doctype html>

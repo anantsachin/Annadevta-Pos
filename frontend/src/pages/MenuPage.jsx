@@ -87,7 +87,19 @@ export default function MenuPage() {
       price: Number(editing.price),
       available: editing.available,
       is_thali: editing.is_thali,
-      thali_groups: editing.is_thali ? editing.thali_groups.filter(g => g.category_id) : [],
+      thali_groups: editing.is_thali
+        ? editing.thali_groups
+            .filter((g) => g.category_id)
+            .map((g) => {
+              const catObj = categories.find((c) => c.id === g.category_id);
+              const catName = catObj ? catObj.name : "";
+              return {
+                category_id: g.category_id,
+                count: Number(g.count) || 1,
+                label: (g.label && g.label.trim()) || catName || g.category_id,
+              };
+            })
+        : [],
       thali_extras: editing.thali_extras || "",
       portion_weight_kg: Number(editing.portion_weight_kg) || 0,
       menuType: mType,

@@ -229,7 +229,14 @@ export default function Billing() {
         is_thali: isThali,
         menuType: targetMode,
         quantity: 1,
-        qty: 1
+        qty: 1,
+        thali_selections: item.thali_selections || item.selections || null,
+        thali_extras: item.thali_extras || item.extras || "",
+        sub_items: item.sub_items || item.subItems || item.included_items || item.includedItems || null,
+        addons: item.addons || item.add_ons || item.addOns || null,
+        included_items: item.included_items || item.includedItems || null,
+        extra_bread: item.extra_bread || 0,
+        extra_bread_charge: item.extra_bread_charge || 0,
       }];
     });
 
@@ -249,10 +256,21 @@ export default function Billing() {
     }
 
     setCart((prev) => {
-      const existing = prev.find((i) => i.id === itemId);
+      const selectionsStr = JSON.stringify(line.thali_selections || {});
+      const extrasStr = line.thali_extras || "";
+      const lineMatchKey = `${itemId}-${selectionsStr}-${extrasStr}`;
+
+      const existing = prev.find(
+        (i) =>
+          i._matchKey === lineMatchKey ||
+          (i.id === itemId &&
+            JSON.stringify(i.thali_selections || {}) === selectionsStr &&
+            (i.thali_extras || "") === extrasStr)
+      );
+
       if (existing) {
         return prev.map((i) =>
-          i.id === itemId
+          i === existing
             ? {
                 ...i,
                 quantity: i.quantity + line.qty,
@@ -263,11 +281,15 @@ export default function Billing() {
             : i
         );
       }
+
+      const uniqueKey = `${itemId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       return [
         ...prev,
         {
           id: itemId,
-          _key: itemId,
+          _key: uniqueKey,
+          _matchKey: lineMatchKey,
+          menu_item_id: itemId,
           name: line.name,
           price: line.price,
           category: "THALI",
@@ -276,6 +298,9 @@ export default function Billing() {
           qty: line.qty,
           thali_selections: line.thali_selections,
           thali_extras: line.thali_extras,
+          sub_items: line.sub_items || line.subItems || line.included_items || line.includedItems || null,
+          addons: line.addons || line.add_ons || line.addOns || null,
+          included_items: line.included_items || line.includedItems || null,
           bread_consumed: line.bread_consumed,
           extra_bread: line.extra_bread,
           extra_bread_charge: line.extra_bread_charge,
@@ -285,18 +310,18 @@ export default function Billing() {
     });
   }, [cart.length]);
 
-  const updateQty = useCallback((id, delta) => {
+  const updateQty = useCallback((keyOrId, delta) => {
     setCart((prev) =>
       prev.map((i) =>
-        i.id === id
+        (i._key === keyOrId || i.id === keyOrId)
           ? { ...i, quantity: Math.max(1, i.quantity + delta), qty: Math.max(1, i.qty + delta) }
           : i
       )
     );
   }, []);
 
-  const removeLine = useCallback((id) => {
-    setCart((prev) => prev.filter((i) => i.id !== id));
+  const removeLine = useCallback((keyOrId) => {
+    setCart((prev) => prev.filter((i) => i._key !== keyOrId && i.id !== keyOrId));
   }, []);
 
   const clear = useCallback(() => {
@@ -414,12 +439,19 @@ export default function Billing() {
     const currentToken = getCurrentToken();
     const payload = {
       items: cart.map((item) => ({
-        menu_item_id: item.id,
+        menu_item_id: item.id || item.menu_item_id,
         name: item.name,
         price: item.price,
-        qty: item.quantity,
-        tax_rate: 5.0,
+        qty: item.qty || item.quantity,
+        tax_rate: item.tax_rate || 5.0,
         is_thali: item.is_thali || item.category === "THALI",
+        thali_selections: item.thali_selections || item.selections || null,
+        thali_extras: item.thali_extras || item.extras || "",
+        sub_items: item.sub_items || item.subItems || item.included_items || item.includedItems || null,
+        addons: item.addons || item.add_ons || item.addOns || null,
+        included_items: item.included_items || item.includedItems || null,
+        extra_bread: item.extra_bread || 0,
+        extra_bread_charge: item.extra_bread_charge || 0,
       })),
       discount: discount,
       payment_mode: mode,
