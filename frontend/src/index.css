@@ -218,3 +218,563 @@ code,
     page-break-inside: avoid !important;
   }
 }
+
+* {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Receipt & Billing Page Responsive Proportional Scaling (1024px & 768px)
+   ========================================================================== */
+
+.receipt-container {
+  width: 300px;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  transition: transform 0.2s ease-in-out;
+}
+
+.receipt-wrapper {
+  overflow-x: auto;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+@media (max-width: 1024px) {
+  .receipt-container {
+    zoom: 0.88;
+    transform-origin: top center;
+  }
+
+  .billing-responsive-scale {
+    zoom: 0.88;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+    background-color: #FAF7F2;
+  }
+
+  .main-wrapper {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  main {
+    margin-left: 0 !important;
+    padding: 0.35rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .top-navbar {
+    display: none !important;
+  }
+
+  .sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    inset: auto !important;
+    transition: transform 0.3s ease, margin-right 0.3s ease !important;
+    flex: 0 0 21% !important;
+    min-width: 172px !important;
+    max-width: 190px !important;
+    height: calc(100vh - 0.7rem) !important;
+    min-height: calc(100vh - 0.7rem) !important;
+    max-height: calc(100vh - 0.7rem) !important;
+    padding: 2px !important;
+    box-sizing: border-box !important;
+    overflow-y: hidden !important;
+    overflow-x: hidden !important;
+    z-index: 20 !important;
+  }
+
+  .sidebar > div > div:first-child {
+    padding: 4px 6px !important;
+  }
+
+  .sidebar nav {
+    padding-top: 1px !important;
+    padding-bottom: 1px !important;
+  }
+
+  .sidebar nav > div {
+    gap: 1px !important;
+  }
+
+  .sidebar nav a {
+    padding: 3px 5px !important;
+    font-size: 10.5px !important;
+    gap: 4.5px !important;
+    border-radius: 5px !important;
+  }
+
+  .sidebar nav a svg {
+    width: 13px !important;
+    height: 13px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .sidebar img {
+    max-width: 88px !important;
+  }
+
+  .sign-out-btn {
+    padding: 2.5px 4px !important;
+    font-size: 9px !important;
+    gap: 3px !important;
+    border-radius: 4px !important;
+  }
+
+  .sign-out-btn svg {
+    width: 11px !important;
+    height: 11px !important;
+  }
+
+  .user-profile-card {
+    padding: 2.5px 4px !important;
+    gap: 3.5px !important;
+    border-radius: 5px !important;
+  }
+
+  .user-profile-card-avatar {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 9px !important;
+  }
+
+  .user-profile-card-name {
+    font-size: 9.5px !important;
+  }
+
+  .user-profile-card-role {
+    font-size: 7.5px !important;
+  }
+
+  .career-craftly-footer {
+    width: auto !important;
+    margin: 4px 10px 8px 10px !important;
+    padding: 8px 6px !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .career-craftly-footer > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    gap: 3px !important;
+  }
+
+  .career-craftly-footer img {
+    height: 16px !important;
+    max-height: 16px !important;
+    object-fit: contain !important;
+  }
+
+  .career-craftly-footer .career-craftly-text {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    margin-top: 2px !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .career-craftly-footer .career-craftly-title {
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    text-align: center !important;
+    white-space: normal !important;
+  }
+
+  .career-craftly-footer .career-craftly-subtitle {
+    font-size: 10px !important;
+    font-weight: 500 !important;
+    line-height: 1.25 !important;
+    text-align: center !important;
+    margin-top: 1px !important;
+    white-space: normal !important;
+  }
+
+  .menu-section {
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    min-height: calc(100vh - 0.8rem) !important;
+    border-radius: 20px !important;
+    background: #FFFDF9 !important;
+    border: 1px solid #F2E4D4 !important;
+    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.04) !important;
+    padding: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .cart-section {
+    flex: 0 0 32% !important;
+    min-width: 250px !important;
+    height: 100% !important;
+    min-height: calc(100vh - 0.8rem) !important;
+    border-radius: 20px !important;
+    background: #FFFDF9 !important;
+    border: 1px solid #F0DFCE !important;
+    box-shadow: 0 8px 20px -4px rgba(255, 107, 0, 0.06) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .container,
+  .page,
+  .layout {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+
+  .menu-section,
+  .cart-section {
+    overflow: hidden;
+  }
+
+  .menu-scroll,
+  .cart-scroll,
+  .cart-items {
+    overflow-y: auto;
+    max-height: 100%;
+  }
+
+  .receipt-container {
+    zoom: 0.85;
+    transform-origin: top center;
+    border-radius: 12px;
+  }
+
+  .billing-responsive-scale {
+    zoom: 0.90;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+}
+
+@media (max-width: 767px) {
+
+  .sidebar {
+    flex: 0 0 20% !important;
+    min-width: 152px !important;
+    max-width: 168px !important;
+    height: calc(100vh - 0.5rem) !important;
+    max-height: calc(100vh - 0.5rem) !important;
+    padding: 1.5px !important;
+  }
+
+  .sidebar > div > div:first-child {
+    padding: 3px 5px !important;
+  }
+
+  .sidebar nav {
+    padding-top: 1px !important;
+    padding-bottom: 1px !important;
+  }
+
+  .sidebar nav > div {
+    gap: 1px !important;
+  }
+
+  .sidebar nav a {
+    padding: 2.5px 4px !important;
+    font-size: 10px !important;
+    gap: 3.5px !important;
+  }
+
+  .sidebar nav a svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .sidebar img {
+    max-width: 80px !important;
+  }
+
+  .user-profile-card {
+    padding: 2px 3.5px !important;
+    gap: 3px !important;
+    border-radius: 5px !important;
+  }
+
+  .user-profile-card-avatar {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 8.5px !important;
+  }
+
+  .user-profile-card-name {
+    font-size: 9px !important;
+  }
+
+  .user-profile-card-role {
+    font-size: 7.5px !important;
+  }
+
+  .sign-out-btn {
+    padding: 2px 3.5px !important;
+    font-size: 8.5px !important;
+    gap: 3px !important;
+    border-radius: 4px !important;
+  }
+
+  .sign-out-btn svg {
+    width: 10.5px !important;
+    height: 10.5px !important;
+  }
+
+  .career-craftly-footer {
+    width: auto !important;
+    margin: 4px 8px 6px 8px !important;
+    padding: 6px 4px !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .career-craftly-footer > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    gap: 2px !important;
+  }
+
+  .career-craftly-footer img {
+    height: 14px !important;
+    max-height: 14px !important;
+    object-fit: contain !important;
+  }
+
+  .career-craftly-footer .career-craftly-text {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    margin-top: 2px !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .career-craftly-footer .career-craftly-title {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+    white-space: normal !important;
+  }
+
+  .career-craftly-footer .career-craftly-subtitle {
+    font-size: 9px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+    margin-top: 1px !important;
+    white-space: normal !important;
+  }
+
+  .menu-section {
+    height: 100% !important;
+    min-height: calc(100vh - 0.6rem) !important;
+    padding: 12px !important;
+  }
+
+  .cart-section {
+    height: 100% !important;
+    min-height: calc(100vh - 0.6rem) !important;
+    flex: 0 0 33% !important;
+    min-width: 235px !important;
+  }
+
+  .receipt-container {
+    zoom: 0.78;
+    transform-origin: top center;
+  }
+
+  .billing-responsive-scale {
+    zoom: 0.84;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+}
+
+/* ==========================================================================
+   Sidebar Toggle Button & Responsive Show/Hide (768px+)
+   ========================================================================== */
+
+@media (min-width: 768px) {
+
+  .toggle-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: transparent !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: none !important;
+    color: #475569;
+    transition: all 0.25s ease;
+    z-index: 50;
+  }
+
+  .toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: #0f172a;
+  }
+
+  .sidebar {
+    transition: flex 0.3s ease, min-width 0.3s ease, max-width 0.3s ease, width 0.3s ease, padding 0.3s ease !important;
+  }
+
+  aside.sidebar ~ main {
+    margin-left: 260px !important;
+    transition: margin-left 0.3s ease !important;
+  }
+
+  /* Collapsed Mode (Slim Icon-only Navbar ~70px) */
+  .sidebar.collapsed {
+    flex: 0 0 70px !important;
+    min-width: 70px !important;
+    max-width: 70px !important;
+    width: 70px !important;
+    padding: 2px !important;
+  }
+
+  aside.sidebar.collapsed ~ main {
+    margin-left: 70px !important;
+    transition: margin-left 0.3s ease !important;
+  }
+
+  .sidebar.collapsed > div {
+    border-radius: 16px !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    transition: border-radius 0.3s ease !important;
+  }
+
+  .sidebar.collapsed .toggle-btn {
+    top: 12px;
+    right: 50%;
+    transform: translateX(50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  /* Hide text labels completely */
+  .sidebar.collapsed nav a span,
+  .sidebar.collapsed .user-profile-card-name,
+  .sidebar.collapsed .user-profile-card-role,
+  .sidebar.collapsed .sign-out-btn span,
+  .sidebar.collapsed .career-craftly-text {
+    display: none !important;
+  }
+
+  /* Center nav items and icons */
+  .sidebar.collapsed nav {
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+  }
+
+  .sidebar.collapsed nav a {
+    justify-content: center !important;
+    padding: 10px 0 !important;
+    gap: 0 !important;
+    width: 100% !important;
+  }
+
+  .sidebar.collapsed nav a > div {
+    justify-content: center !important;
+    gap: 0 !important;
+    width: 100% !important;
+  }
+
+  .sidebar.collapsed nav a svg {
+    margin: 0 auto !important;
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Center logo */
+  .sidebar.collapsed img {
+    max-width: 32px !important;
+    margin: 0 auto !important;
+  }
+
+  .sidebar.collapsed .user-profile-card {
+    justify-content: center !important;
+    padding: 4px !important;
+    gap: 0 !important;
+  }
+
+  .sidebar.collapsed .sign-out-btn {
+    justify-content: center !important;
+    padding: 6px 0 !important;
+    gap: 0 !important;
+  }
+
+  .sidebar.collapsed .sign-out-btn svg {
+    margin: 0 auto !important;
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .sidebar.collapsed .career-craftly-footer {
+    padding: 6px !important;
+    margin: 4px !important;
+  }
+
+  .sidebar.collapsed .career-craftly-footer img {
+    height: 16px !important;
+    margin: 0 auto !important;
+  }
+
+}
+
+@media (max-width: 767px) {
+  .toggle-btn {
+    display: none !important;
+  }
+
+  .sidebar {
+    transform: translateX(0) !important;
+  }
+}

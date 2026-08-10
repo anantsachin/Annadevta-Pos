@@ -508,9 +508,9 @@ export default function Billing() {
   }, [cart, subtotal, gst, total, discount, isOnline, settings, clear, refresh, customerName, t]);
 
   return (
-    <div className="h-full grid grid-cols-12 gap-4 bg-[#FAF7F2] p-1 sm:p-2 overflow-hidden">
+    <div className="h-full grid grid-cols-12 gap-4 bg-[#FAF7F2] p-1 sm:p-2 overflow-hidden billing-responsive-scale container main-wrapper">
       {/* Main Section: Food Menus */}
-      <div className="col-span-12 lg:col-span-9 flex flex-col h-full min-h-0 bg-[#FFFDF9] rounded-3xl shadow-sm border border-[#F2E8DC] p-4 sm:p-6 overflow-hidden">
+      <div className="col-span-7 sm:col-span-7 lg:col-span-9 flex flex-col h-full min-h-0 bg-[#FFFDF9] rounded-3xl shadow-sm border border-[#F2E8DC] p-3 sm:p-6 overflow-hidden main-content menu-section">
 
         {/* Header & Search */}
         <div className="flex flex-col gap-4 pb-4 border-b border-[#F5EFE6]">
@@ -526,7 +526,7 @@ export default function Billing() {
             </div>
 
             {/* Search Input */}
-            <div className="relative w-full sm:w-80">
+            <div className="relative w-full sm:w-52 md:w-60 lg:w-80">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
                 data-testid="menu-search"
@@ -561,7 +561,7 @@ export default function Billing() {
                   }}
                   data-testid={`cat-${tab.toLowerCase().replace(/\s+/g, "-")}`}
                   className={`
-                    px-5 py-2.5 rounded-full text-xs font-extrabold tracking-wider transition-all duration-200 whitespace-nowrap border shadow-2xs select-none
+                    px-3.5 py-2 rounded-full text-[11px] sm:text-xs font-extrabold tracking-wider transition-all duration-200 whitespace-nowrap border shadow-2xs select-none
                     ${isActive
                       ? "bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-orange-500/20 scale-[1.02]"
                       : "bg-white text-slate-600 border-[#EFE5DA] hover:bg-[#FFF5ED] hover:text-[#FF6B00] hover:border-orange-200"
@@ -630,7 +630,7 @@ export default function Billing() {
                 </div>
               ) : (
                 <div
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
                   data-testid="all-items-grid"
                 >
                   {allFilteredItems.map((item) => (
@@ -668,7 +668,7 @@ export default function Billing() {
                 </div>
               ) : (
                 <div
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
                   data-testid="dining-menu-grid"
                 >
                   {filteredDining.map((item) => (
@@ -706,7 +706,7 @@ export default function Billing() {
                 </div>
               ) : (
                 <div
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
                   data-testid="parcel-menu-grid"
                 >
                   {filteredParcel.map((item) => (
@@ -739,7 +739,7 @@ export default function Billing() {
                 </div>
               ) : (
                 <div
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
                   data-testid="category-menu-grid"
                 >
                   {activeFilteredCategoryItems.map((item) => (
@@ -765,13 +765,13 @@ export default function Billing() {
       )}
 
       {/* Active Bill Sidebar Column */}
-      <div className={`
+      <div className={`cart-panel cart-section
         fixed inset-y-0 right-0 z-40
-        w-full sm:w-[420px]
+        w-full
         transform transition-transform duration-300
-        lg:relative lg:translate-x-0
-        lg:col-span-3
-        lg:w-auto
+        sm:relative sm:translate-x-0 sm:inset-auto
+        col-span-5 sm:col-span-5 lg:col-span-3
+        sm:w-auto
         bg-[#FFFDF9]
         rounded-[32px]
         shadow-sm
@@ -779,7 +779,7 @@ export default function Billing() {
         border-[#F4E6D7]
         overflow-hidden
         flex flex-col
-        ${showCartMobile ? "translate-x-0" : "translate-x-full"}`}
+        ${showCartMobile ? "translate-x-0" : "max-sm:translate-x-full"}`}
       >
         {/* Orange Header */}
         <div className="relative overflow-hidden p-5 bg-gradient-to-br from-[#FF8A3D] to-[#FF6B00] text-white">
@@ -824,7 +824,7 @@ export default function Billing() {
 
         {/* Tab Content */}
         {activeTab === "cart" ? (
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 cart-items">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 my-auto min-h-[220px]">
                 <div className="w-16 h-16 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center text-[#FF6B00] shadow-2xs">
@@ -894,18 +894,18 @@ export default function Billing() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 pt-1">
+          <div className="grid grid-cols-3 gap-1.5 pt-1">
             <button
               onClick={() => {
                 setPaymentMethod("cash");
                 checkout("cash");
               }}
-              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold rounded-full transition-all border select-none active:scale-95 ${paymentMethod === "cash"
+              className={`flex items-center justify-center gap-1 py-2 px-1.5 sm:px-2.5 text-[11px] sm:text-xs font-bold rounded-full transition-all border select-none active:scale-95 ${paymentMethod === "cash"
                   ? "bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-orange-500/20"
                   : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-800"
                 }`}
             >
-              <Banknote className="w-4 h-4" />
+              <Banknote className="w-3.5 h-3.5 shrink-0" />
               <span>CASH</span>
             </button>
             <button
@@ -913,12 +913,12 @@ export default function Billing() {
                 setPaymentMethod("upi");
                 checkout("upi");
               }}
-              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold rounded-full transition-all border select-none active:scale-95 ${paymentMethod === "upi"
+              className={`flex items-center justify-center gap-1 py-2 px-1.5 sm:px-2.5 text-[11px] sm:text-xs font-bold rounded-full transition-all border select-none active:scale-95 ${paymentMethod === "upi"
                   ? "bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-orange-500/20"
                   : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-800"
                 }`}
             >
-              <Smartphone className="w-4 h-4" />
+              <Smartphone className="w-3.5 h-3.5 shrink-0" />
               <span>UPI</span>
             </button>
             <button
@@ -926,12 +926,12 @@ export default function Billing() {
                 setPaymentMethod("card");
                 checkout("card");
               }}
-              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold rounded-full transition-all border select-none active:scale-95 ${paymentMethod === "card"
+              className={`flex items-center justify-center gap-1 py-2 px-1.5 sm:px-2.5 text-[11px] sm:text-xs font-bold rounded-full transition-all border select-none active:scale-95 ${paymentMethod === "card"
                   ? "bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-orange-500/20"
                   : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-800"
                 }`}
             >
-              <CreditCard className="w-4 h-4" />
+              <CreditCard className="w-3.5 h-3.5 shrink-0" />
               <span>CARD</span>
             </button>
           </div>

@@ -37,7 +37,12 @@ export default function Layout() {
   const [settings, setSettings] = useState(null);
   const [alertCount, setAlertCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const { isOnline, syncStatus, pendingCount, triggerSync } = useSyncManager();
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => !prev);
+  };
 
   const handleLogout = async () => { await logout(); navigate("/login"); };
 
@@ -101,9 +106,9 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f7fb]">
+    <div className="min-h-screen bg-[#f5f7fb] main-wrapper">
       {/* Mobile Top Header */}
-      <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-border sticky top-0 z-30 shadow-sm h-14">
+      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-border sticky top-0 z-30 shadow-sm h-14 top-navbar">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMobileMenuOpen(true)}
@@ -124,13 +129,18 @@ export default function Layout() {
       {/* Mobile Menu Drawer Backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-sm transition-opacity"
+          className="md:hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-sm transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar - Fixed/Drawer on mobile, Standard on desktop */}
-      <aside className="fixed left-0 top-0 h-screen w-[260px] p-4">
+      <aside className={`fixed left-0 top-0 h-screen w-[260px] p-4 sidebar ${isCollapsed ? "collapsed" : ""}`}>
+        <button className="toggle-btn" onClick={() => setIsCollapsed(!isCollapsed)} aria-label="Toggle navigation">
+          <svg width="20" height="20" viewBox="0 0 24 24" style={{ transform: isCollapsed ? "rotate(180deg)" : "none", transition: "transform 0.25s ease" }}>
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
         {/* Header with Customizable terracotaing */}
         <div className="relative h-full bg-[#FFFDF9] rounded-[30px] border border-[#F4E6D7] shadow-lg overflow-hidden flex flex-col">
           <div className="absolute inset-0 overflow-hidden pointer-events-none">      </div>
@@ -144,13 +154,6 @@ export default function Layout() {
                 className="w-full max-w-[170px] object-contain"
               />
             </div>
-
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="lg:hidden absolute top-5 right-5"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Navigation */}
@@ -188,18 +191,18 @@ export default function Layout() {
           {/* Bottom */}
           <div className="pt-3">
 
-            <div className="p-5 bg-transparent">
-              <div className="mb-2 rounded-xl bg-white border border-[#F4E6D7] shadow-sm px-3 py-2 flex items-center gap-1">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-terracota to-brand-600 flex items-center justify-center text-white font-bold">
+            <div className="p-3 bg-transparent space-y-1.5">
+              <div className="user-profile-card mb-1.5 rounded-xl bg-white border border-[#F4E6D7] shadow-2xs px-2.5 py-1.5 flex items-center gap-2">
+                <div className="user-profile-card-avatar w-8 h-8 rounded-full bg-gradient-to-br from-[#FF8A3D] to-[#FF6B00] flex items-center justify-center text-white font-extrabold text-xs shadow-xs shrink-0">
                   {user?.name?.charAt(0).toUpperCase()}
                 </div>
 
-                <div>
-                  <div className="text-[15px] font-semibold">
+                <div className="min-w-0 flex-1">
+                  <div className="user-profile-card-name text-xs font-bold text-slate-800 truncate leading-tight">
                     {user?.name}
                   </div>
 
-                  <div className="text-xs text-muted-foreground">
+                  <div className="user-profile-card-role text-[10px] text-slate-500 font-medium truncate leading-tight mt-0.5">
                     {user?.role === "admin" ? "Administrator" : "Cashier"}
                   </div>
                 </div>
@@ -207,33 +210,23 @@ export default function Layout() {
 
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center
-        gap-0
-        px-4
-        py-3
-        rounded-xl
-        bg-white
-        border
-        border-[#F4E6D7]
-        shadow-sm
-        hover:bg-[#FFF8F2]
-        transition-all"
+                className="sign-out-btn w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#F4E6D7] text-xs font-semibold text-slate-700 shadow-2xs hover:bg-[#FFF8F2] transition-all"
               >
-                <LogOut className="w-4 h-4" />
-                {t("sign_out")}
+                <LogOut className="w-3.5 h-3.5" />
+                <span>{t("sign_out")}</span>
               </button>
             </div>
 
-            <div className="p-3 bg-gradient-to-br m-4 mt-0 rounded-xl from-blue-50 to-blue-100 border-t border-blue-200">
-              <div className="flex flex-col items-center">
+            <div className="career-craftly-footer p-3 bg-gradient-to-br m-4 mt-0 rounded-xl from-blue-50 to-blue-100 border-t border-blue-200">
+              <div className="flex flex-col items-center text-center">
                 <img
                   src={`${process.env.PUBLIC_URL}/tranferentlogo.png`}
                   alt="Career Craftly"
-                  className="h-5"
+                  className="h-5 shrink-0 object-contain"
                 />
-                <div className="text-[15px] text-center mt-2">
-                  <div className="font-bold text-blue-900">Career Craftly</div>
-                  <div className="text-blue-700">Digital Solutions</div>
+                <div className="text-center mt-1.5 career-craftly-text max-w-full overflow-hidden">
+                  <div className="font-bold text-blue-900 text-[12px] leading-tight career-craftly-title">Career Craftly</div>
+                  <div className="text-blue-700 text-[10.5px] leading-tight mt-0.5 career-craftly-subtitle">Digital Solutions</div>
                 </div>
               </div>
             </div>
@@ -245,7 +238,7 @@ export default function Layout() {
 
 
       {/* Main Content - Offset by sidebar width on desktop */}
-      <main className="lg:ml-[240px] h-screen p-4 overflow-hidden">
+      <main className="md:ml-[260px] h-screen p-4 overflow-hidden">
         {/* Sync / Offline Status Bar */}
         {(!isOnline || pendingCount > 0 || syncStatus === "syncing" || syncStatus === "synced" || syncStatus === "error") && (
           <div className={`w-full px-4 py-2 flex items-center justify-between text-xs font-semibold z-20 ${!isOnline

@@ -36,67 +36,51 @@ export default function PayrollDashboard() {
   ];
 
   return (
-    <div className="h-full
-    bg-[#FFFDF9]
-    rounded-[32px]
-    border
-    border-[#F4E6D7]
-    shadow-lg
-    p-8
-    flex
-    flex-col
-    overflow-hidden
-  ">
-    {/* <div className="p-6 lg:p-10 max-w-7xl mx-auto bg-slate-50 min-h-screen"> */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <div className="text-[15px]
-          uppercase
-          tracking-[0.1em]
-          font-bold
-          bg-gradient-to-r
-          from-[#FF8A3D] to-[#FF6B00]
-          bg-clip-text
-          text-transparent">Workforce Management</div>
-          <h1 className="font-display text-3xl font-extrabold text-slate-900 tracking-tight">HR Dashboard</h1>
-        </div>
-        <Link to="/payroll/process" className="bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105 rounded-xl text-white px-5 py-2.5  text-sm font-semibold shadow-sm transition-colors flex items-center gap-2">
-          <Wallet className="w-4 h-4" /> Run Payroll
-        </Link>
-      </div>
+    <div className="h-full bg-[#FFFDF9] rounded-[16px] sm:rounded-[20px] md:rounded-[24px] lg:rounded-[32px] border border-[#F4E6D7] shadow-lg p-3 sm:p-4 md:p-5 lg:p-6 xl:p-8 flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
+        <div className="w-full">
+          <div className="mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <div className="text-[11px] sm:text-[12px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">Workforce Management</div>
+              <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">HR Dashboard</h1>
+            </div>
+            <Link to="/payroll/process" className="bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105 rounded-xl text-white px-4 md:px-5 py-2 md:py-2.5 text-xs md:text-sm font-semibold shadow-sm transition-colors flex items-center gap-2 self-start sm:self-auto">
+              <Wallet className="w-4 h-4" /> Run Payroll
+            </Link>
+          </div>
 
       {/* Top HR Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
         {topCards.map((c, i) => (
-          <Card key={i} className={`p-5 border ${c.border} shadow-sm bg-white overflow-hidden relative group`}>
+          <Card key={i} className={`p-4 md:p-5 border ${c.border} shadow-sm bg-white overflow-hidden relative group`}>
             <div className={`absolute -right-4 -top-4 w-16 h-16 rounded-full opacity-10 transition-transform group-hover:scale-150 ${c.bg}`}></div>
             <div className="flex flex-col relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${c.bg}`}>
-                  <c.icon className={`w-5 h-5 ${c.color}`} />
+              <div className="flex items-center justify-between mb-2 md:mb-3">
+                <div className={`w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center ${c.bg}`}>
+                  <c.icon className={`w-4 h-4 md:w-5 md:h-5 ${c.color}`} />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-800 mb-1">{c.value}</div>
-              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">{c.label}</div>
+              <div className="text-2xl md:text-3xl font-bold text-slate-800 mb-1">{c.value}</div>
+              <div className="text-[10px] md:text-xs font-medium text-slate-500 uppercase tracking-wider">{c.label}</div>
             </div>
           </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
         {/* Financial Overview */}
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-lg font-bold text-slate-800">Financial Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-3 md:space-y-4">
+          <h2 className="text-base md:text-lg font-bold text-slate-800">Financial Overview</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
             {financialCards.map((c, i) => (
-              <Card key={i} className="p-5 border-slate-200 shadow-sm bg-white">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${c.bg}`}>
-                    <c.icon className={`w-6 h-6 ${c.color}`} />
+              <Card key={i} className="p-4 md:p-5 border-slate-200 shadow-sm bg-white">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0 ${c.bg}`}>
+                    <c.icon className={`w-5 h-5 md:w-6 md:h-6 ${c.color}`} />
                   </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">{c.label}</div>
-                    <div className="font-bold text-xl text-slate-800 mt-0.5">{c.value}</div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] md:text-xs font-medium text-slate-500 uppercase tracking-wider truncate">{c.label}</div>
+                    <div className="font-bold text-lg md:text-xl text-slate-800 mt-0.5 truncate">{c.value}</div>
                   </div>
                 </div>
               </Card>
@@ -105,29 +89,29 @@ export default function PayrollDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-slate-800">Quick Links</h2>
+        <div className="space-y-3 md:space-y-4">
+          <h2 className="text-base md:text-lg font-bold text-slate-800">Quick Links</h2>
           <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
             <div className="divide-y divide-slate-100">
-              <Link to="/staff" className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
-                <div className="w-8 h-8 rounded bg-indigo-50 flex items-center justify-center text-indigo-600"><Users className="w-4 h-4" /></div>
-                <div className="font-semibold text-sm text-slate-700">Employee Directory</div>
+              <Link to="/staff" className="flex items-center gap-3 p-3 md:p-4 hover:bg-slate-50 transition-colors">
+                <div className="w-7 h-7 md:w-8 md:h-8 rounded bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0"><Users className="w-3.5 h-3.5 md:w-4 md:h-4" /></div>
+                <div className="font-semibold text-xs md:text-sm text-slate-700">Employee Directory</div>
               </Link>
-              <Link to="/payroll/structures" className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
-                <div className="w-8 h-8 rounded bg-sky-50 flex items-center justify-center text-sky-600"><Coins className="w-4 h-4" /></div>
-                <div className="font-semibold text-sm text-slate-700">Salary Structures</div>
+              <Link to="/payroll/structures" className="flex items-center gap-3 p-3 md:p-4 hover:bg-slate-50 transition-colors">
+                <div className="w-7 h-7 md:w-8 md:h-8 rounded bg-sky-50 flex items-center justify-center text-sky-600 shrink-0"><Coins className="w-3.5 h-3.5 md:w-4 md:h-4" /></div>
+                <div className="font-semibold text-xs md:text-sm text-slate-700">Salary Structures</div>
               </Link>
-              <Link to="/payroll/attendance" className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
-                <div className="w-8 h-8 rounded bg-emerald-50 flex items-center justify-center text-emerald-600"><Clock className="w-4 h-4" /></div>
-                <div className="font-semibold text-sm text-slate-700">Attendance Log</div>
+              <Link to="/payroll/attendance" className="flex items-center gap-3 p-3 md:p-4 hover:bg-slate-50 transition-colors">
+                <div className="w-7 h-7 md:w-8 md:h-8 rounded bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0"><Clock className="w-3.5 h-3.5 md:w-4 md:h-4" /></div>
+                <div className="font-semibold text-xs md:text-sm text-slate-700">Attendance Log</div>
               </Link>
-              <Link to="/payroll/advances" className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
-                <div className="w-8 h-8 rounded bg-violet-50 flex items-center justify-center text-violet-600"><HandCoins className="w-4 h-4" /></div>
-                <div className="font-semibold text-sm text-slate-700">Salary Advances</div>
+              <Link to="/payroll/advances" className="flex items-center gap-3 p-3 md:p-4 hover:bg-slate-50 transition-colors">
+                <div className="w-7 h-7 md:w-8 md:h-8 rounded bg-violet-50 flex items-center justify-center text-violet-600 shrink-0"><HandCoins className="w-3.5 h-3.5 md:w-4 md:h-4" /></div>
+                <div className="font-semibold text-xs md:text-sm text-slate-700">Salary Advances</div>
               </Link>
-              <Link to="/payroll/reports" className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
-                <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-600"><FileText className="w-4 h-4" /></div>
-                <div className="font-semibold text-sm text-slate-700">Payroll Reports</div>
+              <Link to="/payroll/reports" className="flex items-center gap-3 p-3 md:p-4 hover:bg-slate-50 transition-colors">
+                <div className="w-7 h-7 md:w-8 md:h-8 rounded bg-slate-100 flex items-center justify-center text-slate-600 shrink-0"><FileText className="w-3.5 h-3.5 md:w-4 md:h-4" /></div>
+                <div className="font-semibold text-xs md:text-sm text-slate-700">Payroll Reports</div>
               </Link>
             </div>
           </Card>
@@ -136,9 +120,9 @@ export default function PayrollDashboard() {
 
       {/* Employee Outstanding Balances */}
       {metrics.employee_balances && metrics.employee_balances.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-lg font-bold text-slate-800 mb-4">Current Month Balances</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="mt-4 md:mt-6">
+          <h2 className="text-base md:text-lg font-bold text-slate-800 mb-3 md:mb-4">Current Month Balances</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
             {metrics.employee_balances.map((emp, i) => (
               <Card key={i} className="p-4 border-slate-200 shadow-sm bg-white flex flex-col justify-between">
                 <div className="flex justify-between items-start mb-3">
@@ -175,7 +159,8 @@ export default function PayrollDashboard() {
           </div>
         </div>
       )}
-    {/* </div> */}
-  </div>
+        </div>
+      </div>
+    </div>
   );
 }

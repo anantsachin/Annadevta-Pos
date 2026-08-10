@@ -275,9 +275,9 @@ export default function ReceiptPreview({
   };
 
   return (
-    <>
+    <div className="receipt-wrapper">
       {/* First Token/Receipt Container - 300px symmetrical thermal layout */}
-      <div className="w-[300px] mx-auto bg-[#fdfbf7] p-[10px] shadow-md border border-[#e6e4de] font-mono leading-normal text-[#000] text-[12px] box-border">
+      <div className="receipt-container w-[300px] mx-auto bg-[#fdfbf7] p-[10px] shadow-md border border-[#e6e4de] font-mono leading-normal text-[#000] text-[12px] box-border">
         {/* Header */}
         {renderHeader()}
 
@@ -447,7 +447,7 @@ export default function ReceiptPreview({
       <div className="h-6 select-none print:hidden" />
 
       {/* Second Token/Receipt Container - 300px symmetrical thermal layout */}
-      <div id="second-token-print" className="w-[300px] mx-auto bg-[#fdfbf7] p-[10px] shadow-md border border-[#e6e4de] font-mono leading-normal text-[#000] text-[12px] box-border">
+      <div id="second-token-print" className="receipt-container w-[300px] mx-auto bg-[#fdfbf7] p-[10px] shadow-md border border-[#e6e4de] font-mono leading-normal text-[#000] text-[12px] box-border">
         {/* Header */}
         <div className="text-center">
           <div className="font-bold text-sm tracking-wide uppercase mb-0.5">{(settings?.name || "ANNDEVTA THALI HOUSE").toUpperCase()}</div>
@@ -531,6 +531,6 @@ export default function ReceiptPreview({
 
         <div className="my-2 border-t border-dashed border-black" />
       </div>
-    </>
+    </div>
   );
 }

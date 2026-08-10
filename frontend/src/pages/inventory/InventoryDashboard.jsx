@@ -45,48 +45,36 @@ export default function InventoryDashboard() {
   ];
 
   return (
-    <div className="h-full
-    bg-[#FFFDF9]
-    rounded-[32px]
-    border
-    border-[#F4E6D7]
-    shadow-lg
-    px-8
-    pt-8
-    pb-6
-    flex
-    flex-col
-    overflow-hidden
-  ">
-    <div className="flex-1 overflow-y-auto">
-  <div className="max-w-7xl mx-auto px-8 py-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("inv_module") || "Inventory Management"}</div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">{t("inv_dashboard") || "Inventory Dashboard"}</h1>
-      </div>
+    <div className="h-full bg-[#FFFDF9] rounded-[16px] sm:rounded-[20px] md:rounded-[24px] lg:rounded-[32px] border border-[#F4E6D7] shadow-lg p-3 sm:p-4 md:p-5 lg:p-6 xl:p-8 flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
+        <div className="w-full">
+          {/* Header */}
+          <div className="mb-4 md:mb-6">
+            <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-muted-foreground">{t("inv_module") || "Inventory Management"}</div>
+            <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight mt-0.5">{t("inv_dashboard") || "Inventory Dashboard"}</h1>
+          </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
         {kpiCards.map((k, i) => (
-          <Card key={i} className="p-5 border-border shadow-none">
+          <Card key={i} className="p-3.5 sm:p-4 md:p-5 border-border shadow-none">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{k.label}</div>
+              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{k.label}</div>
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${k.bg}`}>
                 <k.icon className={`w-4 h-4 ${k.color}`} />
               </div>
             </div>
-            <div className={`font-display text-3xl font-extrabold tracking-tight ${k.color}`}>{k.value}</div>
+            <div className={`font-display text-2xl sm:text-3xl font-extrabold tracking-tight ${k.color}`}>{k.value}</div>
           </Card>
         ))}
       </div>
 
       {data.unmapped_items_count > 0 && (
-        <div className="mb-6 bg-amber-50 border border-amber-200 p-4 rounded-lg flex items-start gap-3">
+        <div className="mb-4 md:mb-6 bg-amber-50 border border-amber-200 p-3.5 md:p-4 rounded-lg flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-semibold text-amber-800">Unmapped Menu Items Detected</h4>
-            <p className="text-sm text-amber-700 mt-1">
+            <h4 className="font-semibold text-amber-800 text-xs md:text-sm">Unmapped Menu Items Detected</h4>
+            <p className="text-xs text-amber-700 mt-1">
               There are {data.unmapped_items_count} items in your menu that are missing a bulk inventory mapping (Portion Weight = 0). Selling these items will not deduct any inventory. Please update them in the Menu Editor.
             </p>
           </div>
@@ -94,7 +82,7 @@ export default function InventoryDashboard() {
       )}
 
       {/* Quick Links */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 md:gap-3 mb-4 md:mb-6">
         <QuickLink to="/inventory/stock" icon={Box} label="Stock Management" color="bg-terracota-light text-terracota" />
         <QuickLink to="/inventory/suppliers" icon={Truck} label="Suppliers" color="bg-forest-light text-forest" />
         <QuickLink to="/inventory/purchase-orders" icon={ClipboardList} label="Purchase Orders" color="bg-blue-50 text-blue-600" />

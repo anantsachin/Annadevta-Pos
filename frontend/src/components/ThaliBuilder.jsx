@@ -36,7 +36,7 @@ export default function ThaliBuilder({ open, onClose, thali, menu, onAdd }) {
       );
       setBreadConsumed(thali?.included_bread_count || 0);
     }
-  }, [open, thali?.id, thali?.included_bread_count]);
+  }, [open, thali?.id, thali?.included_bread_count, thali?.thali_groups]);
 
   if (!thali) return null;
   const groups = thali.thali_groups || [];
