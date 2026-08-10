@@ -52,11 +52,11 @@ export default function Dashboard() {
   return (
     <div className="h-full
         bg-[#FFFDF9]
-        rounded-[32px]
+        rounded-[20px] md:rounded-[28px] lg:rounded-[32px]
         border
         border-[#F4E6D7]
         shadow-lg
-        p-8
+        p-4 sm:p-5 md:p-6 lg:p-8
         overflow-y-auto">
       <div className="mb-8 flex items-end justify-between">
         <div>

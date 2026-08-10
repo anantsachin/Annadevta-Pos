@@ -236,13 +236,13 @@ export default function Settings() {
   return (
     <div className="h-full
     bg-[#FFFDF9]
-    rounded-[32px]
+    rounded-[20px] md:rounded-[28px] lg:rounded-[32px]
     border
     border-[#F4E6D7]
     shadow-lg
-    px-8
-    pt-8
-    pb-6
+    px-4 sm:px-6 lg:px-8
+    pt-4 sm:pt-6 lg:pt-8
+    pb-4 lg:pb-6
     flex
     flex-col
     overflow-hidden

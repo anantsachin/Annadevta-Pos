@@ -169,7 +169,7 @@ export default function DailyMenu() {
   const activeCount = safeMenu.filter(m => m.available).length;
 
   return (
-    <div className="h-full bg-[#FFFDF9] rounded-[32px] border border-[#F4E6D7] shadow-lg p-8 flex flex-col overflow-hidden">
+    <div className="h-full bg-[#FFFDF9] rounded-[20px] md:rounded-[28px] lg:rounded-[32px] border border-[#F4E6D7] shadow-lg p-4 sm:p-5 md:p-6 lg:p-8 flex flex-col overflow-hidden">
       <div className="mb-8">
         <div>
           <div className="text-[15px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">{today}</div>

@@ -196,6 +196,12 @@ export default function Billing() {
       }
     }
 
+    // Open Thali Rules & Customization modal for Thali items
+    if (isThali) {
+      setThaliFor(item);
+      return;
+    }
+
     if (cart.length === 0 && !tokenAssignedRef.current) {
       tokenAssignedRef.current = true;
       const nextTok = incrementToken();
@@ -230,8 +236,11 @@ export default function Billing() {
         menuType: targetMode,
         quantity: 1,
         qty: 1,
+        rules: item.rules || null,
+        thali_groups: item.thali_groups || item.thali_rules || item.rules || null,
         thali_selections: item.thali_selections || item.selections || null,
         thali_extras: item.thali_extras || item.extras || "",
+        fixedInclusions: item.fixedInclusions || item.thali_extras || item.extras || "",
         sub_items: item.sub_items || item.subItems || item.included_items || item.includedItems || null,
         addons: item.addons || item.add_ons || item.addOns || null,
         included_items: item.included_items || item.includedItems || null,
@@ -296,8 +305,11 @@ export default function Billing() {
           is_thali: true,
           quantity: line.qty,
           qty: line.qty,
+          rules: line.rules || null,
+          thali_groups: line.thali_groups || line.thali_rules || null,
           thali_selections: line.thali_selections,
           thali_extras: line.thali_extras,
+          fixedInclusions: line.fixedInclusions || line.thali_extras || "",
           sub_items: line.sub_items || line.subItems || line.included_items || line.includedItems || null,
           addons: line.addons || line.add_ons || line.addOns || null,
           included_items: line.included_items || line.includedItems || null,
@@ -445,8 +457,11 @@ export default function Billing() {
         qty: item.qty || item.quantity,
         tax_rate: item.tax_rate || 5.0,
         is_thali: item.is_thali || item.category === "THALI",
+        rules: item.rules || null,
+        thali_groups: item.thali_groups || item.thali_rules || item.rules || null,
         thali_selections: item.thali_selections || item.selections || null,
         thali_extras: item.thali_extras || item.extras || "",
+        fixedInclusions: item.fixedInclusions || item.thali_extras || item.extras || "",
         sub_items: item.sub_items || item.subItems || item.included_items || item.includedItems || null,
         addons: item.addons || item.add_ons || item.addOns || null,
         included_items: item.included_items || item.includedItems || null,
@@ -508,9 +523,9 @@ export default function Billing() {
   }, [cart, subtotal, gst, total, discount, isOnline, settings, clear, refresh, customerName, t]);
 
   return (
-    <div className="h-full grid grid-cols-12 gap-4 bg-[#FAF7F2] p-1 sm:p-2 overflow-hidden billing-responsive-scale container main-wrapper">
+    <div className="h-full grid grid-cols-12 gap-2.5 sm:gap-3 lg:gap-4 bg-[#FAF7F2] p-1 sm:p-2 overflow-hidden billing-responsive-scale container billing-page-container">
       {/* Main Section: Food Menus */}
-      <div className="col-span-7 sm:col-span-7 lg:col-span-9 flex flex-col h-full min-h-0 bg-[#FFFDF9] rounded-3xl shadow-sm border border-[#F2E8DC] p-3 sm:p-6 overflow-hidden main-content menu-section">
+      <div className="col-span-7 sm:col-span-7 lg:col-span-8 xl:col-span-8 2xl:col-span-9 flex flex-col h-full min-h-0 bg-[#FFFDF9] rounded-3xl shadow-sm border border-[#F2E8DC] p-3 sm:p-6 overflow-hidden main-content menu-section">
 
         {/* Header & Search */}
         <div className="flex flex-col gap-4 pb-4 border-b border-[#F5EFE6]">
@@ -770,7 +785,7 @@ export default function Billing() {
         w-full
         transform transition-transform duration-300
         sm:relative sm:translate-x-0 sm:inset-auto
-        col-span-5 sm:col-span-5 lg:col-span-3
+        col-span-5 sm:col-span-5 lg:col-span-4 xl:col-span-4 2xl:col-span-3
         sm:w-auto
         bg-[#FFFDF9]
         rounded-[32px]
@@ -842,11 +857,12 @@ export default function Billing() {
             ) : (
               cart.map((line) => (
                 <CartLine
-                  key={line.id}
+                  key={line._key || line.id}
                   line={line}
-                  onInc={() => updateQty(line.id, 1)}
-                  onDec={() => updateQty(line.id, -1)}
-                  onRemove={() => removeLine(line.id)}
+                  onInc={() => updateQty(line._key || line.id, 1)}
+                  onDec={() => updateQty(line._key || line.id, -1)}
+                  onRemove={() => removeLine(line._key || line.id)}
+                  onEditThali={(thaliLine) => setThaliFor(thaliLine)}
                 />
               ))
             )}
@@ -859,6 +875,7 @@ export default function Billing() {
               settings={settings}
               customerName={customerName}
               tokenNo={currentToken}
+              menu={menuItems}
             />
           </div>
         )}

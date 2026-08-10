@@ -637,26 +637,33 @@ code,
 
   .toggle-btn {
     position: absolute;
-    top: 16px;
+    top: 18px;
     right: 16px;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: transparent !important;
-    border: none !important;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FFFFFF 0%, #FFFDF9 100%) !important;
+    border: 1.5px solid #F4E6D7 !important;
     display: flex !important;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: none !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
     color: #475569;
-    transition: all 0.25s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
     z-index: 50;
   }
 
   .toggle-btn:hover {
-    background: rgba(0, 0, 0, 0.05) !important;
-    color: #0f172a;
+    background: linear-gradient(135deg, #FFF3E7 0%, #FFE9D6 100%) !important;
+    color: #FF6B00 !important;
+    border-color: #FFB380 !important;
+    box-shadow: 0 4px 14px rgba(255, 107, 0, 0.22), 0 0 0 3px rgba(255, 107, 0, 0.08) !important;
+    transform: scale(1.08);
+  }
+
+  .toggle-btn:active {
+    transform: scale(0.95);
   }
 
   .sidebar {
@@ -664,8 +671,15 @@ code,
   }
 
   aside.sidebar ~ main {
-    margin-left: 260px !important;
-    transition: margin-left 0.3s ease !important;
+    margin-left: 240px !important;
+    padding-left: 4px !important;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding-left 0.3s ease !important;
+  }
+
+  @media (min-width: 1024px) {
+    aside.sidebar ~ main {
+      margin-left: 250px !important;
+    }
   }
 
   /* Collapsed Mode (Slim Icon-only Navbar ~70px) */
@@ -679,7 +693,8 @@ code,
 
   aside.sidebar.collapsed ~ main {
     margin-left: 70px !important;
-    transition: margin-left 0.3s ease !important;
+    padding-left: 4px !important;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding-left 0.3s ease !important;
   }
 
   .sidebar.collapsed > div {
@@ -690,12 +705,17 @@ code,
   }
 
   .sidebar.collapsed .toggle-btn {
-    top: 12px;
-    right: 50%;
-    transform: translateX(50%);
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    top: 16px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+  }
+
+  .sidebar.collapsed .toggle-btn:hover {
+    transform: translateX(-50%) scale(1.08);
   }
 
   /* Hide text labels completely */

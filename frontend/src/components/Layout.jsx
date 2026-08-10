@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Receipt, CalendarDays, BookOpen, ListOrdered, LayoutDashboard, FileBarChart, Settings as SettingsIcon, LogOut, Package, Briefcase, Users, Menu, X, WifiOff, RefreshCw, CheckCircle2, CloudOff } from "lucide-react";
+import { Receipt, CalendarDays, BookOpen, ListOrdered, LayoutDashboard, FileBarChart, Settings as SettingsIcon, LogOut, Package, Briefcase, Users, Menu, X, WifiOff, RefreshCw, CheckCircle2, CloudOff, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import PasswordChangeDialog from "./PasswordChangeDialog";
@@ -135,14 +135,21 @@ export default function Layout() {
       )}
 
       {/* Sidebar - Fixed/Drawer on mobile, Standard on desktop */}
-      <aside className={`fixed left-0 top-0 h-screen w-[260px] p-4 sidebar ${isCollapsed ? "collapsed" : ""}`}>
-        <button className="toggle-btn" onClick={() => setIsCollapsed(!isCollapsed)} aria-label="Toggle navigation">
-          <svg width="20" height="20" viewBox="0 0 24 24" style={{ transform: isCollapsed ? "rotate(180deg)" : "none", transition: "transform 0.25s ease" }}>
-            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
+      <aside className={`fixed left-0 top-0 h-screen w-[240px] lg:w-[250px] p-2.5 sm:p-3 md:pr-1 sidebar ${isCollapsed ? "collapsed" : ""}`}>
         {/* Header with Customizable terracotaing */}
         <div className="relative h-full bg-[#FFFDF9] rounded-[30px] border border-[#F4E6D7] shadow-lg overflow-hidden flex flex-col">
+          <button
+            className="toggle-btn group"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            aria-label="Toggle navigation"
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-[#FF6B00] transition-transform duration-200 group-hover:translate-x-0.5" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 text-slate-600 group-hover:text-[#FF6B00] transition-transform duration-200 group-hover:-translate-x-0.5" />
+            )}
+          </button>
           <div className="absolute inset-0 overflow-hidden pointer-events-none">      </div>
 
           {/* Logo */}
@@ -238,7 +245,7 @@ export default function Layout() {
 
 
       {/* Main Content - Offset by sidebar width on desktop */}
-      <main className="md:ml-[260px] h-screen p-4 overflow-hidden">
+      <main className="md:ml-[240px] lg:ml-[250px] h-screen p-2.5 sm:p-3 md:pl-1 overflow-hidden transition-all duration-300">
         {/* Sync / Offline Status Bar */}
         {(!isOnline || pendingCount > 0 || syncStatus === "syncing" || syncStatus === "synced" || syncStatus === "error") && (
           <div className={`w-full px-4 py-2 flex items-center justify-between text-xs font-semibold z-20 ${!isOnline
@@ -271,7 +278,7 @@ export default function Layout() {
             )}
           </div>
         )}
-        <div className="h-[calc(100vh-32px)] overflow-y-auto bg-transparent">
+        <div className="h-[calc(100vh-20px)] sm:h-[calc(100vh-24px)] overflow-y-auto bg-transparent">
           <Outlet />
         </div>
 

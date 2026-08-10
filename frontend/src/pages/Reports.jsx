@@ -85,11 +85,11 @@ export default function Reports() {
   return (
     <div className="h-full
     bg-[#FFFDF9]
-    rounded-[32px]
+    rounded-[20px] md:rounded-[28px] lg:rounded-[32px]
     border
     border-[#F4E6D7]
     shadow-lg
-    p-8
+    p-4 sm:p-5 md:p-6 lg:p-8
     flex
     flex-col
     overflow-hidden

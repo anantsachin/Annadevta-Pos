@@ -8,9 +8,10 @@ const translations = { en, gu, bilingual };
 function getItemSubItems(item, t, menuList = []) {
   if (!item) return [];
 
-  const itemMap = new Map();
+  const tr = (key) => (t && typeof t === 'function' ? t(key) : key);
+  const result = [];
 
-  const parseItem = (str) => {
+  const parseItemStr = (str) => {
     if (!str) return null;
     const trimmed = String(str).trim();
     if (!trimmed) return null;
@@ -21,143 +22,115 @@ function getItemSubItems(item, t, menuList = []) {
     return { name, qty };
   };
 
-  const processSingle = (val) => {
-    if (!val) return;
-    if (typeof val === 'string') {
-      const trimmed = val.trim();
-      if (!trimmed) return;
+  // 1. Check explicit item.rules array:
+  const rules = item.rules || (typeof item.rules === 'string' ? (() => { try { return JSON.parse(item.rules); } catch(e){ return null; } })() : null);
+  if (Array.isArray(rules) && rules.length > 0) {
+    rules.forEach((r) => {
+      if (!r || typeof r !== 'object') return;
+      const name = r.name || r.item_name || r.title || r.label || "";
+      const qty = Number(r.qty || r.quantity || r.count || 1);
+      if (name) {
+        result.push(`${tr(name)} (${qty})`);
+      }
+    });
+  }
 
-      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+  // 2. Process thali_selections / selections if rules array was not present or empty
+  if (result.length === 0) {
+    const selObj = item.thali_selections || item.selections;
+    if (selObj) {
+      let parsedObj = selObj;
+      if (typeof selObj === 'string') {
         try {
-          const parsedJSON = JSON.parse(trimmed);
-          if (parsedJSON) {
-            processSingle(parsedJSON);
-            return;
+          if (selObj.startsWith('{') || selObj.startsWith('[')) {
+            parsedObj = JSON.parse(selObj);
           }
-        } catch (e) {
-          // Fallback to comma split
-        }
+        } catch (e) {}
       }
 
-      const parts = trimmed.split(',');
-      for (const part of parts) {
-        const parsed = parseItem(part);
-        if (parsed && parsed.name) {
-          const currentQty = itemMap.get(parsed.name) || 0;
-          itemMap.set(parsed.name, currentQty + parsed.qty);
-        }
-      }
-    } else if (typeof val === 'object' && val !== null) {
-      if (Array.isArray(val)) {
-        val.forEach(processSingle);
-      } else if (val.by_category && typeof val.by_category === 'object') {
-        processSingle(val.by_category);
-      } else if (val.name || val.item_name || val.label || val.title) {
-        const name = val.name || val.item_name || val.label || val.title;
-        const qty = Number(val.qty || val.quantity || val.count || 1);
-        if (typeof name === 'string') {
-          const parsed = parseItem(name);
-          if (parsed && parsed.name) {
-            const currentQty = itemMap.get(parsed.name) || 0;
-            itemMap.set(parsed.name, currentQty + (parsed.qty * qty));
+      if (typeof parsedObj === 'object' && parsedObj !== null && !Array.isArray(parsedObj)) {
+        Object.entries(parsedObj).forEach(([ruleLabel, items]) => {
+          if (!items) return;
+          const itemArr = Array.isArray(items) ? items : [items];
+          const counts = new Map();
+          itemArr.forEach((it) => {
+            if (!it) return;
+            if (typeof it === 'string') {
+              const p = parseItemStr(it);
+              if (p && p.name) counts.set(p.name, (counts.get(p.name) || 0) + p.qty);
+            } else if (typeof it === 'object' && (it.name || it.label)) {
+              const n = it.name || it.label;
+              const q = Number(it.qty || it.count || 1);
+              counts.set(n, (counts.get(n) || 0) + q);
+            }
+          });
+          for (const [itemName, q] of counts.entries()) {
+            result.push(`${tr(itemName)} (${q})`);
           }
-        }
-      } else {
-        Object.values(val).forEach((v) => {
-          if (Array.isArray(v) || typeof v === 'string' || (typeof v === 'object' && v !== null)) {
-            processSingle(v);
+        });
+      } else if (Array.isArray(parsedObj)) {
+        parsedObj.forEach((it) => {
+          if (typeof it === 'string') {
+            const p = parseItemStr(it);
+            if (p) result.push(`${tr(p.name)} (${p.qty})`);
           }
         });
       }
     }
-  };
-
-  const processGroup = (group) => {
-    if (!group || typeof group !== 'object') return;
-    let name = group.label || group.name || group.category_name;
-    if (!name || (typeof name === 'string' && name.match(/^[0-9a-fA-F-]{16,}$/))) {
-      name = group.category_id;
-    }
-    const count = Number(group.count || group.qty || group.quantity || 1);
-    if (name && typeof name === 'string' && !name.match(/^[0-9a-fA-F-]{16,}$/)) {
-      const parsed = parseItem(name);
-      if (parsed && parsed.name) {
-        const currentQty = itemMap.get(parsed.name) || 0;
-        itemMap.set(parsed.name, currentQty + (parsed.qty * count));
-      }
-    }
-  };
-
-  const sources = [
-    item.thali_selections,
-    item.selections,
-    item.sub_items,
-    item.subItems,
-    item.addons,
-    item.add_ons,
-    item.addOns,
-    item.included_items,
-    item.includedItems,
-    item.thali_extras,
-    item.extras,
-  ];
-
-  for (const src of sources) {
-    if (src) processSingle(src);
   }
 
-  if (itemMap.size === 0 && Array.isArray(item.thali_groups) && item.thali_groups.length > 0) {
-    item.thali_groups.forEach(processGroup);
-  }
-
-  if (itemMap.size === 0 && item.menu_item && typeof item.menu_item === 'object') {
-    const fallbackSources = [
-      item.menu_item.thali_extras,
-      item.menu_item.thali_selections,
-      item.menu_item.sub_items,
-      item.menu_item.addons,
-      item.menu_item.included_items,
-    ];
-    for (const src of fallbackSources) {
-      if (src) processSingle(src);
-    }
-    if (itemMap.size === 0 && Array.isArray(item.menu_item.thali_groups)) {
-      item.menu_item.thali_groups.forEach(processGroup);
+  // 3. Process thali_groups fallback if still empty
+  if (result.length === 0) {
+    const groups = item.thali_groups || item.thali_rules || (item.menu_item && item.menu_item.thali_groups);
+    if (Array.isArray(groups) && groups.length > 0) {
+      groups.forEach((g) => {
+        if (!g) return;
+        const name = g.name || g.label || g.category_name;
+        const count = Number(g.count || g.qty || 1);
+        if (name && typeof name === 'string' && !name.match(/^[0-9a-fA-F-]{16,}$/)) {
+          result.push(`${tr(name)} (${count})`);
+        }
+      });
     }
   }
 
-  if (itemMap.size === 0 && Array.isArray(menuList) && menuList.length > 0) {
+  // 4. Menu list fallback if still empty
+  if (result.length === 0 && Array.isArray(menuList) && menuList.length > 0) {
     const mId = item.menu_item_id || item.id;
     const foundMenu = menuList.find(m => m.id === mId || (m.name && m.name.toLowerCase() === (item.name || '').toLowerCase()));
-    if (foundMenu) {
-      const fallbackSources = [
-        foundMenu.thali_extras,
-        foundMenu.thali_selections,
-        foundMenu.sub_items,
-        foundMenu.addons,
-        foundMenu.included_items,
-      ];
-      for (const src of fallbackSources) {
-        if (src) processSingle(src);
-      }
-      if (itemMap.size === 0 && Array.isArray(foundMenu.thali_groups)) {
-        foundMenu.thali_groups.forEach(processGroup);
-      }
+    if (foundMenu && Array.isArray(foundMenu.thali_groups)) {
+      foundMenu.thali_groups.forEach((g) => {
+        if (!g) return;
+        const name = g.name || g.label || g.category_name;
+        const count = Number(g.count || g.qty || 1);
+        if (name && typeof name === 'string' && !name.match(/^[0-9a-fA-F-]{16,}$/)) {
+          result.push(`${tr(name)} (${count})`);
+        }
+      });
     }
   }
 
-  if (item.extra_bread && Number(item.extra_bread) > 0) {
-    const breadName = "Extra Roti";
-    const breadQty = Number(item.extra_bread);
-    const currentQty = itemMap.get(breadName) || 0;
-    itemMap.set(breadName, currentQty + breadQty);
+  // 5. Process fixedInclusions / thali_extras (e.g. "salad" or "Roti (4), Rice, Salad")
+  const fixedInclusions = item.fixedInclusions || item.thali_extras || item.extras || (item.menu_item && item.menu_item.thali_extras);
+  if (fixedInclusions && typeof fixedInclusions === 'string' && fixedInclusions.trim()) {
+    const trimmed = fixedInclusions.trim();
+    const formattedStr = trimmed.split(',').map(s => {
+      const p = parseItemStr(s);
+      if (!p) return tr(s.trim());
+      return p.qty > 1 ? `${tr(p.name)} (${p.qty})` : tr(p.name);
+    }).join(', ');
+    if (formattedStr && !result.includes(formattedStr)) {
+      result.push(formattedStr);
+    }
   }
 
-  const result = [];
-  for (const [name, qty] of itemMap.entries()) {
-    const displayName = (t && typeof t === 'function') ? t(name) : name;
-    result.push(`${displayName} (${qty})`);
+  // 6. Extra bread
+  if (item.extra_bread && Number(item.extra_bread) > 0) {
+    const breadName = tr("Extra Roti");
+    const breadQty = Number(item.extra_bread);
+    result.push(`${breadName} (${breadQty})`);
   }
+
   return result;
 }
 

@@ -154,7 +154,7 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="h-full bg-[#FFFDF9] rounded-[32px] border border-[#F4E6D7] shadow-lg p-8 flex flex-col overflow-hidden">
+    <div className="h-full bg-[#FFFDF9] rounded-[20px] md:rounded-[28px] lg:rounded-[32px] border border-[#F4E6D7] shadow-lg p-4 sm:p-5 md:p-6 lg:p-8 flex flex-col overflow-hidden">
       <div className="relative z-20 flex-shrink-0 mb-2 flex items-end justify-between">
         <div>
           <div className="text-[15px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">{t("menu_database")}</div>

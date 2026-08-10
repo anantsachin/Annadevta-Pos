@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Plus, Minus, Trash2 } from "lucide-react";
+import { Plus, Minus, Trash2, Sparkles } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
 function translateExtras(extrasStr, t) {
@@ -25,48 +25,89 @@ function formatThaliSelections(selections, t) {
     .join(" · ");
 }
 
-function CartLineComponent({ line, onInc, onDec, onRemove }) {
+function CartLineComponent({ line, onInc, onDec, onRemove, onEditThali }) {
   const { t } = useLanguage();
   const selectionsText = useMemo(() => formatThaliSelections(line.thali_selections, t), [line.thali_selections, t]);
   const translatedExtras = useMemo(() => translateExtras(line.thali_extras, t), [line.thali_extras, t]);
 
   return (
-    <div className="border-b border-border pb-3" data-testid={`cart-line-${line._key}`}>
-      <div className="flex items-start gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            {line.is_thali && <span className="text-[9px] uppercase tracking-[0.18em] font-bold bg-terracota text-white px-1.5 py-0.5 rounded">Thali</span>}
-            <span className="text-sm font-semibold truncate">{t(line.name)}</span>
+    <div className="border-b border-[#F4E6D7] pb-3 pt-1" data-testid={`cart-line-${line._key || line.id}`}>
+      <div className="flex items-start justify-between gap-2">
+        {/* Left Side: Info & Name */}
+        <div className="flex-1 min-w-0 pr-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {line.is_thali && (
+              <button
+                type="button"
+                onClick={() => onEditThali && onEditThali(line)}
+                className="shrink-0 text-[9px] uppercase tracking-wider font-extrabold bg-[#FF6B00] hover:bg-[#E05D00] text-white px-2 py-0.5 rounded-md flex items-center gap-1 cursor-pointer transition-all shadow-2xs active:scale-95"
+                title="Click to view or edit Thali rules"
+              >
+                <span>Rules</span>
+                <Sparkles className="w-2.5 h-2.5" />
+              </button>
+            )}
+            <span className="text-xs sm:text-sm font-extrabold text-slate-800 break-words leading-snug">
+              {t(line.name)}
+            </span>
           </div>
+
           {line.is_thali && selectionsText && (
-            <div className="text-[11px] text-muted-foreground mt-1 leading-snug">
+            <div
+              onClick={() => onEditThali && onEditThali(line)}
+              className="text-[11px] text-slate-600 mt-1.5 leading-relaxed break-words bg-[#FFFBF7] hover:bg-[#FFF5ED] border border-[#F4E6D7]/80 hover:border-orange-300 p-2 rounded-xl cursor-pointer transition-all"
+              title="Click to change selections"
+            >
               {selectionsText}
-              {line.thali_extras && <span> · <i>{translatedExtras}</i></span>}
             </div>
           )}
+
           {line.extra_bread > 0 && (
-            <div className="text-[11px] text-amber-700 mt-1 font-medium">
+            <div className="text-[11px] text-amber-800 mt-1 font-medium bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-md inline-block">
               🍞 {t("Extra Roti")} ({line.extra_bread}) · ₹{line.extra_bread_charge.toFixed(2)}
             </div>
           )}
-          <div className="text-xs text-muted-foreground font-mono mt-1">
-            ₹{line.price} × {line.qty} = ₹{(line.price * line.qty).toFixed(2)}
-            {line.extra_bread_charge > 0 && <span className="text-amber-700"> + ₹{line.extra_bread_charge.toFixed(2)}</span>}
+
+          <div className="text-xs text-slate-500 font-mono mt-1.5 flex flex-wrap items-center gap-1">
+            <span className="font-semibold text-slate-700">₹{line.price}</span>
+            <span>× {line.qty} =</span>
+            <span className="font-bold text-[#FF6B00]">₹{(line.price * line.qty).toFixed(2)}</span>
+            {line.extra_bread_charge > 0 && (
+              <span className="text-amber-700 font-medium">+ ₹{line.extra_bread_charge.toFixed(2)}</span>
+            )}
           </div>
+
           {line.current_stock !== undefined && line.current_stock !== null && (
-            <div className="text-[11px] text-forest font-medium mt-1">
-              Available Stock: {line.current_stock % 1 !== 0 ? line.current_stock.toFixed(3) + ' kg' : line.current_stock}
+            <div className="text-[10px] text-emerald-700 font-semibold mt-1">
+              Stock: {line.current_stock % 1 !== 0 ? line.current_stock.toFixed(3) + " kg" : line.current_stock}
             </div>
           )}
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button onClick={onDec} data-testid={`dec-${line._key}`}
-            className="w-7 h-7 border border-border rounded-md flex items-center justify-center hover:bg-sand-subtle"><Minus className="w-3 h-3" /></button>
-          <span className="w-6 text-center text-sm font-mono">{line.qty}</span>
-          <button onClick={onInc} data-testid={`inc-${line._key}`}
-            className="w-7 h-7 border border-border rounded-md flex items-center justify-center hover:bg-sand-subtle"><Plus className="w-3 h-3" /></button>
-          <button onClick={onRemove} data-testid={`rm-${line._key}`}
-            className="w-7 h-7 text-destructive hover:bg-destructive/10 rounded-md flex items-center justify-center"><Trash2 className="w-3 h-3" /></button>
+
+        {/* Right Side: Quantity Buttons */}
+        <div className="flex items-center gap-1 shrink-0 pt-0.5">
+          <button
+            onClick={onDec}
+            data-testid={`dec-${line._key}`}
+            className="w-7 h-7 border border-[#F4E6D7] bg-white rounded-lg flex items-center justify-center text-slate-600 hover:bg-[#FFF3E7] hover:text-[#FF6B00] hover:border-[#FF8A3D] transition-all shadow-2xs active:scale-95"
+          >
+            <Minus className="w-3 h-3" />
+          </button>
+          <span className="w-6 text-center text-xs font-mono font-bold text-slate-800">{line.qty}</span>
+          <button
+            onClick={onInc}
+            data-testid={`inc-${line._key}`}
+            className="w-7 h-7 border border-[#F4E6D7] bg-white rounded-lg flex items-center justify-center text-slate-600 hover:bg-[#FFF3E7] hover:text-[#FF6B00] hover:border-[#FF8A3D] transition-all shadow-2xs active:scale-95"
+          >
+            <Plus className="w-3 h-3" />
+          </button>
+          <button
+            onClick={onRemove}
+            data-testid={`rm-${line._key}`}
+            className="w-7 h-7 text-rose-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 rounded-lg flex items-center justify-center transition-all ml-0.5 active:scale-95"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </div>
