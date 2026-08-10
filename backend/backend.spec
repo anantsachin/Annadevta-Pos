@@ -55,12 +55,6 @@ hidden_imports = [
     'starlette.responses',
     'starlette.routing',
     'starlette.staticfiles',
-    # Database
-    'motor',
-    'motor.motor_asyncio',
-    'pymongo',
-    'bson',
-    'bson.json_util',
     # Auth
     'jwt',
     'bcrypt',
@@ -78,6 +72,9 @@ hidden_imports = [
     # Excel
     'openpyxl',
     'openpyxl.styles',
+    # SQLite (local offline database)
+    'aiosqlite',
+    'sqlite3',
     # Utils
     'multipart',
     'python_multipart',
@@ -146,7 +143,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['tkinter', 'matplotlib', 'PIL'],
+    excludes=['tkinter', 'matplotlib', 'PIL', 'motor', 'pymongo', 'bson', 'pymongo.errors', 'gridfs'],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,

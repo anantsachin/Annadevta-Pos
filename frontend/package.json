@@ -107,10 +107,6 @@
       {
         "from": "../backend/dist/backend.exe",
         "to": "bin/backend.exe"
-      },
-      {
-        "from": "../mongodb-portable/bin/mongod.exe",
-        "to": "bin/mongod.exe"
       }
     ],
     "win": {

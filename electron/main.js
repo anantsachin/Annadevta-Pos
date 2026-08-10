@@ -1,12 +1,11 @@
 /**
- * Anndevta POS — Electron Main Process
+ * Anndevta POS — Electron Main Process (Offline SQLite Edition)
  *
  * Startup sequence:
- *  1. Spawn mongod.exe (local MongoDB)
- *  2. Spawn backend.exe (PyInstaller FastAPI server)
- *  3. Poll /api/health until backend is ready
- *  4. Open BrowserWindow loading the React production build
- *  5. On quit: gracefully terminate backend → mongod
+ *  1. Spawn backend.exe (PyInstaller FastAPI server with SQLite)
+ *  2. Poll /api/health until backend is ready
+ *  3. Open BrowserWindow loading the React production build
+ *  4. On quit: gracefully terminate backend
  */
 
 const { app, BrowserWindow, dialog, shell, ipcMain } = require('electron');
@@ -27,7 +26,6 @@ const IS_PACKAGED = app.isPackaged;
 function getResourcePath(...segments) {
   if (IS_PACKAGED) {
     // Packaged: binaries and React build are in process.resourcesPath (extraResources)
-    // electron/ files are inside app.asar, but bin/ and build/ are in extraResources
     return path.join(process.resourcesPath, ...segments);
   }
   // Dev: __dirname = D:\GIT\POS-system\electron\
@@ -39,12 +37,13 @@ function getResourcePath(...segments) {
   return path.join(__dirname, '..', ...segments);
 }
 
-// MongoDB data directory — stored in user's AppData so it persists between updates
-const MONGO_DATA_DIR = path.join(app.getPath('userData'), 'data', 'db');
-const MONGO_LOG_DIR  = path.join(app.getPath('userData'), 'logs');
+// Log directory — stored in user's AppData so it persists between updates
+const LOG_DIR = path.join(app.getPath('userData'), 'logs');
+
+// SQLite database path — stored in user's AppData so it persists between updates
+const DB_PATH = path.join(app.getPath('userData'), 'pos_data.db');
 
 // Bundled binaries
-const MONGOD_EXE   = getResourcePath('bin', 'mongod.exe');
 const BACKEND_EXE  = getResourcePath('bin', 'backend.exe');
 
 // React production build (index.html)
@@ -58,7 +57,6 @@ const HEALTH_URL   = `${BACKEND_URL}/api/health`;
 // ─── State ───────────────────────────────────────────────────────────────────
 
 let mainWindow = null;
-let mongodProc = null;
 let backendProc = null;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -68,21 +66,35 @@ function ensureDir(dir) {
 }
 
 function logToFile(tag, data) {
-  const logPath = path.join(MONGO_LOG_DIR, 'electron.log');
+  const logPath = path.join(LOG_DIR, 'electron.log');
   const line = `[${new Date().toISOString()}] [${tag}] ${data}\n`;
   try { fs.appendFileSync(logPath, line); } catch (_) {}
 }
+
+let backendErrorLogs = [];
 
 function spawnSilent(exe, args, opts = {}) {
   const proc = spawn(exe, args, {
     detached: false,
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
+    cwd: path.dirname(exe),
     ...opts,
   });
-  proc.stdout.on('data', (d) => logToFile(path.basename(exe), d.toString().trim()));
-  proc.stderr.on('data', (d) => logToFile(`${path.basename(exe)}:ERR`, d.toString().trim()));
-  proc.on('error', (e) => logToFile(`${path.basename(exe)}:ERROR`, e.message));
+  proc.stdout.on('data', (d) => {
+    const msg = d.toString().trim();
+    logToFile(path.basename(exe), msg);
+  });
+  proc.stderr.on('data', (d) => {
+    const msg = d.toString().trim();
+    backendErrorLogs.push(msg);
+    if (backendErrorLogs.length > 15) backendErrorLogs.shift();
+    logToFile(`${path.basename(exe)}:ERR`, msg);
+  });
+  proc.on('error', (e) => {
+    backendErrorLogs.push(e.message);
+    logToFile(`${path.basename(exe)}:ERROR`, e.message);
+  });
   return proc;
 }
 
@@ -120,32 +132,38 @@ function waitForUrl(url, timeoutMs = 60000, intervalMs = 1000) {
 // ─── Startup ─────────────────────────────────────────────────────────────────
 
 async function startServices() {
-  ensureDir(MONGO_DATA_DIR);
-  ensureDir(MONGO_LOG_DIR);
+  ensureDir(LOG_DIR);
+  ensureDir(path.dirname(DB_PATH));
 
   logToFile('main', `IS_PACKAGED=${IS_PACKAGED}`);
-  logToFile('main', `MONGOD_EXE=${MONGOD_EXE}`);
   logToFile('main', `BACKEND_EXE=${BACKEND_EXE}`);
   logToFile('main', `REACT_BUILD=${REACT_BUILD}`);
+  logToFile('main', `DB_PATH=${DB_PATH}`);
 
-  // 1. Start MongoDB
-  if (!fs.existsSync(MONGOD_EXE)) {
-    logToFile('main', 'WARN: mongod.exe not found — assuming external MongoDB is running');
-  } else {
-    logToFile('main', 'Starting mongod...');
-    mongodProc = spawnSilent(MONGOD_EXE, [
-      '--dbpath', MONGO_DATA_DIR,
-      '--port', '27017',
-      '--bind_ip', '127.0.0.1',
-      '--logpath', path.join(MONGO_LOG_DIR, 'mongod.log'),
-      '--logappend',
-    ]);
-    logToFile('main', `mongod PID: ${mongodProc.pid}`);
-    // Give MongoDB a moment to initialise before starting the backend
-    await new Promise((r) => setTimeout(r, 2000));
+  // Kill orphaned backend processes from prior runs to ensure port 8000 is available
+  if (process.platform === 'win32') {
+    try {
+      logToFile('main', 'Cleaning up any existing backend.exe processes...');
+      await new Promise((resolve) => {
+        const kill = spawn('taskkill', ['/F', '/IM', 'backend.exe'], { windowsHide: true });
+        kill.on('exit', resolve);
+        kill.on('error', resolve);
+        setTimeout(resolve, 3000); // Safety timeout
+      });
+    } catch (_) {}
   }
 
-  // 2. Start FastAPI backend
+  // Clear stale SQLite WAL lock files left by crashed previous sessions
+  try {
+    const walFile = DB_PATH + '-wal';
+    const shmFile = DB_PATH + '-shm';
+    if (fs.existsSync(walFile)) { fs.unlinkSync(walFile); logToFile('main', 'Cleared stale WAL file'); }
+    if (fs.existsSync(shmFile)) { fs.unlinkSync(shmFile); logToFile('main', 'Cleared stale SHM file'); }
+  } catch (e) {
+    logToFile('main', `WAL cleanup warning: ${e.message}`);
+  }
+
+  // Start FastAPI backend (SQLite only — no MongoDB)
   if (!fs.existsSync(BACKEND_EXE)) {
     logToFile('main', 'WARN: backend.exe not found — assuming external backend is running');
   } else {
@@ -153,7 +171,7 @@ async function startServices() {
     backendProc = spawnSilent(BACKEND_EXE, [], {
       env: {
         ...process.env,
-        MONGO_URL: 'mongodb://127.0.0.1:27017',
+        DB_PATH: DB_PATH,
         DB_NAME: 'thali_pos',
         JWT_SECRET: 'thali-pos-super-secret-key-987654321',
         ADMIN_EMAIL: 'admin@pos.com',
@@ -164,19 +182,20 @@ async function startServices() {
     logToFile('main', `backend PID: ${backendProc.pid}`);
   }
 
-  // 3. Wait for backend to be ready
+  // Wait for backend to be ready
   logToFile('main', `Waiting for backend at ${HEALTH_URL}...`);
   const ready = await waitForUrl(HEALTH_URL, 90000, 1000);
   if (!ready) {
     logToFile('main', 'ERROR: Backend did not become ready in time');
+    const errorDetails = backendErrorLogs.join('\n') || 'Backend server failed to bind or initialize database.';
     const choice = dialog.showMessageBoxSync({
       type: 'error',
       title: 'Anndevta POS — Startup Error',
       message: 'The backend server failed to start.',
-      detail: `Check logs at:\n${MONGO_LOG_DIR}\n\nDo you want to open the log folder?`,
+      detail: `Details:\n${errorDetails}\n\nCheck full logs at:\n${LOG_DIR}\n\nDo you want to open the log folder?`,
       buttons: ['Open Logs', 'Quit'],
     });
-    if (choice === 0) shell.openPath(MONGO_LOG_DIR);
+    if (choice === 0) shell.openPath(LOG_DIR);
     app.quit();
     return false;
   }
@@ -236,7 +255,7 @@ function killProcess(proc, name) {
     logToFile('main', `Terminating ${name} (PID ${proc.pid})...`);
     if (process.platform === 'win32') {
       // Use taskkill to kill the process and all its children recursively and forcibly.
-      // This is crucial to prevent zombie PyInstaller backend/mongod processes on Windows.
+      // This is crucial to prevent zombie PyInstaller backend processes on Windows.
       spawn('taskkill', ['/F', '/T', '/PID', proc.pid.toString()]);
     } else {
       process.kill(proc.pid, 'SIGTERM');
@@ -248,8 +267,6 @@ function killProcess(proc, name) {
 
 function shutdownServices() {
   killProcess(backendProc, 'backend');
-  // Wait briefly before killing mongod so backend can flush writes
-  setTimeout(() => killProcess(mongodProc, 'mongod'), 1500);
 }
 
 // ─── IPC Handlers for Authentication Persistence ────────────────────────────
@@ -335,33 +352,46 @@ ipcMain.handle('get-version', () => {
 });
 
 ipcMain.handle('open-logs', () => {
-  shell.openPath(MONGO_LOG_DIR);
+  shell.openPath(LOG_DIR);
   return true;
 });
 
 // ─── App lifecycle ───────────────────────────────────────────────────────────
 
-app.whenReady().then(async () => {
-  // Show a loading splash via a small window while services start
-  const splash = new BrowserWindow({
-    width: 480,
-    height: 300,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    resizable: false,
-    icon: path.join(__dirname, 'icon.ico'),
-    webPreferences: { nodeIntegration: false },
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
   });
-  splash.loadFile(path.join(__dirname, 'splash.html'));
-  splash.center();
 
-  const ok = await startServices();
-  if (!ok) return;
+  app.whenReady().then(async () => {
+    // Show a loading splash via a small window while services start
+    const splash = new BrowserWindow({
+      width: 480,
+      height: 300,
+      frame: false,
+      transparent: true,
+      alwaysOnTop: true,
+      resizable: false,
+      icon: path.join(__dirname, 'icon.ico'),
+      webPreferences: { nodeIntegration: false },
+    });
+    splash.loadFile(path.join(__dirname, 'splash.html'));
+    splash.center();
 
-  createWindow();
-  splash.destroy();
-});
+    const ok = await startServices();
+    if (!ok) return;
+
+    createWindow();
+    splash.destroy();
+  });
+}
 
 app.on('before-quit', shutdownServices);
 

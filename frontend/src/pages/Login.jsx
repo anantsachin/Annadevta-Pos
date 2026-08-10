@@ -48,11 +48,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-sand-app">
-      <div className="hidden lg:block relative overflow-hidden">
+      <div className="hidden lg:block relative overflow-hidden bg-slate-900">
         <img
           src="https://images.unsplash.com/photo-1707334724033-e997675f8c10?crop=entropy&cs=srgb&fm=jpg&q=85"
           alt=""
-          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => { e.target.style.opacity = '0'; }}
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
         />
         <div className="absolute inset-0 bg-gradient-to-tr from-black/75 via-black/40 to-transparent" />
         <div className="absolute inset-0 p-12 flex flex-col justify-between text-white">
