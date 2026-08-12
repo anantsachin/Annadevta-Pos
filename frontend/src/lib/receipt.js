@@ -457,7 +457,7 @@ export function printReceipt({ order, settings, menu }) {
   });
 
   const html = `<!doctype html>
-<html><head><title>Receipt #${receiptNoFormatted}</title>
+<html><head><meta charset="utf-8"/><title>Receipt #${receiptNoFormatted}</title>
 <style>
   @page {
     size: ${paperWidth} auto;
@@ -467,7 +467,7 @@ export function printReceipt({ order, settings, menu }) {
     box-sizing: border-box;
   }
   body {
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'JetBrains Mono', 'Courier New', Courier, monospace, sans-serif;
     font-size: 12px;
     line-height: 1.5;
     color: #000;
@@ -525,10 +525,22 @@ export function printReceipt({ order, settings, menu }) {
     font-weight: bold;
     padding: 2px 0;
   }
+  .receipt-cut-separator {
+    border-top: 2px dashed #000 !important;
+    margin: 16px 0 !important;
+    width: 100% !important;
+    display: block !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+  .second-token-container {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
 </style></head>
 <body>
   ${firstReceiptHTML}
-  <div style="margin-top: 2em; margin-bottom: 2em; border-top: 1px dashed #666; width: 100%;"></div>
+  <div class="receipt-cut-separator" style="margin-top: 1.5em; margin-bottom: 1.5em; border-top: 2px dashed #000; width: 100%; page-break-after: always; break-after: page;"></div>
   ${secondReceiptHTML}
   <script>
     window.onload = () => {

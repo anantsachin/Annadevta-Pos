@@ -356,6 +356,100 @@ ipcMain.handle('open-logs', () => {
   return true;
 });
 
+// ─── Printer IPC Handlers for Thermal Paper Cutting ───────────────────────────
+ipcMain.handle('printer:get-printers', async () => {
+  if (!mainWindow) return [];
+  try {
+    const list = await mainWindow.webContents.getPrintersAsync();
+    return list.map(p => ({ name: p.name, isDefault: p.isDefault }));
+  } catch (e) {
+    logToFile('main', `Failed to get printers: ${e.message}`);
+    return [];
+  }
+});
+
+ipcMain.handle('printer:print', async (event, { html, printerName, paperWidth }) => {
+  return new Promise((resolve) => {
+    let printWin = new BrowserWindow({
+      show: false,
+      webPreferences: { nodeIntegration: false, contextIsolation: true }
+    });
+
+    printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+
+    printWin.webContents.once('did-finish-load', () => {
+      const printOptions = {
+        silent: true,
+        printBackground: true,
+        margins: { marginType: 'none' },
+      };
+      if (printerName) {
+        printOptions.deviceName = printerName;
+      }
+
+      printWin.webContents.print(printOptions, (success, failureReason) => {
+        if (!success) {
+          logToFile('main', `Print failed: ${failureReason}`);
+        } else {
+          logToFile('main', 'Print job sent successfully');
+        }
+        try { printWin.close(); } catch (_) {}
+        printWin = null;
+        resolve(success);
+      });
+    });
+  });
+});
+
+ipcMain.handle('printer:test-print', async (event, { printerName, paperWidth }) => {
+  const is58 = Number(paperWidth) === 58;
+  const widthStr = is58 ? "58mm" : "80mm";
+  const testHTML = `<!doctype html>
+<html><head><meta charset="utf-8"/><title>Test Print</title>
+<style>
+  @page { size: ${widthStr} auto; margin: 0; }
+  body { font-family: monospace; font-size: 12px; padding: 10px; text-align: center; }
+  .receipt-cut-separator {
+    border-top: 2px dashed #000;
+    margin: 15px 0;
+    page-break-after: always;
+    break-after: page;
+  }
+</style></head>
+<body>
+  <h3>ANNDEVTA POS</h3>
+  <p>Test Receipt</p>
+  <div class="receipt-cut-separator"></div>
+  <p>Test Token</p>
+</body></html>`;
+
+  return new Promise((resolve) => {
+    let printWin = new BrowserWindow({
+      show: false,
+      webPreferences: { nodeIntegration: false, contextIsolation: true }
+    });
+
+    printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(testHTML)}`);
+
+    printWin.webContents.once('did-finish-load', () => {
+      const printOptions = {
+        silent: true,
+        printBackground: true,
+        margins: { marginType: 'none' },
+      };
+      if (printerName) {
+        printOptions.deviceName = printerName;
+      }
+
+      printWin.webContents.print(printOptions, (success, failureReason) => {
+        try { printWin.close(); } catch (_) {}
+        printWin = null;
+        resolve(success);
+      });
+    });
+  });
+});
+
 // ─── App lifecycle ───────────────────────────────────────────────────────────
 
 const gotTheLock = app.requestSingleInstanceLock();

@@ -245,12 +245,12 @@ code,
 
 @media (max-width: 1024px) {
   .receipt-container {
-    zoom: 0.88;
+    zoom: 1;
     transform-origin: top center;
   }
 
   .billing-responsive-scale {
-    zoom: 0.88;
+    zoom: 1;
     max-width: 100%;
     box-sizing: border-box;
   }
@@ -436,7 +436,7 @@ code,
 
   .cart-section {
     flex: 0 0 32% !important;
-    min-width: 250px !important;
+    min-width: 0 !important;
     height: 100% !important;
     min-height: calc(100vh - 0.8rem) !important;
     border-radius: 20px !important;
@@ -467,13 +467,13 @@ code,
   }
 
   .receipt-container {
-    zoom: 0.85;
+    zoom: 1;
     transform-origin: top center;
     border-radius: 12px;
   }
 
   .billing-responsive-scale {
-    zoom: 0.90;
+    zoom: 1;
     max-width: 100%;
     box-sizing: border-box;
   }
@@ -612,16 +612,16 @@ code,
     height: 100% !important;
     min-height: calc(100vh - 0.6rem) !important;
     flex: 0 0 33% !important;
-    min-width: 235px !important;
+    min-width: 0 !important;
   }
 
   .receipt-container {
-    zoom: 0.78;
+    zoom: 1;
     transform-origin: top center;
   }
 
   .billing-responsive-scale {
-    zoom: 0.84;
+    zoom: 1;
     max-width: 100%;
     box-sizing: border-box;
   }
@@ -667,6 +667,7 @@ code,
 
   .sidebar {
     transition: flex 0.3s ease, min-width 0.3s ease, max-width 0.3s ease, width 0.3s ease, padding 0.3s ease !important;
+    z-index: 30 !important;
   }
 
   aside.sidebar ~ main {
@@ -755,7 +756,7 @@ code,
   /* Center logo */
   .sidebar.collapsed img {
     max-width: 32px !important;
-    margin: 0 auto !important;
+    margin: 28px auto 0 auto !important;
   }
 
   .sidebar.collapsed .user-profile-card {
