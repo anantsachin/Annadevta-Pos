@@ -106,7 +106,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f7fb] main-wrapper">
+    <div className="min-h-screen w-full bg-[#f5f7fb] main-wrapper overflow-hidden">
       {/* Mobile Top Header */}
       <header className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-border sticky top-0 z-30 shadow-sm h-14 top-navbar">
         <div className="flex items-center gap-3">
@@ -135,7 +135,15 @@ export default function Layout() {
       )}
 
       {/* Sidebar - Fixed/Drawer on mobile, Standard on desktop */}
-      <aside className={`fixed left-0 top-0 h-screen w-[210px] p-2 sm:p-2.5 md:pr-1 sidebar ${isCollapsed ? "collapsed" : ""}`}>
+      <aside
+      className={`
+      fixed left-0 top-0 h-screen
+      w-[210px]
+      p-2 sm:p-2.5 md:pr-1
+      sidebar
+      ${isCollapsed ? "collapsed" : ""}
+      `}
+>
         {/* Header with Customizable terracotaing */}
         <div className="relative h-full bg-[#FFFDF9] rounded-[24px] border border-[#F4E6D7] shadow-lg overflow-hidden flex flex-col">
           <button
@@ -245,7 +253,7 @@ export default function Layout() {
 
 
       {/* Main Content - Offset by sidebar width on desktop */}
-      <main className="md:ml-[210px] h-screen p-2.5 sm:p-3 md:pl-1 overflow-hidden transition-all duration-300">
+      <main className="md:ml-[210px] h-screen min-w-0 p-2 sm:p-3 md:pl-1 overflow-hidden transition-all duration-300">
         {/* Sync / Offline Status Bar */}
         {(!isOnline || pendingCount > 0 || syncStatus === "syncing" || syncStatus === "synced" || syncStatus === "error") && (
           <div className={`w-full px-4 py-2 flex items-center justify-between text-xs font-semibold z-20 ${!isOnline
@@ -278,7 +286,7 @@ export default function Layout() {
             )}
           </div>
         )}
-        <div className="h-[calc(100vh-20px)] sm:h-[calc(100vh-24px)] overflow-y-auto bg-transparent">
+        <div className="h-[calc(100vh-20px)] sm:h-[calc(100vh-24px)] min-w-0 overflow-x-hidden overflow-y-auto bg-transparent">
           <Outlet />
         </div>
 
