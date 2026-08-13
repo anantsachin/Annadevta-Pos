@@ -33,15 +33,15 @@ import { useOnlineStatus } from "../lib/offlineManager";
 import { getCurrentToken, incrementToken } from "../lib/tokenManager";
 
 // Horizontal category tabs requested
-const CATEGORY_TABS = [
-  "ALL ITEMS",
-  "THALI",
-  "SABJI",
-  "DAL",
-  "RICE",
-  "BREAD",
-  "DRINKS",
-];
+// const CATEGORY_TABS = [
+//   "ALL ITEMS",
+//   "THALI",
+//   "SABJI",
+//   "DAL",
+//   "RICE",
+//   "BREAD",
+//   "DRINKS",
+// ];
 
 
 
@@ -53,7 +53,7 @@ export default function Billing() {
   const [search, setSearch] = useState("");
   const [thaliFor, setThaliFor] = useState(null);
   const [activeTab, setActiveTab] = useState("cart"); // "cart" or "receipt"
-  const [menuMode, setMenuMode] = useState(null); // No auto-selected menu mode by default
+  const [menuMode, setMenuMode] = useState("dining"); // No auto-selected menu mode by default
   const [showCartMobile, setShowCartMobile] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [cart, setCart] = useState([]);
@@ -458,10 +458,7 @@ export default function Billing() {
     [menuMode, filteredDining, filteredParcel, allFilteredItems]
   );
 
-  const showGlobalMenus = useMemo(() => {
-    const norm = activeCat.trim().toUpperCase();
-    return norm === "ALL ITEMS" || norm === "ALL" || norm === "THALI";
-  }, [activeCat]);
+  const showGlobalMenus = true;
 
   const checkout = useCallback(async (mode) => {
     if (!cart.length) {
@@ -588,7 +585,7 @@ export default function Billing() {
           </div>
 
           {/* Horizontal Category Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-1 scrollbar-none">
+          {/* <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-1 scrollbar-none">
             {CATEGORY_TABS.map((tab) => {
               const isActive = activeCat.toUpperCase() === tab;
               return (
@@ -613,10 +610,10 @@ export default function Billing() {
                 </button>
               );
             })}
-          </div>
+          </div> */}
 
           {/* Dining Menu & Parcel Menu Toggle Buttons (ONLY visible for ALL ITEMS or THALI) */}
-          {showGlobalMenus && (
+          {/* {showGlobalMenus && ( */}
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={() => setMenuMode("dining")}
@@ -642,14 +639,14 @@ export default function Billing() {
                 Parcel Menu
               </button>
             </div>
-          )}
+          {/* )} */}
         </div>
 
         {/* Scrollable Content: Dining Menu & Parcel Menu */}
         <div className="flex-1 min-h-0 overflow-y-auto pt-5 pr-1 space-y-8 scroll-behavior-smooth">
 
           {/* ALL ITEMS SECTION (WHEN NEITHER DINING NOR PARCEL MODE TOGGLE IS ACTIVE) */}
-          {showGlobalMenus && !menuMode && (
+          {/* {showGlobalMenus && !menuMode && (
             <section className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -684,7 +681,7 @@ export default function Billing() {
                 </div>
               )}
             </section>
-          )}
+          )} */}
 
           {/* SECTION 1: DINING MENU (ONLY visible for ALL ITEMS or THALI) */}
           {showGlobalMenus && menuMode === "dining" && (

@@ -346,12 +346,9 @@ export default function ReceiptPreview({
             <span>{receiptNoFormatted}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span>{t("date")}:</span>
-            <span>{dateStr}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span>{t("time")}:</span>
-            <span>{timeStr}</span>
+          <span>{dateStr}</span>
+          <span>{timeStr}</span>
+          
           </div>
           {/* {order.cashier_name && (
             <div className="flex justify-between items-center">
