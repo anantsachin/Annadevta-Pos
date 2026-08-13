@@ -671,14 +671,14 @@ code,
   }
 
   aside.sidebar ~ main {
-    margin-left: 240px !important;
+    margin-left: 210px !important;
     padding-left: 4px !important;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding-left 0.3s ease !important;
   }
 
   @media (min-width: 1024px) {
     aside.sidebar ~ main {
-      margin-left: 250px !important;
+      margin-left: 210px !important;
     }
   }
 

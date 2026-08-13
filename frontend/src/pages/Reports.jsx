@@ -169,7 +169,9 @@ export default function Reports() {
                 <th className="text-left px-4 py-3">{t("date_col")}</th>
                 <th className="text-left px-4 py-3">{t("payment_col")}</th>
                 <th className="text-right px-4 py-3">{t("subtotal")}</th>
-                <th className="text-right px-4 py-3">{t("tax_label")}</th>
+                <th className="text-right px-4 py-3">CGST</th>
+                <th className="text-right px-4 py-3">SGST</th>
+                <th className="text-right px-4 py-3">Total Tax</th>
                 <th className="text-right px-4 py-3">{t("total")}</th>
               </tr>
             </thead>
@@ -179,21 +181,25 @@ export default function Reports() {
                 if (o.payment_mode === "cash") paymentModeLabel = t("cash");
                 if (o.payment_mode === "upi") paymentModeLabel = t("upi");
                 if (o.payment_mode === "card") paymentModeLabel = t("card");
+                const taxVal = Number(o.tax || 0);
+                const cgstVal = o.cgst !== undefined ? Number(o.cgst) : Number((taxVal / 2).toFixed(2));
+                const sgstVal = o.sgst !== undefined ? Number(o.sgst) : Number((taxVal - cgstVal).toFixed(2));
                 return (
                   <tr key={o.id} className="border-t border-border">
                     <td className="px-4 py-3 font-mono font-semibold">{o.receipt_no}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(o.paid_at).toLocaleString('en-IN')}</td>
                     <td className="px-4 py-3 uppercase text-xs font-mono">{paymentModeLabel}</td>
                     <td className="px-4 py-3 text-right font-mono">₹{o.subtotal}</td>
-                    <td className="px-4 py-3 text-right font-mono">₹{o.tax}</td>
+                    <td className="px-4 py-3 text-right font-mono">₹{cgstVal.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-right font-mono">₹{sgstVal.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-right font-mono">₹{taxVal.toFixed(2)}</td>
                     <td className="px-4 py-3 text-right font-mono font-semibold">₹{o.total}</td>
                   </tr>
                 );
               })}
-              {rows.length === 0 && <tr><td colSpan="6" className="text-center text-muted-foreground py-10">{t("no_sales_in_period")}</td></tr>}
+              {rows.length === 0 && <tr><td colSpan="8" className="text-center text-muted-foreground py-10">{t("no_sales_in_period")}</td></tr>}
             </tbody>
           </table>
-        
         )}
 
         {tab === "products" && (

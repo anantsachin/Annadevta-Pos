@@ -3,18 +3,21 @@ import api from "../lib/api";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Printer, Eye, Search } from "lucide-react";
+import { Printer, Eye, Search, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { printReceipt } from "../lib/receipt";
 import ReceiptPreview from "../components/ReceiptPreview";
 import { useLanguage } from "../context/LanguageContext";
 import { safeArray } from "../lib/safeArray";
+import ConfirmDialog from "../components/ConfirmDialog";
+import { toast } from "sonner";
 
 export default function OrderHistory() {
   const { t } = useLanguage();
   const [orders, setOrders] = useState([]);
   const [settings, setSettings] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const getLocalDateString = (rawDate) => {
     if (!rawDate) return "";
@@ -135,6 +138,20 @@ export default function OrderHistory() {
 
   const reprint = (o) => printReceipt({ order: o, settings });
 
+  const handleDeleteOrder = async () => {
+    if (!deleteTarget || !deleteTarget.id) return;
+    try {
+      await api.delete(`/orders/${deleteTarget.id}`);
+      setOrders((prev) => prev.filter((o) => o.id !== deleteTarget.id));
+      toast.success(t("order_deleted_success") || "Order deleted successfully");
+    } catch (err) {
+      console.error("Failed to delete order", err);
+      toast.error(err.response?.data?.detail || "Failed to delete order");
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
   return (
     <div className="h-full bg-[#FFFDF9] rounded-[16px] sm:rounded-[20px] md:rounded-[24px] lg:rounded-[32px] border border-[#F4E6D7] shadow-lg p-3 sm:p-4 md:p-5 lg:p-8 flex flex-col overflow-hidden">
       <div className="mb-3 md:mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 md:gap-4 shrink-0">
@@ -253,6 +270,7 @@ export default function OrderHistory() {
                       <div className="flex justify-end items-center gap-0.5">
                         <button onClick={() => setView(o)} className="p-1 md:p-1.5 hover:bg-sand-subtle rounded-md text-slate-600" data-testid={`view-${o.id}`} title="View Details"><Eye className="w-3.5 h-3.5 md:w-4 md:h-4" /></button>
                         <button onClick={() => reprint(o)} className="p-1 md:p-1.5 hover:bg-sand-subtle rounded-md text-terracota" data-testid={`reprint-${o.id}`} title="Reprint Receipt"><Printer className="w-3.5 h-3.5 md:w-4 md:h-4" /></button>
+                        <button onClick={() => setDeleteTarget(o)} className="p-1 md:p-1.5 hover:bg-red-50 rounded-md text-red-500 hover:text-red-700 transition-colors" data-testid={`delete-${o.id}`} title="Delete Order"><Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" /></button>
                       </div>
                     </td>
                   </tr>
@@ -279,6 +297,17 @@ export default function OrderHistory() {
           </DialogContent>
         </Dialog>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteOrder}
+        title="Delete this order?"
+        message="Are you sure you want to permanently remove this order from Order History? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   );
 }

@@ -21,7 +21,7 @@ function getItemSubItems(item, t, menuList = []) {
   };
 
   // 1. Check explicit item.rules array:
-  const rules = item.rules || (typeof item.rules === 'string' ? (() => { try { return JSON.parse(item.rules); } catch(e){ return null; } })() : null);
+  const rules = item.rules || (typeof item.rules === 'string' ? (() => { try { return JSON.parse(item.rules); } catch (e) { return null; } })() : null);
   if (Array.isArray(rules) && rules.length > 0) {
     rules.forEach((r) => {
       if (!r || typeof r !== 'object') return;
@@ -43,7 +43,7 @@ function getItemSubItems(item, t, menuList = []) {
           if (selObj.startsWith('{') || selObj.startsWith('[')) {
             parsedObj = JSON.parse(selObj);
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (typeof parsedObj === 'object' && parsedObj !== null && !Array.isArray(parsedObj)) {
@@ -246,10 +246,85 @@ export default function ReceiptPreview({
       </div>
     );
   };
-
   return (
     <div className="receipt-wrapper">
-      {/* First Token/Receipt Container - 300px symmetrical thermal layout */}
+      {/* FIRST CONTAINER: Kitchen Receipt - 300px symmetrical thermal layout */}
+      <div id="kitchen-receipt-print" className="kitchen-receipt-container w-[300px] mx-auto bg-[#fdfbf7] p-[10px] shadow-md border border-[#e6e4de] font-mono leading-normal text-[#000] text-[12px] box-border">
+        {/* Restaurant Name */}
+        <div className="text-center">
+          <div className="font-bold text-xs tracking-wide uppercase mb-0.5">{(settings?.name || "ANNDEVTA THALI HOUSE").toUpperCase()}</div>
+        </div>
+
+        <div className="my-1.5 border-t border-black" />
+
+        {/* Kitchen Metadata */}
+        <div className="space-y-0.5 text-[11px] font-medium">
+          {(order.token_no !== undefined && order.token_no !== null) && (
+            <div className="flex justify-between items-center">
+              <span>TOKEN NO:</span>
+              <span className="font-bold text-xs">#{order.token_no}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center">
+            <span>BILL NO:</span>
+            <span className="font-bold">{receiptNoFormatted}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>DATE:</span>
+            <span>{dateStr}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>TIME:</span>
+            <span>{timeStr}</span>
+          </div>
+          {order.notes && (
+            <div className="flex justify-between items-center text-[#d32f2f] font-bold">
+              <span>NOTES:</span>
+              <span>{order.notes}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Title */}
+        <div className="my-1.5 border-t border-dashed border-black" />
+        <div className="text-center font-extrabold tracking-widest text-xs">KITCHEN ORDER</div>
+        <div className="my-1.5 border-t border-dashed border-black" />
+
+        {/* Items List (No Prices) */}
+        <div className="space-y-2 my-2">
+          {Array.isArray(order?.items) && order.items.map((line, idx) => {
+            const key = line._key || `${line.menu_item_id}-${idx}`;
+            const subItems = getItemSubItems(line, t, menu);
+            return (
+              <div key={key}>
+                <div className="font-bold text-[13px]">
+                  {t(line.name)}
+                </div>
+                <div className="font-bold text-[11px] text-[#111]">
+                  Qty: {line.qty}
+                </div>
+                {Array.isArray(subItems) && subItems.length > 0 && (
+                  <div className="text-[11px] text-[#333] pl-2 mt-0.5 leading-snug">
+                    {subItems.map((sel, sIdx) => (
+                      <div key={sIdx}>• {sel}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer Banner */}
+        <div className="mt-3 my-1 border-t border-black" />
+        <div className="text-center font-extrabold text-xs tracking-widest uppercase my-0.5">KITCHEN COPY</div>
+        <div className="my-1 border-t border-black" />
+      </div>
+
+      {/* Vertical spacing between preview blocks */}
+      <div className="h-6 select-none print:hidden" />
+
+      {/* SECOND CONTAINER: Customer Receipt - 300px symmetrical thermal layout */}
       <div className="receipt-container w-[300px] mx-auto bg-[#fdfbf7] p-[10px] shadow-md border border-[#e6e4de] font-mono leading-normal text-[#000] text-[12px] box-border">
         {/* Header */}
         {renderHeader()}
@@ -358,12 +433,24 @@ export default function ReceiptPreview({
             <span>{t("subtotal")}</span>
             <span>Rs.{Number(order.subtotal || 0).toFixed(2)}</span>
           </div>
-          {settings?.show_gst !== false && (
-            <div className="flex justify-between">
-              <span>{taxLabel} ({gstRate}%)</span>
-              <span>Rs.{Number(order.tax || 0).toFixed(2)}</span>
-            </div>
-          )}
+          {settings?.show_gst !== false && (() => {
+            const cgstRate = order.cgst_rate ?? settings?.cgst_rate ?? ((settings?.gst_rate ?? 5.0) / 2);
+            const sgstRate = order.sgst_rate ?? settings?.sgst_rate ?? ((settings?.gst_rate ?? 5.0) / 2);
+            const cgstVal = order.cgst ?? (Number(order.subtotal || 0) * (cgstRate / 100));
+            const sgstVal = order.sgst ?? (Number(order.subtotal || 0) * (sgstRate / 100));
+            return (
+              <>
+                <div className="flex justify-between">
+                  <span>CGST ({cgstRate}%)</span>
+                  <span>Rs.{Number(cgstVal).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>SGST ({sgstRate}%)</span>
+                  <span>Rs.{Number(sgstVal).toFixed(2)}</span>
+                </div>
+              </>
+            );
+          })()}
           {order.discount > 0 && (
             <div className="flex justify-between text-[#d32f2f]">
               <span>{t("discount")}</span>
@@ -414,95 +501,6 @@ export default function ReceiptPreview({
           <div className="text-[8.5px] mt-0.5">Crafting Digital Success, Intelligently</div>
         </div>
         <div className="mt-2 border-t border-black" />
-      </div>
-
-      {/* Vertical spacing for receipt preview gap */}
-      <div className="h-6 select-none print:hidden" />
-
-      {/* Second Token/Receipt Container - 300px symmetrical thermal layout */}
-      <div id="second-token-print" className="receipt-container w-[300px] mx-auto bg-[#fdfbf7] p-[10px] shadow-md border border-[#e6e4de] font-mono leading-normal text-[#000] text-[12px] box-border">
-        {/* Header */}
-        <div className="text-center">
-          <div className="font-bold text-sm tracking-wide uppercase mb-0.5">{(settings?.name || "ANNDEVTA THALI HOUSE").toUpperCase()}</div>
-          {settings?.address && <div className="text-[11px] text-[#333] whitespace-pre-wrap mb-0.5">{settings.address}</div>}
-          {settings?.phone && <div className="text-[11px] text-[#333] mb-0.5">PH: {settings.phone}</div>}
-          {settings?.gstin && <div className="text-[11px] text-[#333]">GSTIN: {settings.gstin}</div>}
-        </div>
-
-        <div className="my-2 border-t border-black" />
-
-        <div className="space-y-0.5 text-[11px]">
-          <div className="flex justify-between items-center">
-            <span>Token No:</span>
-            <span className="font-bold">#{order.token_no}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span>Bill No:</span>
-            <span>{receiptNoFormatted}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span>Date:</span>
-            <span>{dateStr}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span>Time:</span>
-            <span>{timeStr}</span>
-          </div>
-        </div>
-
-        <div className="my-2 border-t border-dashed border-black" />
-        <div className="text-center font-bold tracking-wider text-[11px]">ITEMS</div>
-        <div className="my-1.5 border-t border-dashed border-black" />
-
-        {/* Items List */}
-        <div className="space-y-1.5">
-          {Array.isArray(order?.items) && order.items.map((line, idx) => {
-            const key = line._key || `${line.menu_item_id}-${idx}`;
-            const subItems = getItemSubItems(line, t, menu);
-            return (
-              <div key={key}>
-                <div className="flex justify-between font-bold">
-                  <span>{t(line.name)}</span>
-                  <span>Rs.{(line.price * line.qty).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-[11px] text-[#333]">
-                  <span>{line.qty} x Rs.{Number(line.price).toFixed(2)}</span>
-                </div>
-                {Array.isArray(subItems) && subItems.length > 0 && (
-                  <div className="text-[10px] text-[#555] pl-2.5 mt-0.5 leading-tight">
-                    {subItems.map((sel, sIdx) => (
-                      <div key={sIdx}>• {sel}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="my-2 border-t border-dashed border-black" />
-
-        <div className="space-y-1 text-[#000]">
-          <div className="flex justify-between">
-            <span>Subtotal</span>
-            <span>Rs.{subtotalVal.toFixed(2)}</span>
-          </div>
-          {settings?.show_gst !== false && (
-            <div className="flex justify-between">
-              <span>GST ({gstRate}%)</span>
-              <span>Rs.{gstVal.toFixed(2)}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="my-2 border-t border-dashed border-black" />
-
-        <div className="flex justify-between font-extrabold text-sm py-0.5">
-          <span>TOTAL</span>
-          <span>Rs.{totalWithGst.toFixed(2)}</span>
-        </div>
-
-        <div className="my-2 border-t border-dashed border-black" />
       </div>
     </div>
   );

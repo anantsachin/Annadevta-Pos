@@ -85,28 +85,28 @@ function CartLineComponent({ line, onInc, onDec, onRemove, onEditThali }) {
         </div>
 
         {/* Right Side: Quantity Buttons */}
-        <div className="flex items-center gap-1 shrink-0 pt-0.5">
+        <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
           <button
             onClick={onDec}
             data-testid={`dec-${line._key}`}
-            className="w-7 h-7 border border-[#F4E6D7] bg-white rounded-lg flex items-center justify-center text-slate-600 hover:bg-[#FFF3E7] hover:text-[#FF6B00] hover:border-[#FF8A3D] transition-all shadow-2xs active:scale-95"
+            className="w-8 h-8 border border-[#F4E6D7] bg-white rounded-lg flex items-center justify-center text-slate-700 hover:bg-[#FFF3E7] hover:text-[#FF6B00] hover:border-[#FF8A3D] transition-all shadow-2xs active:scale-95 touch-manipulation"
           >
-            <Minus className="w-3 h-3" />
+            <Minus className="w-3.5 h-3.5" />
           </button>
-          <span className="w-6 text-center text-xs font-mono font-bold text-slate-800">{line.qty}</span>
+          <span className="w-6 text-center text-xs font-mono font-extrabold text-slate-800">{line.qty}</span>
           <button
             onClick={onInc}
             data-testid={`inc-${line._key}`}
-            className="w-7 h-7 border border-[#F4E6D7] bg-white rounded-lg flex items-center justify-center text-slate-600 hover:bg-[#FFF3E7] hover:text-[#FF6B00] hover:border-[#FF8A3D] transition-all shadow-2xs active:scale-95"
+            className="w-8 h-8 border border-[#F4E6D7] bg-white rounded-lg flex items-center justify-center text-slate-700 hover:bg-[#FFF3E7] hover:text-[#FF6B00] hover:border-[#FF8A3D] transition-all shadow-2xs active:scale-95 touch-manipulation"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={onRemove}
             data-testid={`rm-${line._key}`}
-            className="w-7 h-7 text-rose-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 rounded-lg flex items-center justify-center transition-all ml-0.5 active:scale-95"
+            className="w-8 h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 rounded-lg flex items-center justify-center transition-all ml-0.5 active:scale-95 touch-manipulation"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>

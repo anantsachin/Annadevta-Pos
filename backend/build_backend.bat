@@ -12,7 +12,11 @@ echo [Anndevta POS] Building backend.exe...
 cd /d "%~dp0"
 
 :: Activate virtual environment
-call .venv\Scripts\activate.bat
+if exist .venv\Scripts\activate.bat (
+    call .venv\Scripts\activate.bat
+) else if exist venv_win\Scripts\activate.bat (
+    call venv_win\Scripts\activate.bat
+)
 
 :: Install / upgrade pyinstaller
 pip install pyinstaller --quiet

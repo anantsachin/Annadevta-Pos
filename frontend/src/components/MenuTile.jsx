@@ -21,93 +21,80 @@ function MenuTileComponent({ item, onClick }) {
         group
         relative
         overflow-hidden
-        h-[250px] flex flex-col
+        h-[155px] sm:h-[165px] flex flex-col justify-between
         w-full
-        rounded-[26px]
+        rounded-[20px] sm:rounded-[24px]
         border
         border-orange-100
         bg-white
-        p-6
+        p-3.5 sm:p-4
         text-left
-        shadow-sm
+        shadow-2xs
         hover:shadow-md
         transition-all
-        duration-300
+        duration-200
         hover:border-orange-200
+        active:scale-[0.98]
+        touch-manipulation
       "
     >
-      {/* Decorative Glow */}
-      {/* <div className="pointer-events-none absolute -right-8 -bottom-8 h-40 w-40 rounded-full bg-gradient-to-br from-terracota-100 via-terracota-200 to-terracota-400 opacity-[0.08] blur-3xl transition-opacity duration-300 group-hover:opacity-[0.16]" /> */}
-
-      {/* Header */}
-      <div className="flex items-start justify-between relative z-10">
+      {/* Header Badge & Stock */}
+      <div className="flex items-center justify-between relative z-10 w-full">
         {item.is_thali ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-white">
-            <Sparkles className="h-3 w-3" />
+          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 px-2.5 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.12em] text-white">
+            <Sparkles className="h-2.5 w-2.5" />
             THALI
           </span>
         ) : (
-          <span className="rounded-full bg-[#F0F8DC] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#6B9A1F]">
+          <span className="rounded-full bg-[#F0F8DC] px-2.5 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.15em] text-[#6B9A1F]">
             {(item.category_name || item.category || "ITEM").toUpperCase()}
           </span>
         )}
 
-        {item.current_stock !== null &&
-          item.current_stock !== undefined && (
-            <span
-              className={`rounded-full px-2 py-1 text-[10px] font-semibold ${stockColor}`}
-            >
-              {item.current_stock % 1 !== 0
-                ? Number(item.current_stock).toFixed(3)
-                : item.current_stock}
-            </span>
-          )}
+        {item.current_stock !== null && item.current_stock !== undefined && (
+          <span className={`rounded-full px-2 py-0.5 text-[9.5px] font-bold ${stockColor}`}>
+            {item.current_stock % 1 !== 0
+              ? Number(item.current_stock).toFixed(3)
+              : item.current_stock}
+          </span>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 mt-4 flex-1 flex flex-col min-h-0">
-
-      <h3
-        className={`
-          font-bold text-slate-900 tracking-tight
-          ${
-            (item.name || "").length > 25
-              ? "text-[14px]"
-              : (item.name || "").length > 15
-              ? "text-[16px]"
-              : "text-[18px]"
-          }
-        `}
-        style={{
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflowWrap: "break-word",
-          wordBreak: "break-word",
-          whiteSpace: "normal",
-          lineHeight: "1.2",
-          maxHeight: "40px",
-          overflow: "hidden"
-        }}
-      >
-        {t(item.name)}
-      </h3>
-
-      <div className="mt-auto border-t border-dashed border-orange-100 pt-4">
-
-      <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-semibold">
-      Price
+      {/* Item Title */}
+      <div className="relative z-10 my-1 flex-1 flex flex-col justify-center min-h-0">
+        <h3
+          className={`
+            font-bold text-slate-900 tracking-tight leading-snug
+            ${
+              (item.name || "").length > 25
+                ? "text-[13px]"
+                : (item.name || "").length > 15
+                ? "text-[14px]"
+                : "text-[15px] sm:text-[16px]"
+            }
+          `}
+          style={{
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflowWrap: "break-word",
+            wordBreak: "break-word",
+            whiteSpace: "normal",
+            maxHeight: "38px",
+            overflow: "hidden"
+          }}
+        >
+          {t(item.name)}
+        </h3>
       </div>
 
-    </div>
-
-</div>
-
-      {/* Bottom */}
-      <div className="relative z-10 mt-auto flex w-full items-end justify-between">
+      {/* Bottom Price & Touch Add Button */}
+      <div className="relative z-10 mt-auto flex w-full items-center justify-between pt-1 border-t border-dashed border-orange-100/80">
         <div>
-      
-          <div className="mt-1 text-[26px] font-black tracking-[-0.04em] text-brand-600">
+          <div className="text-[9px] uppercase tracking-[0.15em] text-slate-400 font-semibold">
+            Price
+          </div>
+          <div className="text-[19px] sm:text-[21px] font-black tracking-tight text-brand-600 leading-tight">
             ₹{item.price}
           </div>
         </div>
@@ -115,8 +102,8 @@ function MenuTileComponent({ item, onClick }) {
         <div
           className="
             flex
-            h-10
-            w-10
+            h-9
+            w-9
             items-center
             justify-center
             rounded-full
@@ -124,13 +111,14 @@ function MenuTileComponent({ item, onClick }) {
             from-brand-400
             to-brand-600
             text-white
-            shadow-button
+            shadow-xs
             transition-all
-            duration-300
-            group-hover:scale-110
+            duration-200
+            group-hover:scale-105
+            shrink-0
           "
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4.5 w-4.5" />
         </div>
       </div>
 

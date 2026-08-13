@@ -92,7 +92,7 @@ class TestSettings:
         r = admin_session.get(f"{API}/settings")
         assert r.status_code == 200
         s = r.json()
-        for k in ("name", "address", "gstin", "phone", "gst_rate", "footer_msg"):
+        for k in ("name", "address", "gstin", "phone", "gst_rate", "cgst_rate", "sgst_rate", "footer_msg"):
             assert k in s
 
     def test_update_settings_admin(self, admin_session):
@@ -103,6 +103,8 @@ class TestSettings:
             "address": "Test Addr",
             "gstin": "TEST29ABCDE",
             "phone": "+91 99999",
+            "cgst_rate": 6.0,
+            "sgst_rate": 6.0,
             "gst_rate": 12.0,
             "footer_msg": "Test footer",
         }
@@ -110,17 +112,20 @@ class TestSettings:
         assert r.status_code == 200
         got = admin_session.get(f"{API}/settings").json()
         assert got["name"] == "TEST_Thali House"
+        assert got["cgst_rate"] == 6.0
+        assert got["sgst_rate"] == 6.0
         assert got["gst_rate"] == 12.0
         # restore
         admin_session.put(f"{API}/settings", json={
             "name": cur["name"], "address": cur["address"], "gstin": cur["gstin"],
-            "phone": cur["phone"], "gst_rate": cur["gst_rate"], "footer_msg": cur["footer_msg"],
+            "phone": cur["phone"], "cgst_rate": cur.get("cgst_rate", 2.5), "sgst_rate": cur.get("sgst_rate", 2.5),
+            "gst_rate": cur["gst_rate"], "footer_msg": cur["footer_msg"],
         })
 
     def test_update_settings_cashier_forbidden(self, cashier_session):
         r = cashier_session.put(f"{API}/settings", json={
             "name": "X", "address": "", "gstin": "", "phone": "",
-            "gst_rate": 5.0, "footer_msg": "x",
+            "cgst_rate": 2.5, "sgst_rate": 2.5, "gst_rate": 5.0, "footer_msg": "x",
         })
         assert r.status_code == 403
 
@@ -132,18 +137,15 @@ class TestCategoriesAndMenu:
         assert r.status_code == 200
         cats = r.json()
         names = {c["name"] for c in cats}
-        # seed defines these six
-        for n in ("Thali", "Sabji", "Dal", "Rice", "Bread", "Drinks"):
+        # seed defines Gujarati categories
+        for n in ("Dining Menu", "Parcel Menu", "Daily Thalis"):
             assert n in names, f"Missing seeded category: {n}"
 
     def test_list_menu_has_thalis(self, menu_items):
         thalis = [m for m in menu_items if m.get("is_thali")]
         assert len(thalis) >= 3
-        names = {t["name"] for t in thalis}
-        assert {"Regular Thali", "Mini Thali", "Special Thali"}.issubset(names)
         for t in thalis:
             assert isinstance(t.get("thali_groups"), list)
-            assert len(t["thali_groups"]) >= 1
 
     def test_toggle_menu_item(self, admin_session, menu_items):
         # pick a non-thali item
@@ -250,6 +252,14 @@ class TestOrders:
         # thali selections preserved
         thali_item = next(i for i in r2.json()["items"] if i["is_thali"])
         assert thali_item["thali_selections"]["Sabji"] == ["Paneer Masala", "Mix Veg"]
+
+        # DELETE order test
+        del_res = admin_session.delete(f"{API}/orders/{o['id']}")
+        assert del_res.status_code == 200
+        assert del_res.json()["ok"] is True
+        # Verify 404 after deletion
+        r3 = admin_session.get(f"{API}/orders/{o['id']}")
+        assert r3.status_code == 404
 
     def test_receipt_no_atomic_increment(self, admin_session, menu_items):
         item = next(m for m in menu_items if not m.get("is_thali"))

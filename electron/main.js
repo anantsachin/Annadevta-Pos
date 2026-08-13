@@ -165,7 +165,40 @@ async function startServices() {
 
   // Start FastAPI backend (SQLite only — no MongoDB)
   if (!fs.existsSync(BACKEND_EXE)) {
-    logToFile('main', 'WARN: backend.exe not found — assuming external backend is running');
+    if (!IS_PACKAGED) {
+      logToFile('main', 'backend.exe not found in dev mode — spawning python backend server...');
+      const backendDir = path.join(__dirname, '..', 'backend');
+      const pyCmd = process.platform === 'win32' ? 'py' : 'python3';
+      backendProc = spawn(pyCmd, ['server.py'], {
+        cwd: backendDir,
+        env: {
+          ...process.env,
+          DB_PATH: DB_PATH,
+          DB_NAME: 'thali_pos',
+          JWT_SECRET: 'thali-pos-super-secret-key-987654321',
+          ADMIN_EMAIL: 'admin@pos.com',
+          ADMIN_PASSWORD: 'admin123',
+          PORT: String(BACKEND_PORT),
+        },
+        windowsHide: true,
+      });
+      if (backendProc && backendProc.pid) {
+        logToFile('main', `backend.py spawned PID: ${backendProc.pid}`);
+        if (backendProc.stdout) {
+          backendProc.stdout.on('data', (d) => logToFile('backend.py', d.toString().trim()));
+        }
+        if (backendProc.stderr) {
+          backendProc.stderr.on('data', (d) => {
+            const msg = d.toString().trim();
+            backendErrorLogs.push(msg);
+            if (backendErrorLogs.length > 15) backendErrorLogs.shift();
+            logToFile('backend.py:ERR', msg);
+          });
+        }
+      }
+    } else {
+      logToFile('main', 'WARN: backend.exe not found — assuming external backend is running');
+    }
   } else {
     logToFile('main', 'Starting backend.exe...');
     backendProc = spawnSilent(BACKEND_EXE, [], {

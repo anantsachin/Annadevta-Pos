@@ -23,7 +23,7 @@ function getItemSubItems(item, t, menuList = []) {
   };
 
   // 1. Check explicit item.rules array:
-  const rules = item.rules || (typeof item.rules === 'string' ? (() => { try { return JSON.parse(item.rules); } catch(e){ return null; } })() : null);
+  const rules = item.rules || (typeof item.rules === 'string' ? (() => { try { return JSON.parse(item.rules); } catch (e) { return null; } })() : null);
   if (Array.isArray(rules) && rules.length > 0) {
     rules.forEach((r) => {
       if (!r || typeof r !== 'object') return;
@@ -45,7 +45,7 @@ function getItemSubItems(item, t, menuList = []) {
           if (selObj.startsWith('{') || selObj.startsWith('[')) {
             parsedObj = JSON.parse(selObj);
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (typeof parsedObj === 'object' && parsedObj !== null && !Array.isArray(parsedObj)) {
@@ -139,8 +139,11 @@ function getGroupedThaliItems(selections, extras, t) {
 }
 
 function buildReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, dateStr, timeStr, safe, menu }) {
-  const gstRate = settings?.gst_rate ?? 5.0;
-  const taxLabel = settings?.tax_label || 'GST';
+  const cgstRate = order.cgst_rate ?? settings?.cgst_rate ?? ((settings?.gst_rate ?? 5.0) / 2);
+  const sgstRate = order.sgst_rate ?? settings?.sgst_rate ?? ((settings?.gst_rate ?? 5.0) / 2);
+  const cgstVal = order.cgst ?? (Number(order.subtotal || 0) * (cgstRate / 100));
+  const sgstVal = order.sgst ?? (Number(order.subtotal || 0) * (sgstRate / 100));
+  const taxLabel = settings?.tax_label || 'CGST & SGST';
 
   // Center aligned header
   let headerHTML = '';
@@ -260,8 +263,12 @@ function buildReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, da
     
     ${settings?.show_gst !== false ? `
     <div class="summary-row">
-      <span>${safe(taxLabel)} (${gstRate}%)</span>
-      <span>Rs.${Number(order.tax || 0).toFixed(2)}</span>
+      <span>CGST (${cgstRate}%)</span>
+      <span>Rs.${Number(cgstVal).toFixed(2)}</span>
+    </div>
+    <div class="summary-row">
+      <span>SGST (${sgstRate}%)</span>
+      <span>Rs.${Number(sgstVal).toFixed(2)}</span>
     </div>` : ''}
     
     ${order.discount > 0 ? `
@@ -306,27 +313,23 @@ function buildReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, da
   `;
 }
 
-function buildSecondReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, dateStr, timeStr, safe, menu }) {
-  const gstRate = settings?.gst_rate ?? 5.0;
-  const taxLabel = settings?.tax_label || 'GST';
+function buildKitchenReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatted, dateStr, timeStr, safe, menu }) {
   const nameUpper = safe((settings?.name || 'ANNDEVTA THALI HOUSE').toUpperCase());
 
   const itemsHTML = (order.items || []).map((i) => {
-    const lineTotal = (i.price * i.qty).toFixed(2);
     const subItems = getItemSubItems(i, t, menu);
     const subline = subItems.map((sel) => `• ${safe(sel)}`);
 
     return `
-      <div style="margin-bottom: 6px;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold;">
-          <span>${safe(t(i.name))}</span>
-          <span>Rs.${lineTotal}</span>
+      <div style="margin-bottom: 8px;">
+        <div style="font-weight: bold; font-size: 13px; margin-bottom: 2px;">
+          ${safe(t(i.name))}
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #333;">
-          <span>${i.qty} x Rs.${Number(i.price).toFixed(2)}</span>
+        <div style="font-weight: bold; font-size: 11px; color: #111;">
+          Qty: ${i.qty}
         </div>
         ${subline.length > 0 ? `
-        <div style="font-size: 10px; color: #555; padding-left: 10px; margin-top: 2px; line-height: 1.3;">
+        <div style="font-size: 11px; color: #333; padding-left: 8px; margin-top: 3px; line-height: 1.4;">
           ${subline.join('<br/>')}
         </div>` : ''}
       </div>
@@ -334,71 +337,51 @@ function buildSecondReceiptBlock({ order, settings, t, tokenNo, receiptNoFormatt
   }).join('');
 
   return `
-  <div class="second-token-container">
+  <div class="kitchen-receipt-container">
     <div style="text-align: center;">
-      <div style="font-weight: bold; font-size: 14px; text-transform: uppercase; margin-bottom: 2px;">${nameUpper}</div>
-      ${settings?.address ? `<div style="font-size: 11px; margin: 1px 0;">${safe(settings.address)}</div>` : ''}
-      ${settings?.phone ? `<div style="font-size: 11px; margin: 1px 0;">PH: ${safe(settings.phone)}</div>` : ''}
-      ${settings?.gstin ? `<div style="font-size: 11px; margin: 1px 0;">GSTIN: ${safe(settings.gstin)}</div>` : ''}
+      <div style="font-weight: bold; font-size: 13px; text-transform: uppercase; margin-bottom: 2px;">${nameUpper}</div>
     </div>
-    
-    <div class="separator-solid"></div>
-    
-    <div class="bill-info">
+
+    <div class="separator-solid" style="border-top: 1px solid #000; margin: 6px 0;"></div>
+
+    <div class="bill-info" style="font-size: 11px;">
       ${tokenNo !== undefined && tokenNo !== null ? `
       <div class="info-row">
-        <span>Token No:</span>
-        <span style="font-weight: bold;">#${tokenNo}</span>
+        <span>TOKEN NO:</span>
+        <span style="font-weight: bold; font-size: 13px;">#${tokenNo}</span>
       </div>` : ''}
       <div class="info-row">
-        <span>${t("bill_no")}:</span>
-        <span>${receiptNoFormatted}</span>
+        <span>BILL NO:</span>
+        <span style="font-weight: bold;">${receiptNoFormatted}</span>
       </div>
       <div class="info-row">
-        <span>${t("date")}:</span>
+        <span>DATE:</span>
         <span>${dateStr}</span>
       </div>
       <div class="info-row">
-        <span>${t("time")}:</span>
+        <span>TIME:</span>
         <span>${timeStr}</span>
       </div>
+      ${order.notes ? `
+      <div class="info-row" style="margin-top: 3px; font-weight: bold; color: #d32f2f;">
+        <span>NOTES:</span>
+        <span>${safe(order.notes)}</span>
+      </div>` : ''}
     </div>
-    
-    <div class="separator-dashed"></div>
-    <div style="text-align: center; font-weight: bold; letter-spacing: 1px; font-size: 11px;">ITEMS</div>
-    <div class="separator-dashed"></div>
-    
-    <div>
+
+    <div class="separator-dashed" style="margin: 6px 0;"></div>
+    <div style="text-align: center; font-weight: bold; letter-spacing: 1.5px; font-size: 12px;">KITCHEN ORDER</div>
+    <div class="separator-dashed" style="margin: 6px 0;"></div>
+
+    <div style="margin: 8px 0;">
       ${itemsHTML}
     </div>
-    
-    <div class="separator-dashed"></div>
-    
-    <div class="summary-row">
-      <span>Subtotal</span>
-      <span>Rs.${Number(order.subtotal || 0).toFixed(2)}</span>
+
+    <div class="separator-solid" style="border-top: 1px solid #000; margin-top: 10px; margin-bottom: 4px;"></div>
+    <div style="text-align: center; font-weight: bold; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;">
+      KITCHEN COPY
     </div>
-    
-    ${settings?.show_gst !== false ? `
-    <div class="summary-row">
-      <span>GST (${gstRate}%)</span>
-      <span>Rs.${Number(order.tax || 0).toFixed(2)}</span>
-    </div>` : ''}
-    
-    ${order.discount > 0 ? `
-    <div class="summary-row" style="color: #d32f2f;">
-      <span>Discount</span>
-      <span>-Rs.${Number(order.discount).toFixed(2)}</span>
-    </div>` : ''}
-    
-    <div class="separator-dashed"></div>
-    
-    <div class="summary-row total-row">
-      <span>TOTAL</span>
-      <span>Rs.${Number(order.total || 0).toFixed(2)}</span>
-    </div>
-    
-    <div class="separator-dashed"></div>
+    <div class="separator-solid" style="border-top: 1px solid #000; margin-top: 4px; margin-bottom: 6px;"></div>
   </div>
   `;
 }
@@ -432,7 +415,7 @@ export function printReceipt({ order, settings, menu }) {
   const paperWidth = is58 ? "58mm" : "80mm";
   const receiptWidth = "300px";
 
-  const firstReceiptHTML = buildReceiptBlock({
+  const customerReceiptHTML = buildReceiptBlock({
     order,
     settings,
     t,
@@ -444,7 +427,7 @@ export function printReceipt({ order, settings, menu }) {
     menu
   });
 
-  const secondReceiptHTML = buildSecondReceiptBlock({
+  const kitchenReceiptHTML = buildKitchenReceiptBlock({
     order,
     settings,
     t,
@@ -469,7 +452,7 @@ export function printReceipt({ order, settings, menu }) {
   body {
     font-family: 'JetBrains Mono', 'Courier New', Courier, monospace, sans-serif;
     font-size: 12px;
-    line-height: 1.5;
+    line-height: 1.4;
     color: #000;
     background-color: #fff;
     margin: 0;
@@ -478,11 +461,11 @@ export function printReceipt({ order, settings, menu }) {
     -webkit-print-color-adjust: exact;
     page-break-inside: avoid;
   }
-  .receipt-container, .second-token-container {
+  .receipt-container, .kitchen-receipt-container {
     width: ${receiptWidth};
     max-width: 100%;
     margin: 0 auto;
-    padding: 10px;
+    padding: 8px 10px;
     box-sizing: border-box;
     page-break-inside: avoid;
     background: #fff;
@@ -491,10 +474,10 @@ export function printReceipt({ order, settings, menu }) {
     body {
       width: 100%;
     }
-    .receipt-container, .second-token-container {
+    .receipt-container, .kitchen-receipt-container {
       width: 100%;
       max-width: 100%;
-      padding: 10px;
+      padding: 5px 10px;
     }
   }
   .separator-solid {
@@ -539,9 +522,24 @@ export function printReceipt({ order, settings, menu }) {
   }
 </style></head>
 <body>
+<<<<<<< Updated upstream
   ${firstReceiptHTML}
   <div class="receipt-cut-separator" style="margin-top: 1.5em; margin-bottom: 1.5em; border-top: 2px dashed #000; width: 100%; page-break-after: always; break-after: page;"></div>
   ${secondReceiptHTML}
+=======
+  <!-- RECEIPT 1: KITCHEN RECEIPT -->
+  ${kitchenReceiptHTML}
+
+  <!-- Continuous paper feed separator space between Kitchen & Customer receipts -->
+  <div style="height: 30px; border-top: 1px dashed #666; margin: 15px 0;"></div>
+
+  <!-- RECEIPT 2: CUSTOMER RECEIPT -->
+  ${customerReceiptHTML}
+
+  <!-- Paper feed at end for clean tear -->
+  <div style="height: 45px;"></div>
+
+>>>>>>> Stashed changes
   <script>
     window.onload = () => {
       window.print();

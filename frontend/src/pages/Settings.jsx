@@ -45,12 +45,16 @@ export default function Settings() {
   const save = async () => {
     setBusy(true);
     try {
+      const cgstVal = Number(s.cgst_rate) ?? 2.5;
+      const sgstVal = Number(s.sgst_rate) ?? 2.5;
       const payload = {
         name: s.name,
         address: s.address,
         gstin: s.gstin,
         phone: s.phone,
-        gst_rate: Number(s.gst_rate) || 0,
+        cgst_rate: cgstVal,
+        sgst_rate: sgstVal,
+        gst_rate: cgstVal + sgstVal,
         footer_msg: s.footer_msg || "",
         show_gst: !!s.show_gst,
         show_payment: !!s.show_payment,
@@ -62,7 +66,7 @@ export default function Settings() {
         auto_print: !!s.auto_print,
         receipt_prefix: s.receipt_prefix ?? "",
         receipt_padding: Number(s.receipt_padding) || 6,
-        tax_label: s.tax_label ?? "GST",
+        tax_label: s.tax_label ?? "CGST & SGST",
         language: s.language ?? "en",
         app_name: s.app_name ?? "Anndevta",
         app_tagline: s.app_tagline ?? "THALI BILLING COUNTER",
@@ -227,9 +231,11 @@ export default function Settings() {
       }
     ],
     subtotal: 210,
-    tax: (210 * (s.gst_rate ?? 5.0)) / 100,
+    cgst: (210 * Number(s.cgst_rate ?? (s.gst_rate ? s.gst_rate / 2 : 2.5))) / 100,
+    sgst: (210 * Number(s.sgst_rate ?? (s.gst_rate ? s.gst_rate / 2 : 2.5))) / 100,
+    tax: (210 * (Number(s.cgst_rate ?? 2.5) + Number(s.sgst_rate ?? 2.5))) / 100,
     discount: 0,
-    total: 210 + (s.show_gst !== false ? (210 * (s.gst_rate ?? 5.0)) / 100 : 0),
+    total: 210 + (s.show_gst !== false ? (210 * (Number(s.cgst_rate ?? 2.5) + Number(s.sgst_rate ?? 2.5))) / 100 : 0),
     payment_mode: "card"
   };
 
@@ -248,62 +254,54 @@ export default function Settings() {
     overflow-hidden
   ">
     <div className="flex-1 overflow-y-auto">
-    <div className="max-w-7xl mx-auto px-8 py-6">
-      {/* Professional Page Header */}
-      <div className="mb-6 flex items-start justify-between flex-wrap gap-6">
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div>
-            <div className="text-[15px] uppercase tracking-[0.12em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">
+    <div className="w-full px-3 sm:px-5 py-4">
+      {/* Page Header */}
+      <div className="mb-4 flex items-center justify-between flex-wrap gap-4 border-b border-[#F4E6D7] pb-4">
+        <div>
+          <div className="text-[13px] uppercase tracking-[0.12em] font-extrabold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">
             Configuration
-            </div>
-            <div className="flex items-center gap-3 mt-1">
-              <Store className="w-8 h-8 text-[#FF7A2F]" />
-              <div>
-                
-                <h1 className="font-display text-4xl font-extrabold tracking-tight">
-                  Restaurant & Receipt Settings
-                </h1>
-              </div>
-            </div>
-            <p className="text-slate-500 mt-3 max-w-3xl">
-              Configure your profile, paper properties, and customize how customers see receipts.
-            </p>
           </div>
-          <Button onClick={save} disabled={busy} className="rounded-2xl h-12 px-7 bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:opacity-95 text-white shadow-lg" data-testid="save-settings-btn">
-            <Save className="w-4 h-4 mr-2" /> {busy ? "Saving..." : "Save settings"}
-          </Button>
+          <div className="flex items-center gap-2.5 mt-0.5">
+            <Store className="w-6 h-6 text-[#FF7A2F] shrink-0" />
+            <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+              Restaurant & Receipt Settings
+            </h1>
+          </div>
         </div>
+        <Button onClick={save} disabled={busy} className="rounded-xl h-10 px-5 bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:opacity-95 text-white shadow-md text-xs font-bold active:scale-95 touch-manipulation" data-testid="save-settings-btn">
+          <Save className="w-4 h-4 mr-1.5" /> {busy ? "Saving..." : "Save Settings"}
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* Left Side: Form Controls */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="lg:col-span-7 xl:col-span-7 space-y-4">
 
           {/* Section 1: Restaurant Profile */}
-          <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
+          <Card className="p-4 sm:p-5 border-[#F4E6D7] shadow-none space-y-3.5 bg-white rounded-2xl">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#FF6B00] flex items-center gap-2">
               <Store className="w-4 h-4" /> {t("restaurant_profile")}
             </h2>
             <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("restaurant_name")}</label>
-              <Input value={s.name} onChange={(e) => setS({ ...s, name: e.target.value })} className="mt-1" data-testid="set-name" />
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("restaurant_name")}</label>
+              <Input value={s.name} onChange={(e) => setS({ ...s, name: e.target.value })} className="mt-1 h-9 text-xs sm:text-sm" data-testid="set-name" />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("address")}</label>
-              <Input value={s.address} onChange={(e) => setS({ ...s, address: e.target.value })} className="mt-1" data-testid="set-address" />
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("address")}</label>
+              <Input value={s.address} onChange={(e) => setS({ ...s, address: e.target.value })} className="mt-1 h-9 text-xs sm:text-sm" data-testid="set-address" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("gstin")}</label>
-                <Input value={s.gstin} onChange={(e) => setS({ ...s, gstin: e.target.value })} className="mt-1 font-mono" placeholder="29ABCDE1234F1Z5" data-testid="set-gstin" />
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("gstin")}</label>
+                <Input value={s.gstin} onChange={(e) => setS({ ...s, gstin: e.target.value })} className="mt-1 h-9 text-xs sm:text-sm font-mono" placeholder="29ABCDE1234F1Z5" data-testid="set-gstin" />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("phone")}</label>
-                <Input value={s.phone} onChange={(e) => setS({ ...s, phone: e.target.value })} className="mt-1" data-testid="set-phone" />
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("phone")}</label>
+                <Input value={s.phone} onChange={(e) => setS({ ...s, phone: e.target.value })} className="mt-1 h-9 text-xs sm:text-sm" data-testid="set-phone" />
               </div>
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("language_select")}</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("language_select")}</label>
               <select
                 value={s.language || "en"}
                 onChange={(e) => {
@@ -311,7 +309,7 @@ export default function Settings() {
                   setS({ ...s, language: val });
                   changeLanguage(val);
                 }}
-                className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
+                className="w-full bg-white border border-[#F4E6D7] rounded-xl px-3 h-9.5 text-xs sm:text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-[#FF6B00]"
                 data-testid="set-language"
               >
                 <option value="en">English</option>
@@ -320,59 +318,58 @@ export default function Settings() {
               </select>
             </div>
 
-            {/* Sidebar terracotaing */}
-            <div className="pt-4 border-t border-border">
-              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Sidebar terracotaing</div>
-              <div className="space-y-3">
+            {/* Sidebar Branding */}
+            <div className="pt-3 border-t border-slate-100">
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600 mb-2">Sidebar Branding</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs uppercase tracking-wider text-muted-foreground">App Name</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">App Name</label>
                   <Input
                     value={s.app_name ?? "Anndevta"}
                     onChange={(e) => setS({ ...s, app_name: e.target.value })}
-                    className="mt-1"
+                    className="mt-1 h-9 text-xs"
                     placeholder="Anndevta"
                     data-testid="set-app-name"
                   />
-                  <div className="text-[10px] text-muted-foreground mt-1">Displayed at the top of the sidebar</div>
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-wider text-muted-foreground">Tagline</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tagline</label>
                   <Input
                     value={s.app_tagline ?? "THALI BILLING COUNTER"}
                     onChange={(e) => setS({ ...s, app_tagline: e.target.value })}
-                    className="mt-1"
+                    className="mt-1 h-9 text-xs"
                     placeholder="THALI BILLING COUNTER"
                     data-testid="set-app-tagline"
                   />
-                  <div className="text-[10px] text-muted-foreground mt-1">Subtitle below the app name</div>
                 </div>
               </div>
             </div>
           </Card>
 
           {/* Section 2: Receipt Formatting */}
-          <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
+          <Card className="p-4 sm:p-5 border-[#F4E6D7] shadow-none space-y-3.5 bg-white rounded-2xl">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#FF6B00] flex items-center gap-2">
               <Sliders className="w-4 h-4" /> {t("receipt_format_styles")}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("header_alignment")}</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("header_alignment")}</label>
                 <select
                   value={s.header_alignment}
                   onChange={(e) => setS({ ...s, header_alignment: e.target.value })}
-                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
+                  className="w-full bg-white border border-[#F4E6D7] rounded-xl px-3 h-9.5 text-xs sm:text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-[#FF6B00]"
                 >
                   <option value="center">Center Header</option>
                   <option value="left">Left Header</option>
                 </select>
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("header_template")}</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("header_template")}</label>
                 <select
                   value={s.header_template}
                   onChange={(e) => setS({ ...s, header_template: e.target.value })}
-                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
+                  className="w-full bg-white border border-[#F4E6D7] rounded-xl px-3 h-9.5 text-xs sm:text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-[#FF6B00]"
                 >
                   <option value="classic">Classic (Name, Address, Phone, GSTIN)</option>
                   <option value="compact">Compact (Name, Phone)</option>
@@ -381,27 +378,27 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("paper_width")}</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("paper_width")}</label>
                 <select
                   value={s.paper_width}
                   onChange={(e) => setS({ ...s, paper_width: Number(e.target.value) })}
-                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
+                  className="w-full bg-white border border-[#F4E6D7] rounded-xl px-3 h-9.5 text-xs sm:text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-[#FF6B00]"
                 >
                   <option value="80">80mm (3-inch)</option>
                   <option value="58">58mm (2-inch)</option>
                 </select>
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
                   <Printer className="w-3 h-3" />
                   Default Printer
                 </label>
                 <select
                   value={s.default_printer || ""}
                   onChange={(e) => setS({ ...s, default_printer: e.target.value || null })}
-                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
+                  className="w-full bg-white border border-[#F4E6D7] rounded-xl px-3 h-9.5 text-xs sm:text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-[#FF6B00]"
                   disabled={printers.length === 0}
                 >
                   <option value="">System Default</option>
@@ -412,136 +409,166 @@ export default function Settings() {
                   ))}
                 </select>
                 {printers.length === 0 && (
-                  <div className="text-[10px] text-amber-600 mt-1">No printers found. Run in desktop app.</div>
+                  <div className="text-[10px] text-amber-600 mt-0.5">No printers found. Run in desktop app.</div>
                 )}
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("font_size")}</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("font_size")}</label>
                 <select
                   value={s.font_size}
                   onChange={(e) => setS({ ...s, font_size: e.target.value })}
-                  className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-terracota"
+                  className="w-full bg-white border border-[#F4E6D7] rounded-xl px-3 h-9.5 text-xs sm:text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-[#FF6B00]"
                 >
                   <option value="small">Small</option>
                   <option value="medium">Medium</option>
                   <option value="large">Large</option>
                 </select>
               </div>
+            </div>
+
+            {/* Tax & GST Settings Section */}
+            <div className="pt-3 border-t border-slate-100 space-y-3">
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("tax_label")}</label>
-                <Input value={s.tax_label} onChange={(e) => setS({ ...s, tax_label: e.target.value })} className="mt-1" placeholder="GST" />
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("tax_label")}</label>
+                <Input value={s.tax_label ?? "CGST & SGST"} onChange={(e) => setS({ ...s, tax_label: e.target.value })} className="mt-1 h-9 text-xs sm:text-sm" placeholder="CGST & SGST" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("default_cgst") ?? "Default CGST %"}</label>
+                  <Input type="number" step="any" value={s.cgst_rate ?? (s.gst_rate !== undefined ? s.gst_rate / 2 : 2.5)} onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (val < 0) {
+                      toast.error(t("cgst_rate_negative_error") ?? "CGST rate cannot be negative");
+                      setS({ ...s, cgst_rate: 0 });
+                    } else if (val > 100) {
+                      toast.error(t("cgst_rate_max_error") ?? "CGST rate cannot exceed 100%");
+                      setS({ ...s, cgst_rate: 100 });
+                    } else {
+                      setS({ ...s, cgst_rate: e.target.value });
+                    }
+                  }} className="mt-1 h-9 text-xs sm:text-sm font-mono" data-testid="set-cgst-rate" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("default_sgst") ?? "Default SGST %"}</label>
+                  <Input type="number" step="any" value={s.sgst_rate ?? (s.gst_rate !== undefined ? s.gst_rate / 2 : 2.5)} onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (val < 0) {
+                      toast.error(t("sgst_rate_negative_error") ?? "SGST rate cannot be negative");
+                      setS({ ...s, sgst_rate: 0 });
+                    } else if (val > 100) {
+                      toast.error(t("sgst_rate_max_error") ?? "SGST rate cannot exceed 100%");
+                      setS({ ...s, sgst_rate: 100 });
+                    } else {
+                      setS({ ...s, sgst_rate: e.target.value });
+                    }
+                  }} className="mt-1 h-9 text-xs sm:text-sm font-mono" data-testid="set-sgst-rate" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("total_gst") ?? "Total GST"}</label>
+                  <div className="mt-1 h-9 px-3 bg-slate-50 border border-[#F4E6D7] rounded-xl text-xs font-extrabold flex items-center justify-between text-slate-900 select-none">
+                    <span className="text-sm font-mono text-[#FF6B00]">{((Number(s.cgst_rate ?? 2.5) || 0) + (Number(s.sgst_rate ?? 2.5) || 0)).toFixed(1)}%</span>
+                    <span className="text-[10px] text-slate-500 font-normal">({s.cgst_rate ?? 2.5}% + {s.sgst_rate ?? 2.5}%)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-[11px] text-slate-500 leading-normal break-words pt-0.5">
+                {t("gst_helper_text") ?? "CGST and SGST are applied separately and combined to calculate the total GST."}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("default_tax")}</label>
-                <Input type="number" value={s.gst_rate} onChange={(e) => {
-                  const val = Number(e.target.value);
-                  if (val < 0) {
-                    toast.error(t("gst_rate_negative_error"));
-                    setS({ ...s, gst_rate: 0 });
-                  } else if (val > 100) {
-                    toast.error(t("gst_rate_max_error"));
-                    setS({ ...s, gst_rate: 100 });
-                  } else {
-                    setS({ ...s, gst_rate: e.target.value });
-                  }
-                }} className="mt-1" data-testid="set-gst-rate" />
-                <div className="text-[10px] text-muted-foreground mt-1">Default percentage applied to menu items.</div>
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("footer_message")}</label>
-                <Input value={s.footer_msg} onChange={(e) => setS({ ...s, footer_msg: e.target.value })} className="mt-1" data-testid="set-footer" />
-              </div>
+            <div className="pt-2">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("footer_message")}</label>
+              <Input value={s.footer_msg} onChange={(e) => setS({ ...s, footer_msg: e.target.value })} className="mt-1 h-9 text-xs sm:text-sm" data-testid="set-footer" />
             </div>
           </Card>
 
           {/* Section 3: Receipt Number Format */}
-          <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
+          <Card className="p-4 sm:p-5 border-[#F4E6D7] shadow-none space-y-3.5 bg-white rounded-2xl">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#FF6B00] flex items-center gap-2">
               <Receipt className="w-4 h-4" /> {t("receipt_numbering")}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("receipt_prefix")}</label>
-                <Input value={s.receipt_prefix} onChange={(e) => setS({ ...s, receipt_prefix: e.target.value })} className="mt-1 font-mono" placeholder="ANP-" />
-                <div className="text-[10px] text-muted-foreground mt-1">Example: Prefix 'ANP-' results in 'ANP-000001'.</div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("receipt_prefix")}</label>
+                <Input value={s.receipt_prefix} onChange={(e) => setS({ ...s, receipt_prefix: e.target.value })} className="mt-1 h-9 text-xs font-mono" placeholder="ANP-" />
+                <div className="text-[10px] text-slate-500 mt-1">Example: Prefix 'ANP-' results in 'ANP-000001'.</div>
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wider text-muted-foreground">{t("receipt_padding")}</label>
-                <Input type="number" value={s.receipt_padding} onChange={(e) => setS({ ...s, receipt_padding: e.target.value })} className="mt-1 font-mono" placeholder="6" />
-                <div className="text-[10px] text-muted-foreground mt-1">Number of digits for numeric component.</div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">{t("receipt_padding")}</label>
+                <Input type="number" value={s.receipt_padding} onChange={(e) => setS({ ...s, receipt_padding: e.target.value })} className="mt-1 h-9 text-xs font-mono" placeholder="6" />
+                <div className="text-[10px] text-slate-500 mt-1">Number of digits for numeric component.</div>
               </div>
             </div>
           </Card>
 
           {/* Section 4: Toggles & Features */}
-          <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
+          <Card className="p-4 sm:p-5 border-[#F4E6D7] shadow-none space-y-3.5 bg-white rounded-2xl">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#FF6B00] flex items-center gap-2">
               <Receipt className="w-4 h-4" /> {t("template_features_rules")}
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <label className="flex items-center gap-3 cursor-pointer select-none border border-border rounded-md p-3 hover:bg-sand-subtle transition-all">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none border border-[#F4E6D7] rounded-xl p-2.5 hover:bg-[#FFF3E7]/40 transition-all">
                 <input
                   type="checkbox"
                   checked={s.show_gst}
                   onChange={(e) => setS({ ...s, show_gst: e.target.checked })}
-                  className="w-4 h-4 rounded text-terracota border-border focus:ring-terracota"
+                  className="w-4 h-4 rounded text-[#FF6B00] border-[#F4E6D7] focus:ring-[#FF6B00]"
                 />
                 <div>
-                  <div className="text-xs font-bold text-foreground">{t("show_tax_breakdown")}</div>
-                  <div className="text-[9px] text-muted-foreground">Print subtotal & tax row details.</div>
+                  <div className="text-xs font-bold text-slate-800">{t("show_tax_breakdown")}</div>
+                  <div className="text-[9.5px] text-slate-500">Print subtotal & tax row details.</div>
                 </div>
               </label>
 
-              <label className="flex items-center gap-3 cursor-pointer select-none border border-border rounded-md p-3 hover:bg-sand-subtle transition-all">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none border border-[#F4E6D7] rounded-xl p-2.5 hover:bg-[#FFF3E7]/40 transition-all">
                 <input
                   type="checkbox"
                   checked={s.show_payment}
                   onChange={(e) => setS({ ...s, show_payment: e.target.checked })}
-                  className="w-4 h-4 rounded text-terracota border-border focus:ring-terracota"
+                  className="w-4 h-4 rounded text-[#FF6B00] border-[#F4E6D7] focus:ring-[#FF6B00]"
                 />
                 <div>
-                  <div className="text-xs font-bold text-foreground">{t("show_payment_method")}</div>
-                  <div className="text-[9px] text-muted-foreground">Display if billed via cash/upi/card.</div>
+                  <div className="text-xs font-bold text-slate-800">{t("show_payment_method")}</div>
+                  <div className="text-[9.5px] text-slate-500">Display if billed via cash/upi/card.</div>
                 </div>
               </label>
 
-              <label className="flex items-center gap-3 cursor-pointer select-none border border-border rounded-md p-3 hover:bg-sand-subtle transition-all">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none border border-[#F4E6D7] rounded-xl p-2.5 hover:bg-[#FFF3E7]/40 transition-all">
                 <input
                   type="checkbox"
                   checked={s.show_thali_selections}
                   onChange={(e) => setS({ ...s, show_thali_selections: e.target.checked })}
-                  className="w-4 h-4 rounded text-terracota border-border focus:ring-terracota"
+                  className="w-4 h-4 rounded text-[#FF6B00] border-[#F4E6D7] focus:ring-[#FF6B00]"
                 />
                 <div>
-                  <div className="text-xs font-bold text-foreground">{t("show_thali_selections")}</div>
-                  <div className="text-[9px] text-muted-foreground">Print detailed thali selections.</div>
+                  <div className="text-xs font-bold text-slate-800">{t("show_thali_selections")}</div>
+                  <div className="text-[9.5px] text-slate-500">Print detailed thali selections.</div>
                 </div>
               </label>
 
-              <label className="flex items-center gap-3 cursor-pointer select-none border border-border rounded-md p-3 hover:bg-sand-subtle transition-all sm:col-span-2">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none border border-[#F4E6D7] rounded-xl p-2.5 hover:bg-[#FFF3E7]/40 transition-all sm:col-span-2">
                 <input
                   type="checkbox"
                   checked={s.auto_print}
                   onChange={(e) => setS({ ...s, auto_print: e.target.checked })}
-                  className="w-4 h-4 rounded text-terracota border-border focus:ring-terracota"
+                  className="w-4 h-4 rounded text-[#FF6B00] border-[#F4E6D7] focus:ring-[#FF6B00]"
                 />
                 <div>
-                  <div className="text-sm font-bold text-foreground">{t("auto_print_receipt")}</div>
-                  <div className="text-[10px] text-muted-foreground">Print receipts automatically after checkout (direct to printer in desktop app).</div>
+                  <div className="text-xs font-bold text-slate-800">{t("auto_print_receipt")}</div>
+                  <div className="text-[9.5px] text-slate-500">Print receipts automatically after checkout.</div>
                 </div>
               </label>
 
-              <div className="flex items-center justify-center border border-border rounded-md p-3">
+              <div className="flex items-center justify-center border border-[#F4E6D7] rounded-xl p-2.5">
                 <Button
                   onClick={handleTestPrint}
                   disabled={testPrinting || !window.electronAPI}
                   variant="outline"
-                  className="w-full border-terracota text-terracota hover:bg-terracota hover:text-white"
+                  className="w-full border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-white text-xs font-bold h-9 rounded-lg"
                 >
-                  <Printer className="w-4 h-4 mr-2" />
+                  <Printer className="w-3.5 h-3.5 mr-1.5" />
                   {testPrinting ? "Printing..." : "Test Print"}
                 </Button>
               </div>
@@ -549,21 +576,21 @@ export default function Settings() {
           </Card>
 
           {/* Section 5: Data Management */}
-          <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
+          <Card className="p-4 sm:p-5 border-[#F4E6D7] shadow-none space-y-3.5 bg-white rounded-2xl">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#FF6B00] flex items-center gap-2">
               <Database className="w-4 h-4" /> {t("data_management")}
             </h2>
 
-            <div className="bg-sand-subtle/40 border border-border rounded-md p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${getBackupStatus().showWarning ? 'text-amber-600' : 'text-muted-foreground'}`} />
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-foreground">{t("last_backup")}</div>
-                  <div className={`text-sm font-mono ${getBackupStatus().color} mt-1`}>
+            <div className="bg-orange-50/50 border border-orange-100 rounded-xl p-3">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${getBackupStatus().showWarning ? 'text-amber-600' : 'text-slate-500'}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-extrabold text-slate-800">{t("last_backup")}</div>
+                  <div className={`text-xs font-mono font-bold ${getBackupStatus().color} mt-0.5`}>
                     {getBackupStatus().text}
                   </div>
                   {getBackupStatus().showWarning && (
-                    <div className="text-xs text-muted-foreground mt-2">
+                    <div className="text-[10px] text-slate-500 mt-1">
                       Regular backups protect your business data. Create a backup now.
                     </div>
                   )}
@@ -571,14 +598,14 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 onClick={createBackup}
                 disabled={backupBusy}
-                className="rounded-[32px] bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105"
+                className="rounded-xl h-10 bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105 text-xs font-bold active:scale-95 touch-manipulation"
                 data-testid="backup-now-btn"
               >
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="w-4 h-4 mr-1.5" />
                 {backupBusy ? "..." : t("backup_now")}
               </Button>
 
@@ -586,73 +613,60 @@ export default function Settings() {
                 onClick={restoreBackup}
                 disabled={restoreBusy}
                 variant="outline"
-                className="rounded-[32px] bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:bg-[#FFF8F2] text-white"
+                className="rounded-xl h-10 bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white hover:opacity-95 text-xs font-bold active:scale-95 touch-manipulation"
                 data-testid="restore-backup-btn"
               >
-                <Upload className="w-4 h-4 mr-2" />
+                <Upload className="w-4 h-4 mr-1.5" />
                 {restoreBusy ? "..." : t("restore_backup")}
               </Button>
             </div>
 
-            <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-border">
-              <p><strong>Backup includes:</strong> All orders, revenue, menu items, daily menu templates, Thali configurations, users, and settings.</p>
+            <div className="text-[10.5px] text-slate-500 space-y-0.5 pt-2 border-t border-slate-100">
+              <p><strong>Backup includes:</strong> Orders, revenue, menu items, daily templates, Thali rules, users, settings.</p>
               <p><strong>File format:</strong> JSON file with timestamp (e.g., AnndevtaPOS_Backup_2026-06-22.json)</p>
-              <p><strong>Restore:</strong> Select a backup file to restore all data. Current data will be overwritten.</p>
             </div>
           </Card>
 
-          {/* Section 6: About & terracotaing */}
-          <Card className="p-6 border-border shadow-none space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-terracota flex items-center gap-2">
+          {/* Section 6: About & Branding */}
+          <Card className="p-4 sm:p-5 border-[#F4E6D7] shadow-none space-y-3 bg-white rounded-2xl">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#FF6B00] flex items-center gap-2">
               <Info className="w-4 h-4" /> System Information
             </h2>
 
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <img src={`${process.env.PUBLIC_URL}/tranferentlogo.png`} alt="Career Craftly" className="h-16" />
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <img src={`${process.env.PUBLIC_URL}/tranferentlogo.png`} alt="Career Craftly" className="h-12 object-contain" />
                 <div>
-                  <div className="text-xl font-bold text-blue-900">Career Craftly</div>
-                  <div className="text-sm text-blue-700">Crafting Digital Success, Intelligently</div>
+                  <div className="text-base font-extrabold text-blue-900 leading-tight">Career Craftly</div>
+                  <div className="text-xs text-blue-700 font-medium">Crafting Digital Success, Intelligently</div>
                 </div>
               </div>
 
-              <div className="border-t border-blue-300 pt-4 space-y-2 text-sm text-blue-800">
+              <div className="border-t border-blue-200 pt-3 space-y-1.5 text-xs text-blue-900">
                 <div className="flex justify-between">
-                  <span className="font-semibold">Product:</span>
+                  <span className="font-bold">Product:</span>
                   <span>Anndevta POS System</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-semibold">Version:</span>
+                  <span className="font-bold">Version:</span>
                   <span>1.0.0</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-semibold">Developed by:</span>
+                  <span className="font-bold">Developed by:</span>
                   <span>Career Craftly</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold">License:</span>
-                  <span>Commercial</span>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-blue-300 text-xs text-blue-700">
-                <p className="leading-relaxed">
-                  This Point of Sale system is professionally developed by <strong>Career Craftly</strong>,
-                  a leading digital solutions provider. For support, updates, or custom features,
-                  contact Career Craftly.
-                </p>
               </div>
             </div>
           </Card>
         </div>
 
         {/* Right Side: Interactive Thermal Preview */}
-        <div className="lg:col-span-5 lg:sticky lg:top-6 flex flex-col items-center">
-          <div className="w-full flex items-center justify-center gap-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <Eye className="w-4 h-4" /> {t("thermal_print_preview")} ({s.paper_width}mm)
+        <div className="lg:col-span-5 xl:col-span-5 lg:sticky lg:top-4 flex flex-col items-center">
+          <div className="w-full flex items-center justify-center gap-2 mb-2 text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+            <Eye className="w-4 h-4 text-[#FF6B00]" /> {t("thermal_print_preview")} ({s.paper_width}mm)
           </div>
 
-          <div className="w-full max-w-sm flex justify-center bg-neutral-50 p-6 rounded-md shadow-inner border border-border overflow-hidden">
+          <div className="w-full max-w-[320px] flex justify-center bg-slate-100/70 p-3 sm:p-4 rounded-2xl border border-[#F4E6D7] shadow-inner overflow-hidden">
             <ReceiptPreview order={mockOrder} settings={s} />
           </div>
         </div>

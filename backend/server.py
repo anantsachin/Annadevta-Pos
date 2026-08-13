@@ -201,6 +201,8 @@ class RestaurantSettings(BaseModel):
     gstin: str = ""
     phone: str = ""
     gst_rate: float = 5.0
+    cgst_rate: float = 2.5
+    sgst_rate: float = 2.5
     footer_msg: str = "Thank you for dining with us!"
     show_gst: bool = True
     show_payment: bool = True
@@ -212,7 +214,7 @@ class RestaurantSettings(BaseModel):
     auto_print: bool = True
     receipt_prefix: str = ""
     receipt_padding: int = 6
-    tax_label: str = "GST"
+    tax_label: str = "CGST & SGST"
     language: str = "en"
     last_reset_date: Optional[str] = None
 
@@ -800,12 +802,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Lifespan database setup warning: {e}")
 
-    try:
-        tenant = _tenant()
-        await _execute(_db_conn, "UPDATE menu SET available = 0 WHERE tenant_db = ?", (tenant,))
-    except Exception as e:
-        logger.warning(f"Reset menu availability warning: {e}")
-
     creds_dir = ROOT_DIR / "memory"
     try:
         creds_dir.mkdir(exist_ok=True, parents=True)
@@ -886,9 +882,9 @@ async def signup(body: SignupIn):
     settings_data = {
         "id": "restaurant",
         "name": body.restaurant_name,
-        "address": "", "gstin": "", "phone": "", "gst_rate": 5.0,
+        "address": "", "gstin": "", "phone": "", "gst_rate": 5.0, "cgst_rate": 2.5, "sgst_rate": 2.5,
         "footer_msg": "Thank you for dining with us!",
-        "auto_print": False, "tax_label": "GST", "language": "en"
+        "auto_print": False, "tax_label": "CGST & SGST", "language": "en"
     }
     await _execute(db,
         "INSERT INTO settings (id, tenant_db, data) VALUES (?, ?, ?)",
@@ -1190,14 +1186,29 @@ async def get_settings(_: dict = Depends(get_current_user)):
                        ("restaurant", tenant, _to_json(s)))
         return s
     s = _parse_json(row["data"], {})
-    # Backward-compatible upgrade: merge defaults for any newly introduced settings fields
-    merged = {**RestaurantSettings().model_dump(), **s}
+    # Backward-compatible migration for CGST/SGST rates
+    defaults = RestaurantSettings().model_dump()
+    if "cgst_rate" not in s or "sgst_rate" not in s:
+        existing_gst = float(s.get("gst_rate", 5.0))
+        s["cgst_rate"] = round(existing_gst / 2.0, 2)
+        s["sgst_rate"] = round(existing_gst / 2.0, 2)
+    if not s.get("tax_label") or s.get("tax_label") == "GST":
+        s["tax_label"] = "CGST & SGST"
+    s["gst_rate"] = float(s.get("cgst_rate", 2.5)) + float(s.get("sgst_rate", 2.5))
+
+    merged = {**defaults, **s}
     merged["id"] = "restaurant"
     return merged
 
 
 @api.put("/settings")
 async def update_settings(body: RestaurantSettings, _: dict = Depends(require_roles("admin"))):
+    if body.cgst_rate < 0 or body.cgst_rate > 100:
+        raise HTTPException(status_code=400, detail="CGST rate must be between 0 and 100")
+    if body.sgst_rate < 0 or body.sgst_rate > 100:
+        raise HTTPException(status_code=400, detail="SGST rate must be between 0 and 100")
+    body.gst_rate = body.cgst_rate + body.sgst_rate
+
     db = await get_db()
     tenant = _tenant()
     data = {"id": "restaurant", **body.model_dump()}
@@ -1265,7 +1276,6 @@ async def list_menu(_: dict = Depends(get_current_user)):
     
     last_reset = s.get("last_reset_date")
     if last_reset != current_date:
-        await _execute(db, "UPDATE menu SET available = 0 WHERE tenant_db = ?", (tenant,))
         s["last_reset_date"] = current_date
         await _execute(db, "UPDATE settings SET data = ? WHERE id = ? AND tenant_db = ?",
                        (_to_json(s), "restaurant", tenant))
@@ -1408,11 +1418,21 @@ async def delete_template(tid: str, _: dict = Depends(require_roles("admin"))):
 
 
 # ------- Orders -------
-def _compute_totals(items: list, discount: float) -> dict:
-    subtotal = sum(i["price"] * i["qty"] for i in items)
-    tax = sum((i["price"] * i["qty"]) * (i.get("tax_rate", 5.0) / 100) for i in items)
+def _compute_totals(items: list, discount: float, default_cgst_rate: float = 2.5, default_sgst_rate: float = 2.5) -> dict:
+    subtotal = sum((i["price"] * i["qty"]) + ((i.get("extra_bread_charge") or 0) * i["qty"]) for i in items)
+    cgst = sum(((i["price"] * i["qty"]) + ((i.get("extra_bread_charge") or 0) * i["qty"])) * (i.get("cgst_rate", default_cgst_rate) / 100) for i in items)
+    sgst = sum(((i["price"] * i["qty"]) + ((i.get("extra_bread_charge") or 0) * i["qty"])) * (i.get("sgst_rate", default_sgst_rate) / 100) for i in items)
+    cgst = round(cgst, 2)
+    sgst = round(sgst, 2)
+    tax = round(cgst + sgst, 2)
     total = max(0.0, round(subtotal + tax - discount, 2))
-    return {"subtotal": round(subtotal, 2), "tax": round(tax, 2), "total": total}
+    return {
+        "subtotal": round(subtotal, 2),
+        "cgst": cgst,
+        "sgst": sgst,
+        "tax": tax,
+        "total": total,
+    }
 
 
 async def _next_receipt_number() -> int:
@@ -1436,15 +1456,22 @@ async def create_order(body: OrderIn, user: dict = Depends(get_current_user)):
     if not items:
         raise HTTPException(400, "Cart is empty")
     
-    # Apply configured GST rate from settings to items that use the default 5%
+    # Apply configured GST rate from settings to items
     row = await _fetchone(db, "SELECT data FROM settings WHERE id = ? AND tenant_db = ?", ("restaurant", tenant))
     s = _parse_json(row["data"], {}) if row else {}
-    gst_rate = s.get("gst_rate", 5.0)
-    for item in items:
-        if item.get("tax_rate") is None or item.get("tax_rate") == 5.0:
-            item["tax_rate"] = gst_rate
+    default_cgst = float(s.get("cgst_rate", float(s.get("gst_rate", 5.0)) / 2.0))
+    default_sgst = float(s.get("sgst_rate", float(s.get("gst_rate", 5.0)) / 2.0))
+    gst_rate = default_cgst + default_sgst
 
-    totals = _compute_totals(items, body.discount)
+    for item in items:
+        if item.get("cgst_rate") is None:
+            item["cgst_rate"] = default_cgst
+        if item.get("sgst_rate") is None:
+            item["sgst_rate"] = default_sgst
+        if item.get("tax_rate") is None or item.get("tax_rate") == 5.0:
+            item["tax_rate"] = item["cgst_rate"] + item["sgst_rate"]
+
+    totals = _compute_totals(items, body.discount, default_cgst, default_sgst)
     rn = await _next_receipt_number()
     ts = iso(now_utc())
     order = {
@@ -1452,7 +1479,11 @@ async def create_order(body: OrderIn, user: dict = Depends(get_current_user)):
         "receipt_no": rn,
         "items": items,
         "subtotal": totals["subtotal"],
+        "cgst": totals["cgst"],
+        "sgst": totals["sgst"],
         "tax": totals["tax"],
+        "cgst_rate": default_cgst,
+        "sgst_rate": default_sgst,
         "discount": body.discount,
         "total": totals["total"],
         "payment_mode": body.payment_mode,
@@ -1577,6 +1608,17 @@ async def get_order(oid: str, _: dict = Depends(get_current_user)):
     o["items"] = _parse_json(o.get("items"), [])
     o.pop("tenant_db", None)
     return o
+
+
+@api.delete("/orders/{oid}")
+async def delete_order(oid: str, _: dict = Depends(get_current_user)):
+    db = await get_db()
+    tenant = _tenant()
+    order = await _fetchone(db, "SELECT id FROM orders WHERE id = ? AND tenant_db = ?", (oid, tenant))
+    if not order:
+        raise HTTPException(404, "Order not found")
+    await _execute(db, "DELETE FROM orders WHERE id = ? AND tenant_db = ?", (oid, tenant))
+    return {"ok": True, "id": oid}
 
 
 # ------- Dashboard -------
@@ -1743,16 +1785,21 @@ async def export_report(
     orders = await _reports_orders(from_date, to_date)
 
     if rtype == "sales":
-        headers = ["Receipt #", "Date", "Items", "Subtotal", "Tax", "Discount", "Total", "Payment", "Cashier"]
+        headers = ["Receipt #", "Date", "Items", "Subtotal", "CGST", "SGST", "Total Tax", "Discount", "Total", "Payment", "Cashier"]
         rows = []
         for o in orders:
             items_txt = "; ".join(f"{i['name']} x{i['qty']}" for i in o.get("items", []))
+            tax_val = float(o.get("tax", 0))
+            cgst_val = float(o.get("cgst", round(tax_val / 2.0, 2)))
+            sgst_val = float(o.get("sgst", round(tax_val - cgst_val, 2)))
             rows.append([
                 o.get("receipt_no", ""),
                 o.get("paid_at", ""),
                 items_txt,
                 o.get("subtotal", 0),
-                o.get("tax", 0),
+                cgst_val,
+                sgst_val,
+                tax_val,
                 o.get("discount", 0),
                 o.get("total", 0),
                 o.get("payment_mode", ""),
@@ -1852,12 +1899,9 @@ async def _seed_categories() -> dict:
     count_row = await _fetchone(db, "SELECT COUNT(*) as cnt FROM categories WHERE tenant_db = ?", (tenant,))
     if count_row["cnt"] == 0:
         for c in [
-            {"name": "Thali", "sort_order": 1},
-            {"name": "Sabji", "sort_order": 2},
-            {"name": "Dal", "sort_order": 3},
-            {"name": "Rice", "sort_order": 4},
-            {"name": "Bread", "sort_order": 5},
-            {"name": "Drinks", "sort_order": 6},
+            {"name": "Dining Menu", "sort_order": 1},
+            {"name": "Parcel Menu", "sort_order": 2},
+            {"name": "Daily Thalis", "sort_order": 3},
         ]:
             await _execute(db, "INSERT INTO categories (id, tenant_db, name, sort_order) VALUES (?, ?, ?, ?)",
                            (new_id(), tenant, c["name"], c["sort_order"]))
@@ -1865,44 +1909,36 @@ async def _seed_categories() -> dict:
     return {c["name"]: c["id"] for c in rows}
 
 
-def _thali_seed_rows(cat_lookup: dict) -> list:
+def _gujarati_seed_items(cat_lookup: dict) -> list:
     return [
-        {
-            "name": "Regular Thali", "price": 150,
-            "thali_groups": [
-                {"category_id": cat_lookup.get("Sabji"), "label": "Sabji", "count": 2},
-                {"category_id": cat_lookup.get("Dal"), "label": "Dal", "count": 1},
-            ],
-            "thali_extras": "Roti (4), Rice, Salad, Papad, Buttermilk",
-        },
-        {
-            "name": "Mini Thali", "price": 100,
-            "thali_groups": [
-                {"category_id": cat_lookup.get("Sabji"), "label": "Sabji", "count": 1},
-                {"category_id": cat_lookup.get("Dal"), "label": "Dal", "count": 1},
-            ],
-            "thali_extras": "Roti (2), Rice, Salad",
-        },
-        {
-            "name": "Special Thali", "price": 220,
-            "thali_groups": [
-                {"category_id": cat_lookup.get("Sabji"), "label": "Sabji", "count": 2},
-                {"category_id": cat_lookup.get("Dal"), "label": "Dal", "count": 1},
-                {"category_id": cat_lookup.get("Rice"), "label": "Rice", "count": 1},
-            ],
-            "thali_extras": "Roti (4), Sweet, Salad, Papad, Pickle, Buttermilk",
-        },
+        # Dining Menu
+        {"category_id": cat_lookup.get("Dining Menu"), "name": "Unlimited Gujarati Thali", "price": 180.0, "is_thali": 1, "thali_extras": "Roti – Puri, 4 Sabzi, Dal – Bhat, Papad, Salad, Chhachh", "menu_type": "dining"},
+        {"category_id": cat_lookup.get("Dining Menu"), "name": "Unlimited Gujarati Thali (Sweet & Farsan Included)", "price": 280.0, "is_thali": 1, "thali_extras": "Roti – Puri, 4 Sabzi, Dal – Bhat, Papad, Salad, Chhachh, Sweet – 1, Farsan – 2", "menu_type": "dining"},
+        {"category_id": cat_lookup.get("Dining Menu"), "name": "Roti Sabzi (8 Roti + 1 Sabzi)", "price": 120.0, "is_thali": 0, "thali_extras": "8 Roti + 1 Sabzi", "menu_type": "dining"},
+        {"category_id": cat_lookup.get("Dining Menu"), "name": "Puri Sabzi (8 Puri + 1 Sabzi)", "price": 120.0, "is_thali": 0, "thali_extras": "8 Puri + 1 Sabzi", "menu_type": "dining"},
+
+        # Parcel Menu
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Fixed Gujarati Thali (aapke tiffin mein)", "price": 150.0, "is_thali": 1, "thali_extras": "Fixed Gujarati Thali in your tiffin", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Fixed Gujarati Thali (hamare container mein)", "price": 160.0, "is_thali": 1, "thali_extras": "Fixed Gujarati Thali in container", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Roti Sabzi (1 Sabzi + 6 Roti)", "price": 120.0, "is_thali": 0, "thali_extras": "1 Sabzi + 6 Roti", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Puri Sabzi (1 Sabzi + 6 Puri)", "price": 120.0, "is_thali": 0, "thali_extras": "1 Sabzi + 6 Puri", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Punjabi Sabzi", "price": 80.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Extra Sweet", "price": 50.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Extra Farsan", "price": 30.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Sabzi", "price": 60.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Dal", "price": 40.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Bhat", "price": 40.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Khichdi", "price": 40.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Kadhi", "price": 40.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Extra Sabzi Bhaji", "price": 10.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Extra Roti", "price": 7.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Papad", "price": 10.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+        {"category_id": cat_lookup.get("Parcel Menu"), "name": "Chhachh", "price": 15.0, "is_thali": 0, "thali_extras": "", "menu_type": "parcel"},
+
+        # Daily Thalis
+        {"category_id": cat_lookup.get("Daily Thalis"), "name": "Savar Ki Gujarati Thali", "price": 150.0, "is_thali": 1, "thali_extras": "2 Sabzi, Dal, Bhat, Salad, Papad, 6 Roti", "menu_type": "both"},
+        {"category_id": cat_lookup.get("Daily Thalis"), "name": "Shaam Ki Gujarati Thali", "price": 150.0, "is_thali": 1, "thali_extras": "2 Sabzi, 1 Khichdi-Kadhi, Papad, Salad, 4 Bhakhri ya 6 Roti", "menu_type": "both"},
     ]
-
-
-def _alacarte_seed_rows() -> dict:
-    return {
-        "Sabji": [("Paneer Masala", 120), ("Mix Veg", 90), ("Bhindi Fry", 100), ("Aloo Matar", 90), ("Chana Masala", 95)],
-        "Dal": [("Dal Tadka", 80), ("Dal Fry", 80), ("Dal Makhani", 110)],
-        "Rice": [("Jeera Rice", 90), ("Steamed Rice", 60)],
-        "Bread": [("Roti", 15), ("Butter Roti", 20), ("Butter Naan", 50), ("Garlic Naan", 60)],
-        "Drinks": [("Buttermilk", 30), ("Masala Chai", 25), ("Fresh Lime", 40)],
-    }
 
 
 async def _seed_menu(cat_lookup: dict):
@@ -1911,18 +1947,12 @@ async def _seed_menu(cat_lookup: dict):
     count_row = await _fetchone(db, "SELECT COUNT(*) as cnt FROM menu WHERE tenant_db = ?", (tenant,))
     if count_row["cnt"] > 0:
         return
-    for t in _thali_seed_rows(cat_lookup):
+    for item in _gujarati_seed_items(cat_lookup):
         await _execute(db,
             """INSERT INTO menu (id, tenant_db, name, category_id, price, available, is_thali, thali_groups, thali_extras, menuType, menu_type)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (new_id(), tenant, t["name"], cat_lookup["Thali"], t["price"], 0, 1,
-             _to_json(t["thali_groups"]), t["thali_extras"], "both", "both"))
-    for cat_name, rows in _alacarte_seed_rows().items():
-        for n, p in rows:
-            await _execute(db,
-                """INSERT INTO menu (id, tenant_db, name, category_id, price, available, is_thali, thali_groups, thali_extras, menuType, menu_type)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (new_id(), tenant, n, cat_lookup[cat_name], p, 0, 0, "[]", "", "parcel", "parcel"))
+               VALUES (?, ?, ?, ?, ?, 1, ?, '[]', ?, ?, ?)""",
+            (new_id(), tenant, item["name"], item["category_id"], item["price"], item["is_thali"],
+             item["thali_extras"], item["menu_type"], item["menu_type"]))
 
 
 async def seed_defaults():

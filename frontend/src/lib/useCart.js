@@ -49,14 +49,22 @@ export function useCart() {
       const extraBreadTotal = (x.extra_bread_charge || 0) * x.qty;
       return s + itemTotal + extraBreadTotal;
     }, 0);
-    const tax = cart.reduce((s, x) => {
+    const cgst = cart.reduce((s, x) => {
       const itemTotal = x.price * x.qty;
       const extraBreadTotal = (x.extra_bread_charge || 0) * x.qty;
-      return s + (itemTotal + extraBreadTotal) * (x.tax_rate / 100);
+      const rate = x.cgst_rate !== undefined ? x.cgst_rate : (x.tax_rate !== undefined ? x.tax_rate / 2 : 2.5);
+      return s + (itemTotal + extraBreadTotal) * (rate / 100);
     }, 0);
+    const sgst = cart.reduce((s, x) => {
+      const itemTotal = x.price * x.qty;
+      const extraBreadTotal = (x.extra_bread_charge || 0) * x.qty;
+      const rate = x.sgst_rate !== undefined ? x.sgst_rate : (x.tax_rate !== undefined ? x.tax_rate / 2 : 2.5);
+      return s + (itemTotal + extraBreadTotal) * (rate / 100);
+    }, 0);
+    const tax = cgst + sgst;
     const d = Number(discount) || 0;
     const total = Math.max(0, subtotal + tax - d);
-    return { subtotal, tax, total, discount: d };
+    return { subtotal, cgst, sgst, tax, total, discount: d };
   }, [cart, discount]);
 
   return { cart, discount, setDiscount, addLine, updateQty, removeLine, clear, totals };

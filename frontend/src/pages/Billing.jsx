@@ -341,13 +341,33 @@ export default function Billing() {
     setDiscount(0);
   }, []);
 
+  const cgstRate = useMemo(() => {
+    return settings?.cgst_rate ?? (settings?.gst_rate ? settings.gst_rate / 2 : 2.5);
+  }, [settings]);
+
+  const sgstRate = useMemo(() => {
+    return settings?.sgst_rate ?? (settings?.gst_rate ? settings.gst_rate / 2 : 2.5);
+  }, [settings]);
+
   const subtotal = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return cart.reduce((sum, item) => {
+      const lineItemTotal = item.price * item.quantity;
+      const extraBreadTotal = (item.extra_bread_charge || 0) * item.quantity;
+      return sum + lineItemTotal + extraBreadTotal;
+    }, 0);
   }, [cart]);
 
+  const cgst = useMemo(() => {
+    return subtotal * (cgstRate / 100);
+  }, [subtotal, cgstRate]);
+
+  const sgst = useMemo(() => {
+    return subtotal * (sgstRate / 100);
+  }, [subtotal, sgstRate]);
+
   const gst = useMemo(() => {
-    return subtotal * 0.05;
-  }, [subtotal]);
+    return cgst + sgst;
+  }, [cgst, sgst]);
 
   const total = useMemo(() => {
     return Math.max(0, subtotal + gst - discount);
@@ -455,7 +475,9 @@ export default function Billing() {
         name: item.name,
         price: item.price,
         qty: item.qty || item.quantity,
-        tax_rate: item.tax_rate || 5.0,
+        cgst_rate: item.cgst_rate ?? cgstRate,
+        sgst_rate: item.sgst_rate ?? sgstRate,
+        tax_rate: (item.cgst_rate ?? cgstRate) + (item.sgst_rate ?? sgstRate),
         is_thali: item.is_thali || item.category === "THALI",
         rules: item.rules || null,
         thali_groups: item.thali_groups || item.thali_rules || item.rules || null,
@@ -480,7 +502,11 @@ export default function Billing() {
         receipt_no: queued.id,
         items: payload.items,
         subtotal: subtotal,
+        cgst: cgst,
+        sgst: sgst,
         tax: gst,
+        cgst_rate: cgstRate,
+        sgst_rate: sgstRate,
         discount: discount,
         total: total,
         payment_mode: mode,
@@ -645,7 +671,7 @@ export default function Billing() {
                 </div>
               ) : (
                 <div
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
+                  className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3"
                   data-testid="all-items-grid"
                 >
                   {allFilteredItems.map((item) => (
@@ -683,7 +709,7 @@ export default function Billing() {
                 </div>
               ) : (
                 <div
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
+                  className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3"
                   data-testid="dining-menu-grid"
                 >
                   {filteredDining.map((item) => (
@@ -721,7 +747,7 @@ export default function Billing() {
                 </div>
               ) : (
                 <div
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
+                  className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3"
                   data-testid="parcel-menu-grid"
                 >
                   {filteredParcel.map((item) => (
@@ -754,7 +780,7 @@ export default function Billing() {
                 </div>
               ) : (
                 <div
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
+                  className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3"
                   data-testid="category-menu-grid"
                 >
                   {activeFilteredCategoryItems.map((item) => (
@@ -871,7 +897,7 @@ export default function Billing() {
           <div className="flex-1 overflow-y-auto p-4 bg-slate-50">
             <ReceiptPreview
               cart={cart}
-              totals={{ subtotal, tax: gst, total, discount }}
+              totals={{ subtotal, cgst, sgst, tax: gst, total, discount }}
               settings={settings}
               customerName={customerName}
               tokenNo={currentToken}
@@ -888,8 +914,12 @@ export default function Billing() {
               <span className="font-mono font-bold text-slate-800">₹{subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center text-slate-500">
-              <span>GST (5%)</span>
-              <span className="font-mono">₹{gst.toFixed(2)}</span>
+              <span>CGST ({cgstRate}%)</span>
+              <span className="font-mono">₹{cgst.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-500">
+              <span>SGST ({sgstRate}%)</span>
+              <span className="font-mono">₹{sgst.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="font-medium text-slate-600">Discount</span>
