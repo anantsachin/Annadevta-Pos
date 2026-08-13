@@ -261,6 +261,26 @@ class TestOrders:
         r3 = admin_session.get(f"{API}/orders/{o['id']}")
         assert r3.status_code == 404
 
+    def test_reset_all_orders(self, admin_session, menu_items):
+        item = next(m for m in menu_items if not m.get("is_thali"))
+        payload = {
+            "items": [{"menu_item_id": item["id"], "name": item["name"], "price": item["price"],
+                       "qty": 1, "tax_rate": 5.0, "is_thali": False}],
+            "discount": 0, "payment_mode": "cash",
+        }
+        admin_session.post(f"{API}/orders", json=payload)
+        admin_session.post(f"{API}/orders", json=payload)
+        
+        # Reset orders
+        reset_res = admin_session.delete(f"{API}/orders/reset")
+        assert reset_res.status_code == 200
+        assert reset_res.json()["ok"] is True
+
+        # Verify empty list
+        orders_res = admin_session.get(f"{API}/orders")
+        assert orders_res.status_code == 200
+        assert len(orders_res.json()) == 0
+
     def test_receipt_no_atomic_increment(self, admin_session, menu_items):
         item = next(m for m in menu_items if not m.get("is_thali"))
         payload = {

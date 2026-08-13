@@ -3,10 +3,11 @@ import api, { API, tokenStore } from "../lib/api";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Download, FileSpreadsheet, FileText, BarChart3, Sparkles, ShoppingBag } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, BarChart3, Sparkles, ShoppingBag, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "../context/LanguageContext";
 import { safeArray } from "../lib/safeArray";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const REPORT_TABS = [
   { key: "sales", label: "Daily Sales", icon: ShoppingBag },
@@ -35,6 +36,7 @@ export default function Reports() {
   const [customTo, setCustomTo] = useState(() => new Date().toISOString().slice(0, 10));
   const [rows, setRows] = useState([]);
   const [thaliPicks, setThaliPicks] = useState([]);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const fromIso = periodKey === "custom" ? toIso(customFrom) : toIso(new Date(Date.now() - PERIODS.find(p => p.key === periodKey).days * 86400000));
   const toIsoStr = periodKey === "custom" ? toIso(customTo, true) : toIso(new Date(), true);
@@ -81,6 +83,18 @@ export default function Reports() {
       toast.error(e.message || "Export failed");
     }
   };
+  const handleResetReports = async () => {
+    try {
+      await api.delete("/reports/reset");
+      await fetch();
+      toast.success(t("reports_reset_success") || "Report records cleared successfully");
+    } catch (e) {
+      console.error("Failed to reset reports", e);
+      toast.error(e.response?.data?.detail || "Failed to reset report records");
+    } finally {
+      setShowResetConfirm(false);
+    }
+  };
 
   return (
     <div className="h-full
@@ -106,12 +120,22 @@ export default function Reports() {
           text-transparent">Analytics</div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-900">{t("nav_reports")}</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <Button onClick={() => download("csv")} variant="outline" className="text-white border-[#F4E6D7] bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] hover:bg-[#FFF8F2] rounded-xl" data-testid="export-csv">
             <FileText className="w-4 h-4 mr-2" /> {t("export_csv")}
           </Button>
-          <Button onClick={() => download("xlsx")} className="bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105 rounded-xl" data-testid="export-xlsx">
+          <Button onClick={() => download("xlsx")} className="bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105 rounded-xl" data-testid="export-excel">
             <FileSpreadsheet className="w-4 h-4 mr-2" /> {t("export_excel")}
+          </Button>
+          <Button
+            type="button"
+            onClick={() => setShowResetConfirm(true)}
+            data-testid="reset-reports-btn"
+            variant="outline"
+            className="group relative overflow-hidden border border-red-200/90 bg-gradient-to-r from-red-500/10 via-rose-500/10 to-red-600/10 hover:from-red-600 hover:to-rose-600 text-red-600 hover:text-white font-bold rounded-xl px-4 py-2 flex items-center gap-1.5 shadow-xs hover:shadow-md hover:shadow-red-500/25 transition-all duration-300 active:scale-95"
+          >
+            <RotateCcw className="w-4 h-4 transition-transform duration-500 group-hover:-rotate-180" />
+            <span>Reset</span>
           </Button>
         </div>
       </div>
@@ -264,6 +288,17 @@ export default function Reports() {
         )}
         </div>
       </Card>
+
+      <ConfirmDialog
+        open={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        onConfirm={handleResetReports}
+        title="Reset Reports"
+        message="Are you sure you want to delete all report records?"
+        confirmText="Reset"
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   );
 }

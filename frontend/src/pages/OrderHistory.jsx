@@ -3,7 +3,7 @@ import api from "../lib/api";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Printer, Eye, Search, Trash2 } from "lucide-react";
+import { Printer, Eye, Search, Trash2, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { printReceipt } from "../lib/receipt";
 import ReceiptPreview from "../components/ReceiptPreview";
@@ -11,6 +11,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { safeArray } from "../lib/safeArray";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { toast } from "sonner";
+import { syncQueue } from "../lib/syncQueue";
 
 export default function OrderHistory() {
   const { t } = useLanguage();
@@ -18,6 +19,7 @@ export default function OrderHistory() {
   const [settings, setSettings] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const getLocalDateString = (rawDate) => {
     if (!rawDate) return "";
@@ -152,6 +154,22 @@ export default function OrderHistory() {
     }
   };
 
+  const handleResetOrders = async () => {
+    try {
+      await api.delete("/orders/reset");
+      setOrders([]);
+      if (syncQueue && typeof syncQueue.clear === "function") {
+        syncQueue.clear();
+      }
+      toast.success(t("orders_reset_success") || "All order records deleted successfully");
+    } catch (err) {
+      console.error("Failed to reset orders", err);
+      toast.error(err.response?.data?.detail || "Failed to delete order records");
+    } finally {
+      setShowResetConfirm(false);
+    }
+  };
+
   return (
     <div className="h-full bg-[#FFFDF9] rounded-[16px] sm:rounded-[20px] md:rounded-[24px] lg:rounded-[32px] border border-[#F4E6D7] shadow-lg p-3 sm:p-4 md:p-5 lg:p-8 flex flex-col overflow-hidden">
       <div className="mb-3 md:mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 md:gap-4 shrink-0">
@@ -160,55 +178,68 @@ export default function OrderHistory() {
           <h1 className="font-display text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight mt-0.5">{t("order_history")}</h1>
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 bg-[#FFF8F2] border border-[#F4E6D7] rounded-full self-start sm:self-auto max-w-full overflow-x-auto" data-testid="date-filter-buttons">
-          <button
+        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-1.5 p-1 bg-[#FFF8F2] border border-[#F4E6D7] rounded-full self-start sm:self-auto max-w-full overflow-x-auto" data-testid="date-filter-buttons">
+            <button
+              type="button"
+              onClick={() => handleFilterChange("all")}
+              data-testid="filter-btn-all"
+              className={`px-2.5 sm:px-3 md:px-3.5 py-1 md:py-1.5 text-[10px] sm:text-[11px] md:text-xs font-bold tracking-wider rounded-full transition-all duration-200 whitespace-nowrap ${
+                activeFilter === "all"
+                  ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
+                  : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
+              }`}
+            >
+              ALL
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFilterChange("today")}
+              data-testid="filter-btn-today"
+              className={`px-2.5 sm:px-3 md:px-3.5 py-1 md:py-1.5 text-[10px] sm:text-[11px] md:text-xs font-bold tracking-wider rounded-full transition-all duration-200 whitespace-nowrap ${
+                activeFilter === "today"
+                  ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
+                  : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
+              }`}
+            >
+              TODAY
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFilterChange("week")}
+              data-testid="filter-btn-week"
+              className={`px-2.5 sm:px-3 md:px-3.5 py-1 md:py-1.5 text-[10px] sm:text-[11px] md:text-xs font-bold tracking-wider rounded-full transition-all duration-200 whitespace-nowrap ${
+                activeFilter === "week"
+                  ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
+                  : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
+              }`}
+            >
+              THIS WEEK
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFilterChange("month")}
+              data-testid="filter-btn-month"
+              className={`px-2.5 sm:px-3 md:px-3.5 py-1 md:py-1.5 text-[10px] sm:text-[11px] md:text-xs font-bold tracking-wider rounded-full transition-all duration-200 whitespace-nowrap ${
+                activeFilter === "month"
+                  ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
+                  : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
+              }`}
+            >
+              THIS MONTH
+            </button>
+          </div>
+
+          <Button
             type="button"
-            onClick={() => handleFilterChange("all")}
-            data-testid="filter-btn-all"
-            className={`px-2.5 sm:px-3 md:px-3.5 py-1 md:py-1.5 text-[10px] sm:text-[11px] md:text-xs font-bold tracking-wider rounded-full transition-all duration-200 whitespace-nowrap ${
-              activeFilter === "all"
-                ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
-                : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
-            }`}
+            onClick={() => setShowResetConfirm(true)}
+            data-testid="reset-history-btn"
+            variant="outline"
+            className="group relative overflow-hidden border border-red-200/90 bg-gradient-to-r from-red-500/10 via-rose-500/10 to-red-600/10 hover:from-red-600 hover:to-rose-600 text-red-600 hover:text-white font-bold text-[10px] sm:text-[11px] md:text-xs h-7 sm:h-8 md:h-9 px-3 sm:px-4 rounded-full flex items-center gap-1.5 shrink-0 shadow-xs hover:shadow-md hover:shadow-red-500/25 transition-all duration-300 active:scale-95"
           >
-            ALL
-          </button>
-          <button
-            type="button"
-            onClick={() => handleFilterChange("today")}
-            data-testid="filter-btn-today"
-            className={`px-2.5 sm:px-3 md:px-3.5 py-1 md:py-1.5 text-[10px] sm:text-[11px] md:text-xs font-bold tracking-wider rounded-full transition-all duration-200 whitespace-nowrap ${
-              activeFilter === "today"
-                ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
-                : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
-            }`}
-          >
-            TODAY
-          </button>
-          <button
-            type="button"
-            onClick={() => handleFilterChange("week")}
-            data-testid="filter-btn-week"
-            className={`px-2.5 sm:px-3 md:px-3.5 py-1 md:py-1.5 text-[10px] sm:text-[11px] md:text-xs font-bold tracking-wider rounded-full transition-all duration-200 whitespace-nowrap ${
-              activeFilter === "week"
-                ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
-                : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
-            }`}
-          >
-            THIS WEEK
-          </button>
-          <button
-            type="button"
-            onClick={() => handleFilterChange("month")}
-            data-testid="filter-btn-month"
-            className={`px-2.5 sm:px-3 md:px-3.5 py-1 md:py-1.5 text-[10px] sm:text-[11px] md:text-xs font-bold tracking-wider rounded-full transition-all duration-200 whitespace-nowrap ${
-              activeFilter === "month"
-                ? "bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] text-white shadow-sm"
-                : "bg-white text-slate-600 hover:text-slate-900 border border-[#F4E6D7]"
-            }`}
-          >
-            THIS MONTH
-          </button>
+            <RotateCcw className="w-3.5 h-3.5 md:w-4 md:h-4 transition-transform duration-500 group-hover:-rotate-180" />
+            <span>Reset</span>
+          </Button>
         </div>
       </div>
 
@@ -305,6 +336,17 @@ export default function OrderHistory() {
         title="Delete this order?"
         message="Are you sure you want to permanently remove this order from Order History? This action cannot be undone."
         confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        onConfirm={handleResetOrders}
+        title="Reset Order History"
+        message="Are you sure you want to delete all order records?"
+        confirmText="Reset"
         cancelText="Cancel"
         variant="destructive"
       />

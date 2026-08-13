@@ -1606,12 +1606,29 @@ async def get_order(oid: str, _: dict = Depends(get_current_user)):
     if not o:
         raise HTTPException(404, "Not found")
     o["items"] = _parse_json(o.get("items"), [])
-    o.pop("tenant_db", None)
     return o
 
 
+@api.delete("/orders/reset")
+async def reset_orders_reset_path(_: dict = Depends(get_current_user)):
+    db = await get_db()
+    tenant = _tenant()
+    await _execute(db, "DELETE FROM orders WHERE tenant_db = ?", (tenant,))
+    return {"ok": True, "message": "All order records deleted"}
+
+
+@api.delete("/orders")
+async def reset_orders_root_path(_: dict = Depends(get_current_user)):
+    db = await get_db()
+    tenant = _tenant()
+    await _execute(db, "DELETE FROM orders WHERE tenant_db = ?", (tenant,))
+    return {"ok": True, "message": "All order records deleted"}
+
+
 @api.delete("/orders/{oid}")
-async def delete_order(oid: str, _: dict = Depends(get_current_user)):
+async def delete_order(oid: str, user: dict = Depends(get_current_user)):
+    if oid == "reset":
+        return await reset_orders_reset_path(user)
     db = await get_db()
     tenant = _tenant()
     order = await _fetchone(db, "SELECT id FROM orders WHERE id = ? AND tenant_db = ?", (oid, tenant))
@@ -1721,9 +1738,36 @@ async def dashboard_summary(_: dict = Depends(get_current_user)):
 
 # ------- Reports -------
 async def _reports_orders(from_date: Optional[str], to_date: Optional[str]) -> list:
+    db = await get_db()
+    tenant = _tenant()
+    s = await _fetchone(db, "SELECT data FROM settings WHERE id = 'main' AND tenant_db = ?", (tenant,))
+    data = _parse_json(s.get("data") if s else None, {})
+    cleared_at = data.get("reports_cleared_at")
+
     fd = from_date or iso(now_utc() - timedelta(days=30))
     td = to_date or iso(now_utc())
+
+    if cleared_at and cleared_at > fd:
+        fd = cleared_at
+
+    if fd > td:
+        return []
+
     return await _orders_in_range(fd, td)
+
+
+@api.delete("/reports/reset")
+async def reset_reports(_: dict = Depends(get_current_user)):
+    db = await get_db()
+    tenant = _tenant()
+    now_str = iso(now_utc())
+    s = await _fetchone(db, "SELECT data FROM settings WHERE id = 'main' AND tenant_db = ?", (tenant,))
+    data = _parse_json(s.get("data") if s else None, {})
+    data["reports_cleared_at"] = now_str
+    await _execute(db,
+        "INSERT INTO settings (id, tenant_db, data) VALUES ('main', ?, ?) ON CONFLICT(id, tenant_db) DO UPDATE SET data = excluded.data",
+        (tenant, json_module.dumps(data)))
+    return {"ok": True, "message": "Report records cleared successfully", "reports_cleared_at": now_str}
 
 
 @api.get("/reports/sales")

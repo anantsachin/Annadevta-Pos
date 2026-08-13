@@ -546,7 +546,7 @@ export default function Billing() {
         toast.error(e?.response?.data?.detail || t("checkout_failed"));
       }
     }
-  }, [cart, subtotal, gst, total, discount, isOnline, settings, clear, refresh, customerName, t]);
+  }, [cart, subtotal, gst, total, discount, isOnline, settings, clear, refresh, customerName, t, cgst, cgstRate, menuMode, sgst, sgstRate]);
 
   return (
     <div className="h-full grid grid-cols-12 gap-2.5 sm:gap-3 lg:gap-4 bg-[#FAF7F2] p-1 sm:p-2 overflow-hidden billing-responsive-scale container billing-page-container">

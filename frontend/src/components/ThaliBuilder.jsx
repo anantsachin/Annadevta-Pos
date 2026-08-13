@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "../components/ui/dialog";
 import { Button } from "../components/ui/button";
+// eslint-disable-next-line no-unused-vars
 import { Check, Sparkles, ShieldCheck, ChevronDown, ChevronRight, Plus, Minus, Info } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
