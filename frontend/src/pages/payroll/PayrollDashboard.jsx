@@ -36,18 +36,34 @@ export default function PayrollDashboard() {
   ];
 
   return (
-    <div className="h-full bg-[#FFFDF9] rounded-[16px] sm:rounded-[20px] md:rounded-[24px] lg:rounded-[32px] border border-[#F4E6D7] shadow-lg p-3 sm:p-4 md:p-5 lg:p-6 xl:p-8 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        <div className="w-full">
-          <div className="mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <div className="text-[11px] sm:text-[12px] uppercase tracking-[0.1em] font-bold bg-gradient-to-r from-[#FF8A3D] to-[#FF6B00] bg-clip-text text-transparent">Workforce Management</div>
-              <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">HR Dashboard</h1>
-            </div>
-            <Link to="/payroll/process" className="bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105 rounded-xl text-white px-4 md:px-5 py-2 md:py-2.5 text-xs md:text-sm font-semibold shadow-sm transition-colors flex items-center gap-2 self-start sm:self-auto">
-              <Wallet className="w-4 h-4" /> Run Payroll
-            </Link>
-          </div>
+    <div className="h-full
+    bg-[#FFFDF9]
+    rounded-[32px]
+    border
+    border-[#F4E6D7]
+    shadow-lg
+    p-8
+    flex
+    flex-col
+    overflow-hidden
+  ">
+    {/* <div className="p-6 lg:p-10 max-w-7xl mx-auto bg-slate-50 min-h-screen"> */}
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <div className="text-[15px]
+          uppercase
+          tracking-[0.1em]
+          font-bold
+          bg-gradient-to-r
+          from-[#FF8A3D] to-[#FF6B00]
+          bg-clip-text
+          text-transparent">Workforce Management</div>
+          <h1 className="font-display text-3xl font-extrabold text-slate-900 tracking-tight">HR Dashboard</h1>
+        </div>
+        <Link to="/payroll/process" className="bg-gradient-to-r from-[#78A61A] to-[#5F9210] hover:brightness-105 rounded-xl text-white px-5 py-2.5  text-sm font-semibold shadow-sm transition-colors flex items-center gap-2">
+          <Wallet className="w-4 h-4" /> Run Payroll
+        </Link>
+      </div>
 
       {/* Top HR Metrics */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
@@ -160,7 +176,7 @@ export default function PayrollDashboard() {
         </div>
       )}
         </div>
-      </div>
-    </div>
+     
+    
   );
 }

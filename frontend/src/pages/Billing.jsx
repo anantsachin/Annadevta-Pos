@@ -517,7 +517,7 @@ export default function Billing() {
       };
       toast.warning(`Offline order saved locally. Will sync when online.`);
       if (settings?.auto_print !== false) {
-        printReceipt({ order: offlineOrder, settings });
+        printReceipt({ order: offlineOrder, settings, menuMode, });
       }
       clear();
       setCustomerName("");
@@ -529,7 +529,7 @@ export default function Billing() {
       const { data } = await api.post("/orders", payload);
       toast.success(`${t("checkout_success")} · #${data.receipt_no} · ₹${data.total} (${mode.toUpperCase()})`);
       if (settings?.auto_print !== false) {
-        printReceipt({ order: data, settings });
+        printReceipt({ order: data, settings, menuMode, });
       }
       clear();
       setCustomerName("");
@@ -902,6 +902,7 @@ export default function Billing() {
               customerName={customerName}
               tokenNo={currentToken}
               menu={menuItems}
+              menuMode={menuMode}
             />
           </div>
         )}

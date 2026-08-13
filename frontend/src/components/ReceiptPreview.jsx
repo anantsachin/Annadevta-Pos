@@ -148,8 +148,10 @@ export default function ReceiptPreview({
   totals,
   customerName,
   tokenNo,
+  menuMode,
 }) {
   const { t } = useLanguage();
+  const isParcel = menuMode === "parcel";
 
   const order = useMemo(() => {
     if (propOrder) {
@@ -248,6 +250,8 @@ export default function ReceiptPreview({
   };
   return (
     <div className="receipt-wrapper">
+      {isParcel && (
+      <>
       {/* FIRST CONTAINER: Kitchen Receipt - 300px symmetrical thermal layout */}
       <div id="kitchen-receipt-print" className="kitchen-receipt-container w-[300px] mx-auto bg-[#fdfbf7] p-[10px] shadow-md border border-[#e6e4de] font-mono leading-normal text-[#000] text-[12px] box-border">
         {/* Restaurant Name */}
@@ -265,17 +269,13 @@ export default function ReceiptPreview({
               <span className="font-bold text-xs">#{order.token_no}</span>
             </div>
           )}
-          <div className="flex justify-between items-center">
+          {/* <div className="flex justify-between items-center">
             <span>BILL NO:</span>
             <span className="font-bold">{receiptNoFormatted}</span>
-          </div>
+          </div> */}
           <div className="flex justify-between items-center">
-            <span>DATE:</span>
-            <span>{dateStr}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span>TIME:</span>
-            <span>{timeStr}</span>
+          <span>{dateStr}</span>
+          <span>{timeStr}</span>
           </div>
           {order.notes && (
             <div className="flex justify-between items-center text-[#d32f2f] font-bold">
@@ -287,7 +287,7 @@ export default function ReceiptPreview({
 
         {/* Title */}
         <div className="my-1.5 border-t border-dashed border-black" />
-        <div className="text-center font-extrabold tracking-widest text-xs">KITCHEN ORDER</div>
+        <div className="text-center font-extrabold tracking-widest text-xs">KITCHEN COPY</div>
         <div className="my-1.5 border-t border-dashed border-black" />
 
         {/* Items List (No Prices) */}
@@ -317,12 +317,14 @@ export default function ReceiptPreview({
 
         {/* Footer Banner */}
         <div className="mt-3 my-1 border-t border-black" />
-        <div className="text-center font-extrabold text-xs tracking-widest uppercase my-0.5">KITCHEN COPY</div>
-        <div className="my-1 border-t border-black" />
+        {/* <div className="text-center font-extrabold text-xs tracking-widest uppercase my-0.5">KITCHEN COPY</div> */}
+        {/* <div className="my-1 border-t border-black" /> */}
       </div>
+      </>
+    )}
 
       {/* Vertical spacing between preview blocks */}
-      <div className="h-6 select-none print:hidden" />
+      {/* <div className="h-6 select-none print:hidden" /> */}
 
       {/* SECOND CONTAINER: Customer Receipt - 300px symmetrical thermal layout */}
       <div className="receipt-container w-[300px] mx-auto bg-[#fdfbf7] p-[10px] shadow-md border border-[#e6e4de] font-mono leading-normal text-[#000] text-[12px] box-border">
@@ -351,7 +353,7 @@ export default function ReceiptPreview({
             <span>{t("time")}:</span>
             <span>{timeStr}</span>
           </div>
-          {order.cashier_name && (
+          {/* {order.cashier_name && (
             <div className="flex justify-between items-center">
               <span>{t("cashier")}:</span>
               <span>
@@ -361,7 +363,7 @@ export default function ReceiptPreview({
                 }
               </span>
             </div>
-          )}
+          )} */}
           {order.customer_name && (
             <div className="flex justify-between items-center">
               <span>{t("customer")}:</span>
@@ -469,7 +471,7 @@ export default function ReceiptPreview({
         <div className="my-2 border-t border-dashed border-black" />
 
         {/* Payment details */}
-        {settings?.show_payment !== false && order.payment_mode && (
+        {/* {settings?.show_payment !== false && order.payment_mode && (
           <div className="flex justify-between items-center font-bold text-[11px] uppercase mb-1">
             <span>{t("payment")}:</span>
             <span>
@@ -480,7 +482,7 @@ export default function ReceiptPreview({
               }
             </span>
           </div>
-        )}
+        )} */}
 
         {/* Footer message */}
         <div className="text-center font-bold uppercase text-[11px] mt-2">
@@ -493,7 +495,7 @@ export default function ReceiptPreview({
           }
         </div>
 
-        <div className="text-center text-[10px] text-[#444] mt-1">{dateStr} {timeStr}</div>
+        {/* <div className="text-center text-[10px] text-[#444] mt-1">{dateStr} {timeStr}</div> */}
 
         <div className="my-2 border-t border-dashed border-black" />
         <div className="text-center text-[9px] text-[#666]">

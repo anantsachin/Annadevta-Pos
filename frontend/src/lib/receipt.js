@@ -386,7 +386,7 @@ function buildKitchenReceiptBlock({ order, settings, t, tokenNo, receiptNoFormat
   `;
 }
 
-export function printReceipt({ order, settings, menu }) {
+export function printReceipt({ order, settings, menu, menuMode }) {
   if (!order) return;
   const lang = localStorage.getItem("pos_language") || settings?.language || "en";
   const t = (key) => {
@@ -439,8 +439,12 @@ export function printReceipt({ order, settings, menu }) {
     menu
   });
 
+  const isParcel = menuMode === "parcel";
+
   const html = `<!doctype html>
-<html><head><meta charset="utf-8"/><title>Receipt #${receiptNoFormatted}</title>
+<html>
+<head>
+<meta charset="utf-8"/><title>Receipt #${receiptNoFormatted}</title>
 <style>
   @page {
     size: ${paperWidth} auto;
@@ -509,43 +513,58 @@ export function printReceipt({ order, settings, menu }) {
     padding: 2px 0;
   }
   .receipt-cut-separator {
-    border-top: 2px dashed #000 !important;
-    margin: 16px 0 !important;
-    width: 100% !important;
-    display: block !important;
-    page-break-after: always !important;
-    break-after: page !important;
+  width: 100%;
+  margin: 14px 0;
+  padding: 8px 0;
+  border-top: 2px dashed #000;
+  border-bottom: 2px dashed #000;
+  text-align: center;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.paper-feed-end {
+  height: 35px;
+}
   }
-  .second-token-container {
-    page-break-before: always !important;
-    break-before: page !important;
-  }
-</style></head>
+  
+</style>
+</head>
 <body>
-<<<<<<< Updated upstream
-  ${firstReceiptHTML}
-  <div class="receipt-cut-separator" style="margin-top: 1.5em; margin-bottom: 1.5em; border-top: 2px dashed #000; width: 100%; page-break-after: always; break-after: page;"></div>
-  ${secondReceiptHTML}
-=======
-  <!-- RECEIPT 1: KITCHEN RECEIPT -->
-  ${kitchenReceiptHTML}
+${
+  isParcel
+    ? `
+      <!-- PARCEL: KITCHEN COPY -->
+      ${kitchenReceiptHTML}
 
-  <!-- Continuous paper feed separator space between Kitchen & Customer receipts -->
-  <div style="height: 30px; border-top: 1px dashed #666; margin: 15px 0;"></div>
+      <!-- CUT / TEAR SEPARATOR -->
+      <div class="receipt-cut-separator">
+        <span>✂ CUT HERE</span>
+      </div>
 
-  <!-- RECEIPT 2: CUSTOMER RECEIPT -->
-  ${customerReceiptHTML}
+      <!-- PARCEL: CUSTOMER COPY -->
+      ${customerReceiptHTML}
 
-  <!-- Paper feed at end for clean tear -->
-  <div style="height: 45px;"></div>
+      <!-- Final paper feed -->
+      <div class="paper-feed-end"></div>
+    `
+    : `
+      <!-- DINING: CUSTOMER COPY ONLY -->
+      ${customerReceiptHTML}
 
->>>>>>> Stashed changes
-  <script>
-    window.onload = () => {
-      window.print();
-      setTimeout(() => window.close(), 500);
-    };
-  </script>
+      <!-- Final paper feed -->
+      <div class="paper-feed-end"></div>
+    `
+}
+
+<script>
+  window.onload = () => {
+    window.print();
+    setTimeout(() => window.close(), 500);
+  };
+</script>
+
 </body></html>`;
 
   const isElectron = window.electronAPI && window.electronAPI.printer;
