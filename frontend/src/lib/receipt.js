@@ -1361,15 +1361,29 @@ ${receiptContent}
   // to finish feeding/cutting the kitchen receipt
   // before the next print job begins.
   await new Promise(resolve =>
-    setTimeout(resolve, 300)
+    setTimeout(resolve, 2000)
   );
 
 
   // Second print job = customer receipt.
-  const customerSuccess = await printOneReceipt(
+  let customerSuccess = await printOneReceipt(
     customerHTML
   );
-
+  
+  if (!customerSuccess) {
+    console.warn(
+      "Customer receipt failed. Retrying..."
+    );
+  
+    await new Promise(resolve =>
+      setTimeout(resolve, 2000)
+    );
+  
+    customerSuccess = await printOneReceipt(
+      customerHTML
+    );
+  }
+  
   return customerSuccess;
 }
 
