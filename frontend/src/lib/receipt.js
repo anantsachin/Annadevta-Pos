@@ -1330,61 +1330,99 @@ ${receiptContent}
   // IMPORTANT:
   // Do NOT combine these into one HTML document.
   // ---------------------------------------------------------
-  const kitchenHTML = buildPrintHTML(
-    kitchenReceiptHTML,
-    "Kitchen Copy"
-  );
+// ---------------------------------------------------------
+// PARCEL
+//
+// ONE IPC REQUEST
+//
+// Electron main process handles:
+//
+// 1. Kitchen Copy
+// 2. Wait
+// 3. Customer Copy
+//
+// Both are separate printer jobs.
+// ---------------------------------------------------------
 
-  const customerHTML = buildPrintHTML(
-    customerReceiptHTML,
-    "Customer Receipt"
-  );
+const kitchenHTML = buildPrintHTML(
+  kitchenReceiptHTML,
+  "Kitchen Copy"
+);
+
+const customerHTML = buildPrintHTML(
+  customerReceiptHTML,
+  "Customer Receipt"
+);
 
 
-  // First print kitchen copy.
-  // Wait until Electron finishes before sending
-  // the customer receipt.
-  const kitchenSuccess = await printOneReceipt(
-    kitchenHTML
-  );
+const isElectron =
+  window.electronAPI &&
+  window.electronAPI.printer;
 
-  if (!kitchenSuccess) {
+
+if (isElectron) {
+
+  try {
+
+    const printerName =
+      settings?.default_printer || null;
+
+    const paperWidthSetting =
+      Number(settings?.paper_width) || 80;
+
+
+    console.log(
+      "PARCEL: Sending kitchen + customer to Electron printer"
+    );
+
+
+    const success =
+      await window.electronAPI.printer.printParcel(
+        kitchenHTML,
+        customerHTML,
+        printerName,
+        paperWidthSetting
+      );
+
+
+    if (!success) {
+
+      console.error(
+        "Parcel printing failed"
+      );
+
+      return false;
+    }
+
+
+    console.log(
+      "PARCEL: Both receipts sent successfully"
+    );
+
+
+    return true;
+
+  } catch (error) {
+
     console.error(
-      "Kitchen receipt printing failed."
+      "Parcel print error:",
+      error
     );
 
     return false;
   }
+}
 
 
-  // Small delay gives the thermal printer time
-  // to finish feeding/cutting the kitchen receipt
-  // before the next print job begins.
-  await new Promise(resolve =>
-    setTimeout(resolve, 2000)
-  );
+// Browser fallback
+// This is only used when Electron is unavailable.
+console.warn(
+  "Electron printer unavailable. Using browser print."
+);
 
-
-  // Second print job = customer receipt.
-  let customerSuccess = await printOneReceipt(
-    customerHTML
-  );
-  
-  if (!customerSuccess) {
-    console.warn(
-      "Customer receipt failed. Retrying..."
-    );
-  
-    await new Promise(resolve =>
-      setTimeout(resolve, 2000)
-    );
-  
-    customerSuccess = await printOneReceipt(
-      customerHTML
-    );
-  }
-  
-  return customerSuccess;
+return fallbackBrowserPrint(
+  customerHTML
+);
 }
 
 function fallbackBrowserPrint(html) {

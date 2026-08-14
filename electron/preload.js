@@ -28,9 +28,34 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   /** Printer API for Desktop Printing & Auto-Cut */
   printer: {
-    getPrinters: () => ipcRenderer.invoke('printer:get-printers'),
-    print: (html, printerName, paperWidth) => ipcRenderer.invoke('printer:print', { html, printerName, paperWidth }),
-    testPrint: (printerName, paperWidth) => ipcRenderer.invoke('printer:test-print', { printerName, paperWidth }),
+    getPrinters: () =>
+      ipcRenderer.invoke('printer:get-printers'),
+  
+    print: (html, printerName, paperWidth) =>
+      ipcRenderer.invoke('printer:print', {
+        html,
+        printerName,
+        paperWidth
+      }),
+  
+    printParcel: (
+      kitchenHTML,
+      customerHTML,
+      printerName,
+      paperWidth
+    ) =>
+      ipcRenderer.invoke('printer:print-parcel', {
+        kitchenHTML,
+        customerHTML,
+        printerName,
+        paperWidth
+      }),
+  
+    testPrint: (printerName, paperWidth) =>
+      ipcRenderer.invoke('printer:test-print', {
+        printerName,
+        paperWidth
+      }),
   },
 });
 
